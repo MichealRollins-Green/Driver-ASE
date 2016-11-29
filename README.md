@@ -88,7 +88,7 @@ This pipeline also uses many different which are all in the same directory.
 The directory with the files can be downloaded from the link below.
 Once downloaded place these files in the TCGA_ASE_Analysis/TCGA_Pipeline/ directory and decompress it. 
 
-###Database directory download link
+####Database directory download link
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
