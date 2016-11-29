@@ -123,7 +123,7 @@ Below are the scripts that are included in this pipeline:
 
 1.3_Make_het_cds.pl – Keeps het SNPS and makes cds sorted files.
 
-2.0_Lookups_for_normal.pl – Performs lookups in the cds files and gets the normal samples out of them.
+2.0_Lookups_for_normal.pl – Performs lookups on the cds sorted files and gets the normal samples out of them.
 
 2.1_Get_Bad_SNPs_and_CNVs.pl – Gets the bad SNPs and CNVs of the cancer type.
 
