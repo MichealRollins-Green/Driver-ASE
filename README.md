@@ -1,27 +1,13 @@
 # TCGA-ASE-Analysis-Pipeline
 TAAP(TCGA ASE Analysis Pipeline): A pipeline to analyze ASEs of various cancer types and answer how ASE is involved
 
-$$$$$$\ $$\   $$\ $$$$$$$$\  $$$$$$\  $$$$$$$\  $$\   $$\  $$$$$$\ $$$$$$$$\ $$$$$$\  $$$$$$\  $$\   $$\ 
-\_$$  _|$$$\  $$ |\__$$  __|$$  __$$\ $$  __$$\ $$ |  $$ |$$  __$$\\__$$  __|\_$$  _|$$  __$$\ $$$\  $$ |
-  $$ |  $$$$\ $$ |   $$ |   $$ /  $$ |$$ |  $$ |$$ |  $$ |$$ /  \__|  $$ |     $$ |  $$ /  $$ |$$$$\ $$ |
-  $$ |  $$ $$\$$ |   $$ |   $$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |        $$ |     $$ |  $$ |  $$ |$$ $$\$$ |
-  $$ |  $$ \$$$$ |   $$ |   $$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |        $$ |     $$ |  $$ |  $$ |$$ \$$$$ |
-  $$ |  $$ |\$$$ |   $$ |   $$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |  $$\   $$ |     $$ |  $$ |  $$ |$$ |\$$$ |
-$$$$$$\ $$ | \$$ |   $$ |    $$$$$$  |$$$$$$$  |\$$$$$$  |\$$$$$$  |  $$ |   $$$$$$\  $$$$$$  |$$ | \$$ |
-\______|\__|  \__|   \__|    \______/ \_______/  \______/  \______/   \__|   \______| \______/ \__|  \__|
+#Introduction
 
 As TCGA is an international project and contains a lot of NGS data for different cancer types, it was our goal to create a pipeline to analyze this data. With this pipeline, It was decided that allelic specific expression (ASE) can be a method to explore TCGA data.
 
 The goal of this pipeline is to do TCGA ASE analysis with RNA-Seq, affymetrix genotyping array, and whole genome sequence. It is divided into many Perl scripts that are used to download, run imputation, perform ASE analysis as well as perform WGS analysis. these scripts are easy to use and provide options and usages. To speed up the analysis, the perl module MCE (Multiple Core Engine was implemented into the pipeline. Additionally, this pipeline uses other software to process data, including samtools, impute2, shapeit, plink, overlapselect and VarScan with links found below for each software. Also included with this pipeline are perl modules that include a bunch of subroutines that were once scripts.
 
- /$$$$$$ /$$   /$$  /$$$$$$  /$$$$$$$$ /$$$$$$  /$$       /$$      
-|_  $$_/| $$$ | $$ /$$__  $$|__  $$__//$$__  $$| $$      | $$      
-  | $$  | $$$$| $$| $$  \__/   | $$  | $$  \ $$| $$      | $$      
-  | $$  | $$ $$ $$|  $$$$$$    | $$  | $$$$$$$$| $$      | $$      
-  | $$  | $$  $$$$ \____  $$   | $$  | $$__  $$| $$      | $$      
-  | $$  | $$\  $$$ /$$  \ $$   | $$  | $$  | $$| $$      | $$      
- /$$$$$$| $$ \  $$|  $$$$$$/   | $$  | $$  | $$| $$$$$$$$| $$$$$$$$
-|______/|__/  \__/ \______/    |__/  |__/  |__/|________/|________/
+#Install
 
 This pipeline was coded on a Centos 7 x86_64 system and some of the software listed below are for an x86_64 linux distribution and some of the software may not be compatible with i686 or other versions.
 
@@ -98,14 +84,7 @@ You will also need to have a GDC account to get the key for downloading as it do
 
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the script directory to your path if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
 
-  /$$$$$$   /$$$$$$  /$$$$$$$  /$$$$$$ /$$$$$$$  /$$$$$$$$ /$$$$$$ 
- /$$__  $$ /$$__  $$| $$__  $$|_  $$_/| $$__  $$|__  $$__//$$__  $$
-| $$  \__/| $$  \__/| $$  \ $$  | $$  | $$  \ $$   | $$  | $$  \__/
-|  $$$$$$ | $$      | $$$$$$$/  | $$  | $$$$$$$/   | $$  |  $$$$$$ 
- \____  $$| $$      | $$__  $$  | $$  | $$____/    | $$   \____  $$
- /$$  \ $$| $$    $$| $$  \ $$  | $$  | $$         | $$   /$$  \ $$
-|  $$$$$$/|  $$$$$$/| $$  | $$ /$$$$$$| $$         | $$  |  $$$$$$/
- \______/  \______/ |__/  |__/|______/|__/         |__/   \______/ 
+#Scripts
 
 Below are the scripts that are inclued in this pipeline:
 
@@ -137,14 +116,7 @@ Below are the scripts that are inclued in this pipeline:
 
 4.1_Upstream_Downstream_Analysis.pl – Performs upstream and downstream analysis and gets the data ready to be analyzed.
 
- /$$      /$$  /$$$$$$  /$$$$$$$  /$$   /$$ /$$       /$$$$$$$$  /$$$$$$ 
-| $$$    /$$$ /$$__  $$| $$__  $$| $$  | $$| $$      | $$_____/ /$$__  $$
-| $$$$  /$$$$| $$  \ $$| $$  \ $$| $$  | $$| $$      | $$      | $$  \__/
-| $$ $$/$$ $$| $$  | $$| $$  | $$| $$  | $$| $$      | $$$$$   |  $$$$$$ 
-| $$  $$$| $$| $$  | $$| $$  | $$| $$  | $$| $$      | $$__/    \____  $$
-| $$\  $ | $$| $$  | $$| $$  | $$| $$  | $$| $$      | $$       /$$  \ $$
-| $$ \/  | $$|  $$$$$$/| $$$$$$$/|  $$$$$$/| $$$$$$$$| $$$$$$$$|  $$$$$$/
-|__/     |__/ \______/ |_______/  \______/ |________/|________/ \______/ 
+#Modules
 
 Modules that are incorporated in the scripts are listed below:
 
