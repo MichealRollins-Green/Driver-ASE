@@ -42,7 +42,9 @@ sudo yum install openssl openssl-devel
 ####The commands to install aria2 are as follows
 
 ./configure --with-openssl
+\
 make
+
 sudo make install
 
 ####This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
@@ -69,6 +71,7 @@ VarScan(need java installed in order to run it) - https://sourceforge.net/projec
 You will need to add the software to your path in order to run them directly from the command line.
 
 cd ~ 
+
 vi .bash_profile
 
 ##press i to insert into the file
