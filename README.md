@@ -22,21 +22,21 @@ perl -e 'use enter module name here;'
 
 If the module is installed, then nothing will happen but if it is not, it will display an error saying that it could not be found.
 
-FindBin
+FindBin - perl -e 'use FindBin;'
 
-File::Copy
+File::Copy - perl -e 'File::Copy;'
 
-FileHandle
+FileHandle - perl -e 'use FileHandle;'
 
-MCE
+MCE - perl -e 'MCE;'
 
-Cwd
+Cwd - perl -e 'Cwd;'
 
-Math::CDF
+Math::CDF - perl -e 'use Math::CDF;'
 
-Getopt::Long
+Getopt::Long - perl -e 'use Getopt::Long;'
 
-autodie
+autodie - perl -e 'use autodie;'
 
 ####You will need to install the latest version of aria2 since this pipeline uses it to download RNA-Seq, Genotyping array and WGS data.
 
