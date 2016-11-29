@@ -61,7 +61,7 @@ VarScan(need java installed in order to run it) - https://sourceforge.net/projec
 
 You will need to add the software to your path in order to run them directly from the command line.
 
-cd ~
+cd ~ 
 vi .bash_profile
 
 #press i to insert into the file
