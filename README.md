@@ -16,12 +16,19 @@ Make sure you have these perl modules installed before you run these scripts.
 #In order to install these modules, you will need to use cpan.
 
 FindBin
+
 File::Copy
+
 FileHandle
+
 MCE
+
 Cwd
+
 Math::CDF
+
 Getopt::Long
+
 autodie
 
 ####You will need to install the latest version of aria2 since this pipeline uses it to download RNA-Seq, Genotyping array and WGS data.
@@ -64,11 +71,11 @@ You will need to add the software to your path in order to run them directly fro
 cd ~ 
 vi .bash_profile
 
-#press i to insert into the file
+##press i to insert into the file
 
 PATH=$PATH:$HOME/bin:$HOME/bin/samtools/:$HOME/bin/shapeit/bin/:$HOME/bin/impute2/:/usr/bin/:$HOME/bin/plink
 
-#press the Esc key
+##press the Esc key
 
 :wq
 
