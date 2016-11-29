@@ -51,8 +51,8 @@ sudo make install
 
 sudo yum install curl
 
-####You will need to install the software below as well####
-####Create a bin directory in your home directory and install the software below to it####
+You will need to install the software below as well
+#Create a bin directory in your home directory and install the software below to it
 
 NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere.
 
@@ -74,19 +74,21 @@ cd ~
 
 vi .bash_profile
 
-##press i to insert into the file
+###press i to insert into the file
 
 PATH=$PATH:$HOME/bin:$HOME/bin/samtools/:$HOME/bin/shapeit/bin/:$HOME/bin/impute2/:/usr/bin/:$HOME/bin/plink
 
-##press the Esc key
+###press the Esc key
 
 :wq
 
 source ~/.bash_profile
 
-####This pipeline also uses many different which are all in the same directory.
-####The directory with the files can be downloaded from the link below.
-####Once downloaded place these files in the TCGA_ASE_Analysis/TCGA_Pipeline/ directory and decompress it. 
+This pipeline also uses many different which are all in the same directory.
+The directory with the files can be downloaded from the link below.
+Once downloaded place these files in the TCGA_ASE_Analysis/TCGA_Pipeline/ directory and decompress it. 
+
+#Database directory download link
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
