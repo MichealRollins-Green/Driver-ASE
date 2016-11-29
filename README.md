@@ -54,6 +54,10 @@ sudo yum install curl
 You will need to install the software below as well
 ####Create a bin directory in your home directory and install the software below to it
 
+cd ~
+
+mkdir bin
+
 ####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere.
 
 samtools - https://sourceforge.net/projects/samtools/files/samtools/
