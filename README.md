@@ -35,7 +35,7 @@ autodie
 
 aria2 - https://aria2.github.io/
 
-###if openssl is not installed the you will have to install that as well because it is needed for https support for aria2.
+####if openssl is not installed the you will have to install that as well because it is needed for https support for aria2.
 
 sudo yum install openssl openssl-devel
 
@@ -98,7 +98,7 @@ This pipeline can be used right away in any part of the system once all of the a
 
 #Scripts
 
-Below are the scripts that are inclued in this pipeline:
+Below are the scripts that are included in this pipeline:
 
 0_Download_SNPArray_From_GDC.pl – Downloads SNP-Array data from gdc. The data types that are used in this pipeline are Genotypes and Copy number estimate.
 
