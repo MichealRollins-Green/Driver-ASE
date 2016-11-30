@@ -38,6 +38,12 @@ Getopt::Long - perl -e 'use Getopt::Long;'
 
 autodie - perl -e 'use autodie;'
 
+lib -  perl -e 'use lib;'
+
+strict -  perl -e 'use strict'
+
+warnings -  perl -e 'use warnings;'
+
 ####You will need to install the latest version of aria2 since this pipeline uses it to download RNA-Seq, Genotyping array and WGS data.
 
 aria2 - https://aria2.github.io/
