@@ -48,7 +48,7 @@ warnings -  perl -e 'use warnings;'
 
 aria2 - https://aria2.github.io/
 
-####if openssl is not installed the you will have to install that as well because it is needed for https support for aria2.
+####if openssl is not installed then you will have to install that as well because it is needed for https support for aria2.
 
 sudo yum install openssl openssl-devel
 
