@@ -20,7 +20,6 @@ chdir $Bin;
 
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
-my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV or OV,PRAD
@@ -50,6 +49,15 @@ if(!defined $key or (!( -f $key)))
 if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
 {
     print STDERR "The file type entered must be RNA-Seq or WGS as these are what this pipeline deals with\n";
+    exit;
+}
+
+my $TCGA_Pipeline_Dir = realpath("../../");
+
+#Checks if there is not Database directory
+if(!(-d "$TCGA_Pipeline_Dir/Database"))
+{
+    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 

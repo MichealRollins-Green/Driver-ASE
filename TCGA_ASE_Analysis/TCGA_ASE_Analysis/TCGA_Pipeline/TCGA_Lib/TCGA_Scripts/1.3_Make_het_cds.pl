@@ -18,7 +18,6 @@ chdir $Bin;
 
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $impute_plink = TCGA_Lib::Imputation_Plink->new;
-my $Analysispath = realpath("../../Analysis");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -36,6 +35,20 @@ if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage("1.3");
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is no Analysis directory
+if (!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
 }
 
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";

@@ -17,7 +17,6 @@ chdir $Bin;
 
 my $wgs_analysis = TCGA_Lib::WGS_Analysis->new;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
-my $Analysispath = realpath("../../Analysis");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -34,6 +33,30 @@ if(!defined $disease_abbr || !defined $wgs_dir)
 {
     print "disease type and/or wgs directory was not entered!\n";
     $parsing->usage("4.1");
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is not Analysis directory.
+if(!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dir"))
+{
+    print STDERR "$Analysispath/$disease_abbr/$wgs_dir does not exist. It was either deleted, moved or no bams have been processed with mpileups and varscan.\n";
+    exit;
+}
+elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups"))
+{
+    print STDERR "$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups does not exist. It was either deleted, moved or no bams have been processed with mpileups and varscan.\n";
+    exit;
 }
 
 my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";

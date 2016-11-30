@@ -18,7 +18,6 @@ chdir $Bin;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $Bad_SNP_CNV = TCGA_Lib::Bad_SNPS_and_CNVS->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
-my $Analysispath = realpath("../../Analysis");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -43,6 +42,29 @@ if(!defined $copynumber)
     $parsing->usage("2.0");
 }
 
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+
+#Checks if there is no Database directory
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is no Analysis directory
+if (!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
@@ -59,8 +81,6 @@ if(!(-d $RNA_Path/$affy_dir))
 }
 
 my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/$copynumber";
-
-my $database_path = "$TCGA_Pipeline_Dir/Database";
 
 chdir "$RNA_Path";
 

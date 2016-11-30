@@ -19,11 +19,10 @@ chdir $Bin;
 my $ase_analysis = TCGA_Lib::TCGA_ASE_Analysis->new;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
-my $Analysispath = realpath("../../Analysis");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'ase_dir|a=s' => \my $ase,
+    'ase_dir|a=s' => \my $ase,#ase directory created by the user from the script option or the default one created when now directory was entered from script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.1");
 
@@ -38,6 +37,29 @@ if(!defined $disease_abbr)
     $parsing->usage("3.1");
 }
 
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+
+#Checks if there is no Database directory
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is no Analysis directory
+if(!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
@@ -50,7 +72,7 @@ if(defined $ase)
 {
     if(!(-d $RNA_Path/$ase))
     {
-        print "The directory $ase does not exist, enter in the directory that was entered in script 3.0 or do not enter in the -a option if no directory was specified in 3.0.\n";
+        print "The directory $ase does not exist, enter in the directory that was entered in script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl or do not enter in the -a option if no directory was specified in 3.0.\n";
         exit;
     }
 }
@@ -59,7 +81,7 @@ else
     $ase = "ase";
     if(!(-d "$RNA_Path/$ase"))
     {
-        print "Enter in the directory that was entered in script 3.0 as the default directory does not exist, was deleted or moved to a different location.\n";
+        print "Enter in the directory that was entered in script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl as the default directory does not exist, was deleted or moved to a different location.\n";
         exit;
     }
 }
@@ -150,7 +172,7 @@ $parsing->vlookup("$RNA_Path/$ase/RNA_seq_id_lookup_snp6_bed.txt",1,"$RNA_Path/$
 $parsing->pull_column("$RNA_Path/$ase/RNA_seq_id_lookup_pull_column.txt","1,2","$RNA_Path/$ase/RNA_seq_id_lookup_comp_gene_faster.txt");
 #compile_gene_ase_faster will use bed file saved in the directory cds_ase_sorted.
 #compile_gene_ase_faster(file that conatins list of ase_counts and associated bed files,cds_sorted_ase directory,path to the refseq.ucsc.ensembl.mrna.hg9.nr.bed file in the Database directory,user defined directory from the command line in script 3.0 or default ase)
-$ase_analysis->compile_gene_ase_faster("$RNA_Path/$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$RNA_Path/$ase/cds_sorted_ase","$TCGA_Pipeline_Dir/Database/refseq.ucsc.ensembl.mrna.hg9.nr.bed","$RNA_Path/$ase");
+$ase_analysis->compile_gene_ase_faster("$RNA_Path/$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$RNA_Path/$ase/cds_sorted_ase","$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed","$RNA_Path/$ase");
 
 print "All jobs have finished for $disease_abbr.\n";
 

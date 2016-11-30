@@ -17,7 +17,6 @@ chdir $Bin;
 
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $Bad_SNP_CNV = TCGA_Lib::Bad_SNPS_and_CNVS->new;
-my $Analysispath = realpath("../../Analysis");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -26,7 +25,7 @@ GetOptions(
                                  #The directory with the birdseed data downloaded mus be entered first otherwise this script will not run
     'affy_dir|a=s' => \my $affy_dir,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("2.2");
+) or die "Incorrect options!\n",$parsing->usage("2.1");
 
 my @raw_file_dirs;
 if(defined $snp_dir)
@@ -35,24 +34,38 @@ if(defined $snp_dir)
     if(scalar(@raw_file_dirs) < 2 or scalar(@raw_file_dirs) >= 3)
     {
         print "Enter in birdseed(Genotypes) and copy number variation(Copy number estimate) directories only.\n";
-        $parsing->usage("2.2");
+        $parsing->usage("2.1");
     }
 }
 else
 {
     print "SNP directories were not entered\n";
-    $parsing->usage("2.2");
+    $parsing->usage("2.1");
 }
 
 if($help)
 {
-    $parsing->usage("2.2");
+    $parsing->usage("2.1");
 }
 
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
-    $parsing->usage("2.2");
+    $parsing->usage("2.1");
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is no Analysis directory
+if (!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
 }
 
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
@@ -73,7 +86,7 @@ $affy_dir = "affy6" unless defined $affy_dir;
 if(!defined $affy_dir)
 {
     print "Enter in the the directory that was specified in script 1.0\n";
-    $parsing->usage("2.2"); 
+    $parsing->usage("2.1"); 
 }
 
 my $SNP_DIR1="$Analysispath/$disease_abbr/SNP6/$raw_file_dirs[0]";

@@ -22,6 +22,7 @@ my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
 my $ase_analysis = TCGA_Lib::TCGA_ASE_Analysis->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
+
 #the different oprions for this script. The out_dir and ase_dir are optional.
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -81,6 +82,15 @@ if($choice ne "all" and $choice ne "download" and $choice ne "mpileups")
 {
     print "The choice must be either all, download or mpileups.\n";
     $parsing->usage("3.0");
+}
+
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+
+#Check if there is no Database directory
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
 }
 
 #Directory where all analysis data will be going in.
@@ -279,7 +289,7 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
         #Downloads WGS BAMs and runs mpileups on them.
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
         mkdir "$rna_wgs_dir/wgs_mpileups" unless(-d "$rna_wgs_dir/wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$TCGA_Pipeline_Dir/Database/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$TCGA_Pipeline_Dir/Database/hg19.fa");
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa");
         copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
     }
     else
@@ -300,7 +310,7 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
         
         #Downloads RNA BAMs and runs mpileups on them.
         #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$TCGA_Pipeline_Dir/Database/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
+        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
     }
 }
 else
@@ -315,7 +325,7 @@ else
     {
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
         mkdir "$rna_wgs_dir/wgs_mpileups" unless(-d "$rna_wgs_dir/wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$TCGA_Pipeline_Dir/Database/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$TCGA_Pipeline_Dir/Database/hg19.fa");
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa");
         copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables") if(!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/already_done_WGS.txt"));
     }
     elsif($Exp_Strategy eq "RNA-Seq")
@@ -329,7 +339,7 @@ else
         chdir "$rna_wgs_dir";
         
         #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$TCGA_Pipeline_Dir/Database/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
+        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
     }
 }
 

@@ -19,11 +19,10 @@ chdir $Bin;
 my $ase_analysis = TCGA_Lib::TCGA_ASE_Analysis->new;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
-my $Analysispath = realpath("../../Analysis");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'ase_dir|a=s' => \my $ase,
+    'ase_dir|a=s' => \my $ase,#ase directory created by the user from the script option or the default one created when now directory was entered from script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl
     'table_file|f=s' => \my $file,#The file that conatains the RNA-Seq table located in the tables directory of the cancer type
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.2");
@@ -39,9 +38,46 @@ if(!defined $disease_abbr || !defined $file)
     $parsing->usage("3.2");
 }
 
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+
+#Checks if there is no Database directory
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is no Analysis directory
+if (!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+
+if(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables")
+{
+   if (!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file"))
+    {
+        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file does not exist. It was either moved, deleted or either of the 3.0 scipts weren't ran.\n";
+        exit;
+    } 
+}
+else
+{
+    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
-if (!(-d $RNA_Path))
+if(!(-d $RNA_Path))
 {
     print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
     exit;
@@ -156,7 +192,7 @@ $parsing->matricize("tumor_ff","normal_ff",4,12,"$RNA_Path");
 `mv $RNA_Path/collabels.txt $RNA_Path/$ase/matrix/normal.collabels`;
  
  #problem zones -> pull bed from rowlabels and make lists of genes
-$parsing->vlookup("$RNA_Path/$ase/matrix/rowlabels.txt",1,"$TCGA_Pipeline_Dir/Database/refseq.ucsc.ensembl.mrna.hg9.nr.bed",4,"1,2,3,4,5,6,7,8,9,10,11,12","n","$RNA_Path/$ase/matrix/rowlabels.bed");
+$parsing->vlookup("$RNA_Path/$ase/matrix/rowlabels.txt",1,"$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",4,"1,2,3,4,5,6,7,8,9,10,11,12","n","$RNA_Path/$ase/matrix/rowlabels.bed");
 
 #rowlabels.bed will be used by script run_problem_cnvs and run_problem_snps!
 #run_problem_cnvs(bad_cnvs directory,the TN snp cnv lookup file created from the sort command,path to RNA_Seq_Analysis directory,matrix directory)

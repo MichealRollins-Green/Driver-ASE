@@ -18,8 +18,6 @@ chdir $Bin;
 my $imput_plink = TCGA_Lib::Imputation_Plink->new;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
-my $Analysispath = realpath("../../Analysis");
-my $database_path = "$TCGA_Pipeline_Dir/Database";
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -36,6 +34,29 @@ if (!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage;
+}
+
+my $Analysispath = realpath("../../Analysis");
+
+#Checks if there is no Analysis directory
+if (!(-d "$Analysispath"))
+{
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+elsif(!(-d "$Analysispath/$disease_abbr"))
+{
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    exit;
+}
+
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+
+#Checks if there is no Database directory
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
 }
 
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";

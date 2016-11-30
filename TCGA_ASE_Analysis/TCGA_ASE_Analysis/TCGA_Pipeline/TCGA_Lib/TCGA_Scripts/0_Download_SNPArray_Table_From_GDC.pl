@@ -73,6 +73,13 @@ else
    @disease = $disease_abbr; 
 }
 
+#Check if there is no Database Directory
+if(!(-d "$TCGA_Pipeline_Dir/Database"))
+{
+    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
 mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
 
