@@ -101,13 +101,16 @@ PATH=$PATH:$HOME/bin:$HOME/bin/samtools/:$HOME/bin/shapeit/bin/:$HOME/bin/impute
 
 source ~/.bash_profile
 
-This pipeline also uses many different which are all in the same directory.
+This pipeline also uses many different files which are all in the same directory.
 The directory with the files can be downloaded from the link below.
-Once downloaded place these files in the TCGA_ASE_Analysis/TCGA_Pipeline/ directory and decompress it. 
 
 ####Database directory download link
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
+
+####Once downloaded place these files in the TCGA_ASE_Analysis/TCGA_Pipeline/ directory and decompress it.
+
+####GDC Key Required
 
 You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to https://gdc-portal.nci.nih.gov/ an go to login. after logging into your account click on your logging name to open the drop down and click download token. after the token is done downloading, rename it gdc.key and place it in the where ever you wish though it makes sense to put it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
