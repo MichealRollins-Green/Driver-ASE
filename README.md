@@ -73,19 +73,95 @@ mkdir bin
 
 ####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere.
 
-samtools - https://sourceforge.net/projects/samtools/files/samtools/
+####If you don't have root permissions to install the software, contact you system admin to have the software installed.
 
-shapeit(v2.12 static was used for this pipeline) - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
+####samtools
 
-impute2(the static verison was used for this pipeline) - https://mathgen.stats.ox.ac.uk/impute/impute_v2.html#download
+download link - https://sourceforge.net/projects/samtools/files/latest/download?source=files
 
-plink(rename to plink if it is named different) - https://www.cog-genomics.org/plink2
+Place the compressed archive in the bin directory and decompress it
 
-overlapselect - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/
+####Installing samtools
 
-VarScan(need java installed in order to run it) - https://sourceforge.net/projects/varscan/files/
+tar -jxvf samtools-1.3.1.tar.bz2
 
-You will need to add the software to your path in order to run them directly from the command line.
+Change the name of the directory to samtools
+
+remove or backup the archive
+
+cd samtools
+
+./configure
+
+make
+
+sudo make install
+
+
+####shapeit(v2.12 static was used for this pipeline) 
+
+download link - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
+
+Place the compressed archive in the bin directory and decompress it
+
+####Installing shapeit
+
+tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz
+
+remove or backup the archive
+
+mkdir shapeit
+
+mv bin example LICENCE shapeit
+
+
+####impute2(the static verison was used for this pipeline) 
+
+download link - https://mathgen.stats.ox.ac.uk/impute/impute_v2.html#download
+
+Place the compressed archive in the bin directory and decompress it
+
+####Installing impute2
+
+tar -zxvf impute_v2.3.2_x86_64_static.tgz 
+
+rename the directory impute2
+
+remove or backup the archive
+
+
+####plink(Stable) 
+
+download link - https://www.cog-genomics.org/plink2
+
+Place the compressed archive in the bin directory and decompress it
+
+####Installing plink
+
+unzip plink_linux_x86_64.zip
+
+mkdir plink1(temporary name)
+
+mv plink prettify LICENSE toy.map toy.ped plink1
+
+mv plink1 plink
+
+
+####overlapSelect 
+
+download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/overlapSelect
+
+place the downloaded software in the bin directory
+
+
+####VarScan(need java installed in order to run it) 
+
+download link - https://sourceforge.net/projects/varscan/files/
+
+place the downloaded software in the bin directory
+
+
+You will need to add the software to your path in order for the pipeline to be able to run them. VarScan is the ony exception to this as you will need to put the full path to it in order for it to run.
 
 cd ~ 
 
