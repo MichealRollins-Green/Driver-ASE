@@ -1,6 +1,6 @@
 # TAAP(TCGA ASE Analysis Pipeline)
 
-TAAP(TCGA ASE Analysis Pipeline): A pipeline that correlates somatic mutation in tumour/normal WGS paired samples with gene-level allele-specific expression in an effort to systematically uncover cis-regulatory variants involved in tumourgenesis.
+A pipeline that correlates somatic mutation in tumour/normal WGS paired samples with gene-level allele-specific expression in an effort to systematically uncover cis-regulatory variants involved in tumourgenesis.
 
 #Introduction
 
