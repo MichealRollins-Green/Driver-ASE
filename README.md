@@ -22,13 +22,13 @@ If the module is installed, then nothing will happen but if it is not, it will d
 
 FindBin - perl -e 'use FindBin;'
 
-File::Copy - perl -e 'File::Copy;'
+File::Copy - perl -e 'use File::Copy;'
 
 FileHandle - perl -e 'use FileHandle;'
 
-MCE - perl -e 'MCE;'
+MCE - perl -e 'use MCE;'
 
-Cwd - perl -e 'Cwd;'
+Cwd - perl -e 'use Cwd;'
 
 Math::CDF - perl -e 'use Math::CDF;'
 
