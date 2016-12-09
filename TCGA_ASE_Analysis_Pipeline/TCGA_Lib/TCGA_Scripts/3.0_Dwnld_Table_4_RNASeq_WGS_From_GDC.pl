@@ -201,7 +201,7 @@ foreach my $disease_abbr(@disease)
             #pull_matched_tn_GDC(sorted bamlist,output file)
             $dwnld->pull_matched_tn_GDC("final_downloadtable_$disease_abbr.txt","final_downloadtable_$disease_abbr\_$Exp_Strategy.txt");
             #filter table and remove bams aligning to NCBI36 or HG18;
-            `cat final_downloadtable_$disease_abbr\_$Exp_Strategy.txt|grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt;rm WGS_tmp.txt`;
+            `cat final_downloadtable_$disease_abbr\_$Exp_Strategy.txt|grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
             copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
         }
         elsif($Exp_Strategy eq "RNA-Seq")
