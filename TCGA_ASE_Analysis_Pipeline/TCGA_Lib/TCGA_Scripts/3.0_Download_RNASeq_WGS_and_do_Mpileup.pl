@@ -124,18 +124,6 @@ if($Exp_Strategy eq "RNA-Seq")
 {
     $number = 45 unless defined $number;
 }
-#elsif($Exp_Strategy eq "WGS")
-#{
-#    if (!defined $number)
-#    {
-#        $number = 10
-#    }
-#    elsif($number % 2 != 0)
-#    {
-#        print STDERR "Enter in an even number as WGS bams are in pairs.\n";
-#        exit;
-#    }
-#}
 
 #defaults to a directory if no output directory was specified in the command line.
 if(!defined $OUT_DIR)
@@ -164,12 +152,6 @@ else
       print STDERR "Please provide fullpath for output dir: \nThe dir does not exist: $OUT_DIR\n";
       exit;
     }
-    
-    #if($OUT_DIR =~ /mpileups/i)
-    #{
-    #    print "mpileups can not be for outputting bams as that directory name is reserved for the mpileup process.\n";
-    #    exit;
-    #}
     
     $OUT_DIR =~ s/\/$//;
     `mkdir -p "$OUT_DIR"` unless(-d "$OUT_DIR");
@@ -265,12 +247,11 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
     
     `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > index_file_ids.txt`;
     
-    #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n))
+   #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n),outputFile)
     
-    #e.g. vlookup lookupfile 3 sourcefile 4 1,2,4,6 y
+    #e.g. vlookup(lookupfile,3,sourcefile,4,"1,2,4,6","y",outputFile)
 
-    #Will search each column 3 entry of lookupfile within colum 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
-
+    #Will search each column 3 entry of lookupfile within column 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
     #N.B. only works on tab-delimited files
     $parsing->vlookup("$disease_abbr.datatable.txt","1","reference.txt","1","2","y","temp");
     $parsing->vlookup("temp","1","index_file_ids.txt","2","3","y","final_downloadtable_$disease_abbr.txt");
