@@ -265,7 +265,7 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
         #pull_matched_tn_GDC(sorted bamlist,output file)
         $dwnld->pull_matched_tn_GDC("final_downloadtable_$disease_abbr\_sorted.txt","final_downloadtable_$disease_abbr\_$Exp_Strategy.txt");
         #filter table and remove bams aligning to NCBI36 or HG18;
-        `cat final_downloadtable_$disease_abbr\_$Exp_Strategy.txt|grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt;rm WGS_tmp.txt`;
+        `cat final_downloadtable_$disease_abbr\_$Exp_Strategy.txt|grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
         copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
         #Downloads WGS BAMs and runs mpileups on them.
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
