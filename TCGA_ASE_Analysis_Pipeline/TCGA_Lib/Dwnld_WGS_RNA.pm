@@ -944,7 +944,7 @@ sub download_files_from_gdc
     my $output_dir = shift;
     my $data_type = shift;
     
-    open(DW,$infile) or die "Can't open file for input: $!\n";
+    open(DW,"$infile") or die "Can't open file for input: $!\n";
     
     my $current_dir = getcwd();
     $key_dir =~ s/\/$//;
@@ -959,11 +959,11 @@ sub download_files_from_gdc
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         if (-f "$output_dir/$a[0]:$a[1]")
         {
-            $cmd = "aria2c -s 16 -x 16 -c --dir $output_dir/ -o $a[0]:$a[1] --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'";
+            $cmd = "aria2c -s 16 -x 16 -c --dir \'$output_dir/\' -o $a[0]:$a[1] --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'";
         }
         else
         {
-            $cmd = "aria2c -s 16 -x 16 --dir $output_dir/ -o $a[0]:$a[1] --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'";
+            $cmd = "aria2c -s 16 -x 16 --dir \'$output_dir/\' -o $a[0]:$a[1] --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'";
         }
         
         print STDERR "The following code is submitted: \n$cmd\n\n";
