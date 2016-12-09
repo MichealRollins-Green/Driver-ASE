@@ -182,9 +182,12 @@ foreach my $disease_abbr(@disease)
         
         `curl --request POST --header \'Content-Type: application/json\' --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > index_file_ids.txt`;
         
-        #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n))
-        #e.g. vlookup lookupfile 3 sourcefile 4 1,2,4,6 y
-        #Will search each column 3 entry of lookupfile within colum 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
+       #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n),outputFile)
+    
+        #e.g. vlookup(lookupfile,3,sourcefile,4,"1,2,4,6","y",outputFile)
+
+        #Will search each column 3 entry of lookupfile within column 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
+        
         #N.B. only works on tab-delimited files
         $parsing->vlookup("$disease_abbr.datatable.txt","1","reference.txt","1","2","y","temp");
         $parsing->vlookup("temp","1","index_file_ids.txt","2","3","y","final_downloadtable_$disease_abbr.txt");
