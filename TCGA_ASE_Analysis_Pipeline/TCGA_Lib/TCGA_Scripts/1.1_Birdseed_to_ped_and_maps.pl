@@ -60,7 +60,7 @@ if (!(-d $RNA_Path))
 }
 
 $affy_dir = "affy6" unless defined $affy_dir;
-if(!(-d $RNA_Path/$affy_dir))
+if(!(-d "$RNA_Path/$affy_dir"))
 {
     print "Enter in the the directory that was specified in script 1.0 or run script 1.0 if it hasn't been run yet.\n";
     $parsing->usage("1.1"); 
