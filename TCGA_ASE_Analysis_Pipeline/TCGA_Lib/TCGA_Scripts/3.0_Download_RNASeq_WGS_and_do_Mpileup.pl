@@ -27,8 +27,6 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. WGS RNA-Seq
-    'out_dir|o=s' => \my $OUT_DIR,
-    'ase_dir|a=s' => \my $ase,
     'choice|c=s' => \my $choice,#either all, download or mpileups
     'number|n=i' => \my $number,#the number of bams to download
     'key|k=s'=> \my $key,
@@ -89,7 +87,7 @@ my $database_path = "$TCGA_Pipeline_Dir/Database";
 #Check if there is no Database directory
 if(!(-d "$database_path"))
 {
-    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
@@ -125,38 +123,28 @@ if($Exp_Strategy eq "RNA-Seq")
     $number = 45 unless defined $number;
 }
 
+my $OUT_DIR;
 #defaults to a directory if no output directory was specified in the command line.
-if(!defined $OUT_DIR)
+
+if($Exp_Strategy eq "RNA-Seq")
 {
-    if($Exp_Strategy eq "RNA-Seq")
-    {
-        $OUT_DIR = "$Analysispath/$disease_abbr/rna_dwnlds/bam";
-    }
-    elsif($Exp_Strategy eq "WGS")
-    {
-        $OUT_DIR = "$Analysispath/$disease_abbr/wgs_dwnlds/bams";
-    }
-    else
-    {
-        print STDERR "File type must be either RNA-Seq or WGS.\n";
-        exit;
-    }
-    
-    print STDERR "no output directory entered, using $OUT_DIR as default\n";
-    `mkdir -p "$OUT_DIR"`;
+    $OUT_DIR = "$Analysispath/$disease_abbr/rna_dwnlds/bam";
+}
+elsif($Exp_Strategy eq "WGS")
+{
+    $OUT_DIR = "$Analysispath/$disease_abbr/wgs_dwnlds/bams";
 }
 else
 {
-    unless(-d "$Analysispath/$disease_abbr/$OUT_DIR")
-    {      
-      print STDERR "Please provide fullpath for output dir: \nThe dir does not exist: $OUT_DIR\n";
-      exit;
-    }
-    
-    $OUT_DIR =~ s/\/$//;
-    `mkdir -p "$OUT_DIR"` unless(-d "$OUT_DIR");
+    print STDERR "File type must be either RNA-Seq or WGS.\n";
+    exit;
 }
 
+`mkdir -p "$OUT_DIR"`;
+
+$OUT_DIR =~ s/\/$//;
+`mkdir -p "$OUT_DIR"` unless(-d "$OUT_DIR");
+    
 #If the entered was mpileups then it will check if the directory where the bams were downloaded exists.
 if($choice eq "mpileups")
 {   
@@ -172,7 +160,7 @@ if($choice eq "mpileups")
 }
 
 #ase directory is defaulted to ase if no name was specified for the directory.
-$ase = "ase" unless defined $ase;
+my $ase = "ase";
 
 my $rna_wgs_dir = dirname($OUT_DIR);
 chdir "$rna_wgs_dir" or die "Can't change to directory $rna_wgs_dir: $!\n";
@@ -247,11 +235,12 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
     
     `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > index_file_ids.txt`;
     
-   #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n),outputFile)
+    #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n),outputFile)
     
     #e.g. vlookup(lookupfile,3,sourcefile,4,"1,2,4,6","y",outputFile)
 
     #Will search each column 3 entry of lookupfile within column 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
+
     #N.B. only works on tab-delimited files
     $parsing->vlookup("$disease_abbr.datatable.txt","1","reference.txt","1","2","y","temp");
     $parsing->vlookup("temp","1","index_file_ids.txt","2","3","y","final_downloadtable_$disease_abbr.txt");

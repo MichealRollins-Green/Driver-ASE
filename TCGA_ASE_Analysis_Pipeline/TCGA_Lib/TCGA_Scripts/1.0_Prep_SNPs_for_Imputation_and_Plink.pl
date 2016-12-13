@@ -21,7 +21,6 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'output|o=s' => \my $affy_dir,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage;
 
@@ -41,12 +40,12 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -55,18 +54,14 @@ my $database_path = "$TCGA_Pipeline_Dir/Database";
 #Checks if there is no Database directory
 if(!(-d "$database_path"))
 {
-    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 mkdir "$Analysispath/$disease_abbr/RNA_Seq_Analysis" unless(-d "$Analysispath/$disease_abbr/RNA_Seq_Analysis");
 
-if (!defined $affy_dir)
-{
-    $affy_dir = "affy6";
-    print STDERR "using $affy_dir as default\n"; 
-}
+my $affy_dir = "affy6";
 
 chdir $RNA_Path;
 

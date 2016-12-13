@@ -26,7 +26,6 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. Genotyping array
     'array_type|a=s' =>\my $array_type,#e.g Genotypes
-    'out_dir|o=s' => \my $OUT_DIR,
     'key|k=s' => \my $key,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("0");
@@ -42,7 +41,7 @@ if (!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
     $parsing->usage("0");
 }
 
-if ($Exp_Strategy eq "Genotyping array")
+if ("$Exp_Strategy" eq "Genotyping array")
 {
     if("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
     {
@@ -73,29 +72,14 @@ if(!(-d "$TCGA_Pipeline_Dir/Database"))
 mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
 
-if (!defined $OUT_DIR)
-{
-    `mkdir -p $Analysispath/$disease_abbr/SNP6` unless(-d "$Analysispath/$disease_abbr/SNP6");        
-    $OUT_DIR = "$Analysispath/$disease_abbr/SNP6/$array_type";
-    print STDERR "Using $OUT_DIR as default\n";
-    `mkdir -p "$OUT_DIR"`;
-}
-else
-{
-    unless(-d $OUT_DIR)
-    {      
-      print STDERR "Please provide fullpath for output dir: \nThe dir does not exist: $OUT_DIR\n";
-      exit;
-    }
-    
-    $OUT_DIR =~ s/\/$//;
-    `mkdir -p "$OUT_DIR/$disease_abbr/SNP6/$array_type"` unless(-d "$OUT_DIR/$disease_abbr/SNP6/$array_type");
-    $OUT_DIR .= "/$disease_abbr/SNP6/$array_type";
-}
+`mkdir -p "$Analysispath/$disease_abbr/SNP6"` unless(-d "$Analysispath/$disease_abbr/SNP6");        
+my $OUT_DIR = "$Analysispath/$disease_abbr/SNP6/$array_type";
+
+`mkdir -p "$OUT_DIR"`;
 
 my $SNP_dir = dirname("$OUT_DIR");
 
-chdir $SNP_dir or die "Can't change to directory $SNP_dir: $!\n";
+chdir "$SNP_dir" or die "Can't change to directory $SNP_dir: $!\n";
 
 #Check gdc key and mv it to db first!
 #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
@@ -105,9 +89,9 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/$disease_abbr.$array_
 {
     #gets the manifest file from gdc and gets the UUIDs from it
     #gdc_parser(cancer type(e.g. OV),type of data (Genotypign array),data type)
-    $dwnld->gdc_parser($disease_abbr,$Exp_Strategy,$array_type);
+    $dwnld->gdc_parser($disease_abbr,"$Exp_Strategy","$array_type");
     
-    if ($array_type eq "Copy number estimate")
+    if ("$array_type" eq "Copy number estimate")
     {
         open(my $tangent,"$disease_abbr.$array_type.result.txt") or die "Can't open file for input: $!\n";
         open(my $out,">$disease_abbr\_tangent.txt") or die "Can't open file for output: $!\n";

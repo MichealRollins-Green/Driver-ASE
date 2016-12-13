@@ -20,9 +20,7 @@ my $impute_plink = TCGA_Lib::Imputation_Plink->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'output|o=s' => \my $bases_dir,
     'snp_dir|s=s' => \my $snp_dir,
-    'affy_dir|a=s' => \my $affy_dir,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("1.1");
 
@@ -42,12 +40,12 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -55,29 +53,25 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
+    print "$RNA_Path does not exist. Either it was deleted, moved, renamed, or the scripts required for it have not been run.\n";
     exit;
 }
 
-$affy_dir = "affy6" unless defined $affy_dir;
+my $affy_dir = "affy6";
 if(!(-d "$RNA_Path/$affy_dir"))
 {
-    print "Enter in the the directory that was specified in script 1.0 or run script 1.0 if it hasn't been run yet.\n";
+    print "The directory $RNA_Path/$affy_dir does not exist, It was moved, renamed, deleted or the script 1.0 has not run yet.\n";
     $parsing->usage("1.1"); 
 }
 
 chdir "$RNA_Path";
 
-if(!defined $bases_dir)
-{
-    $bases_dir = "$RNA_Path/bases";
-    print STDERR "using $bases_dir as default\n"; 
-}
+my $bases_dir = "$RNA_Path/bases";
 
-`mkdir -p $bases_dir` unless(-d "$bases_dir");
+`mkdir -p "$bases_dir"` unless(-d "$bases_dir");
 `rm -f $bases_dir/*`;
 
-my $SNP6_Raw_Files_Dir="$Analysispath/$disease_abbr/SNP6/$snp_dir";
+my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/$snp_dir";
 
 #gets all of the files in the the directory that was specified to download the SNP-Array data
 my @birdseed = $parsing->get_only_files_in_dir("$SNP6_Raw_Files_Dir");
@@ -89,11 +83,23 @@ mce_map
     $impute_plink->Prepare_Genos("$_","$SNP6_Raw_Files_Dir","$RNA_Path/$affy_dir/snp6.cd.txt","$bases_dir",2);
 }@birdseed;
 
-`rm $RNA_Path/bases/*.t`;
+#remove the .t files in the $bases_dir
+my @t_files = `ls $bases_dir`;
+chdir "$bases_dir";
+for(my $i = 0;$i < scalar(@t_files);$i++)
+{
+    if($t_files[$i] =~ /.t/)
+    {
+        chomp($t_files[$i]);
+        `rm '$bases_dir'/$t_files[$i]`;  
+    }
+}
+
+chdir "$RNA_Path";
 
 my @files = $parsing->get_only_files_in_dir("$bases_dir");
    @files=grep{!/\.$/}@files;
-my $selected_file=$files[-1];
+my $selected_file = $files[-1];
 #pull_column(file to pull column from,column(s) to pull, output file)
 $parsing->pull_column("$bases_dir/$selected_file","1","$disease_abbr\_t");
 
@@ -151,11 +157,36 @@ chdir "$RNA_Path";
 `mv $RNA_Path/maps/$disease_abbr\_TN_TCGA_All.* $RNA_Path`;
 
 #To save space
-`rm -r $RNA_Path/bases`;
-`rm -f $RNA_Path/maps/*.bim`;
-`rm -f $RNA_Path/maps/*.bed`;
-`rm -f $RNA_Path/maps/*.fam`;
-`rm -f $RNA_Path/maps/*.log`;
+`rm -r $bases_dir` unless(!(-d "$bases_dir"));
+my @del_files = `ls $RNA_Path/maps`;
+
+for(my $i = 0;$i < scalar(@del_files);$i++)
+{
+    if ($del_files[$i] =~ /.bim$/)
+    {
+        `rm -f $RNA_Path/maps/$del_files[$i]`;
+    }
+    elsif($del_files[$i] =~ /.bed$/)
+    {
+        `rm -f $RNA_Path/maps/$del_files[$i]`;
+    }
+    elsif($del_files[$i] =~ /.fam$/)
+    {
+      `rm -f $RNA_Path/maps/$del_files[$i]`; 
+    }
+    elsif($del_files[$i] =~ /.log$/)
+    {
+        `rm -f $RNA_Path/maps/$del_files[$i]`;
+    }
+    elsif($del_files[$i] =~ /.ped$/)
+    {
+        `rm -f $RNA_Path/maps/$del_files[$i]`;  
+    }
+    elsif($del_files[$i] =~ /.pro$/)
+    {
+        `rm -f $RNA_Path/maps/$del_files[$i]`;  
+    }
+}
 
 #Split Bed into peds and move them into the dir peds
 my @chrs=(1..23);

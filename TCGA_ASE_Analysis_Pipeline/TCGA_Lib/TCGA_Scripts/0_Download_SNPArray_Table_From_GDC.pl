@@ -26,20 +26,19 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. Genotyping array
     'array_type|a=s' =>\my $array_type,#e.g Genotypes
-    'table_dir|b=s' => \my $Table_Dir,#directory where the table will be created.
     'key|k=s'=> \my $key,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("0_table");
+) or die "Incorrect options!\n",$parsing->usage("0");
 
 if($help)
 {
-    $parsing->usage("0_table");
+    $parsing->usage("0");
 }
 
 if(!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
     print "disease type, data type and/or file type was not entered!\n";
-    $parsing->usage("0_table");
+    $parsing->usage("0");
 }
 
 if ($Exp_Strategy eq "Genotyping array")
@@ -47,20 +46,20 @@ if ($Exp_Strategy eq "Genotyping array")
     if("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
     {
         print STDERR "data type must be Genotypes or Copy number estimate as those are the types that are used in this pipeline.\n";
-        $parsing->usage("0_table");
+        $parsing->usage("0");
     }
 }
 else
 {
     print "the Eperimental Strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
-    $parsing->usage("0_table");
+    $parsing->usage("0");
 }
 
 if(!defined $key or (!(-f $key)))
 {
     print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
     print $key,"\n";
-    $parsing->usage("0_table");
+    $parsing->usage("0");
 }
 
 my @disease;
@@ -76,7 +75,7 @@ else
 #Check if there is no Database Directory
 if(!(-d "$TCGA_Pipeline_Dir/Database"))
 {
-    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
@@ -85,24 +84,9 @@ my $Analysispath = realpath("../../Analysis");
 
 chdir $Analysispath;
 
-if(!defined $Table_Dir)
-{      
-    $Table_Dir = "$Analysispath/tables";
-    print STDERR "Using $Table_Dir as default\n";
-    `mkdir -p "$Table_Dir"`;
-}
-else
-{
-    unless(-d $Table_Dir)
-    {      
-      print STDERR "Please provide fullpath for output dir: \nThe dir does not exist: $Table_Dir\n";
-      exit;
-    }
-    
-    $Table_Dir =~ s/\/$//;
-    `mkdir -p "$Table_Dir"` unless(-d "$Table_Dir");
-    $Table_Dir .= "/tables";
-}
+   
+my $Table_Dir = "$Analysispath/tables";
+`mkdir -p "$Table_Dir"`;
 
 chdir $Table_Dir or die "Can't change to directory $Table_Dir: $!\n";
 
@@ -173,7 +157,7 @@ foreach my $disease_abbr(@disease)
     }
 }
 
-`rm -rf $Table_Dir`;
+`rm -rf "$Table_Dir"`;
 
 print "All jobs have finished for $disease_abbr.\n";
   

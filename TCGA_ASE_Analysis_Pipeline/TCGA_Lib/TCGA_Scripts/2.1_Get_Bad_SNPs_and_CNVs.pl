@@ -20,38 +20,18 @@ my $Bad_SNP_CNV = TCGA_Lib::Bad_SNPS_and_CNVS->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'output|o=s' => \my $bad_snps,#directory where the bad snps will be located
-    'snp_dir|s=s' =>\my $snp_dir,#directories where the birdseed and copy number variants were downloaded(separate them by a comma)
-                                 #The directory with the birdseed data downloaded mus be entered first otherwise this script will not run
-    'affy_dir|a=s' => \my $affy_dir,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("2.1");
-
-my @raw_file_dirs;
-if(defined $snp_dir)
-{
-    @raw_file_dirs = split(",",$snp_dir);
-    if(scalar(@raw_file_dirs) < 2 or scalar(@raw_file_dirs) >= 3)
-    {
-        print "Enter in birdseed(Genotypes) and copy number variation(Copy number estimate) directories only.\n";
-        $parsing->usage("2.1");
-    }
-}
-else
-{
-    print "SNP directories were not entered\n";
-    $parsing->usage("2.1");
-}
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("2.1");
+    $parsing->usage;
 }
 
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
-    $parsing->usage("2.1");
+    $parsing->usage;
 }
 
 my $Analysispath = realpath("../../Analysis");
@@ -76,44 +56,35 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-if(!defined $bad_snps)
+my $bad_snps = "$RNA_Path/bad_snps";
+
+my $affy_dir = "affy6";
+if(!(-d "$RNA_Path/$affy_dir"))
 {
-    $bad_snps = "$RNA_Path/bad_snps";
-    print STDERR "using $bad_snps as default\n"; 
+    print STDERR "The directory $RNA_Path/$affy_dir does not exist, it was moved, renamed. deleted or the script that creates it has not run.\n";
+    exit; 
 }
 
-$affy_dir = "affy6" unless defined $affy_dir;
-if(!defined $affy_dir)
-{
-    print "Enter in the the directory that was specified in script 1.0\n";
-    $parsing->usage("2.1"); 
-}
-
-my $SNP_DIR1="$Analysispath/$disease_abbr/SNP6/$raw_file_dirs[0]";
-my $SNP_DIR2="$Analysispath/$disease_abbr/SNP6/$raw_file_dirs[1]";
+my $geno_dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
+my $copy_dir = "$Analysispath/$disease_abbr/SNP6/Copy number estimate";
 
 chdir "$RNA_Path";
 
 `mkdir -p $bad_snps` unless(-d "$bad_snps");
-`rm -f $RNA_Path/bad_snps/*`;
-
-unless($bad_snps = "$RNA_Path/bad_snps")
-{
-   $bad_snps = realpath("../$bad_snps"); 
-}
+`rm -f $RNA_Path/$bad_snps/*`;
 
 #make tumor normal tables for birdseed and copy number
 #mk_tn_tables(directory where Genotype data was downloaded,raw file name(same as directory name but will be used for files))
-$Bad_SNP_CNV->mk_tn_tables("$SNP_DIR1",$raw_file_dirs[0]);
+$Bad_SNP_CNV->mk_tn_tables("$geno_dir","Genotypes");
 #mk_tn_tables(directory where Copy number estimate data was downloaded,raw file name(same as directory name but will be used for files))
-$Bad_SNP_CNV->mk_tn_tables("$SNP_DIR2",$raw_file_dirs[1]);
+$Bad_SNP_CNV->mk_tn_tables("$copy_dir","Copy number estimate");
 
-$parsing->vlookup("look.have_cd",3,"$raw_file_dirs[0]\_T",3,"1,2,3,4","y","$raw_file_dirs[0]\_1");
-$parsing->vlookup("$raw_file_dirs[0]\_1",3,"$raw_file_dirs[0]\_N",3,2,"y","$raw_file_dirs[0]\_2");
-$parsing->vlookup("$raw_file_dirs[0]\_2",3,"$raw_file_dirs[1]\_T",3,2,"y","$raw_file_dirs[1]\_1");
-$parsing->vlookup("$raw_file_dirs[1]\_1",3,"$raw_file_dirs[1]\_N",3,2,"y","$raw_file_dirs[1]\_2");
+$parsing->vlookup("look.have_cd",3,"Genotypes_T",3,"1,2,3,4","y","Genotypes_1");
+$parsing->vlookup("Genotypes_1",3,"Genotypes_N",3,2,"y","Genotypes_2");
+$parsing->vlookup("Genotypes_2",3,"Copy number estimate_T",3,2,"y","Copy number estimate_1");
+$parsing->vlookup("Copy number estimate_1",3,"Copy number estimate_N",3,2,"y","Copy number estimate_2");
 
-$parsing->pull_column("$raw_file_dirs[1]\_2","5,6,9,3,8,10,1","lookup_TN");
+$parsing->pull_column("Copy number estimate_2","5,6,9,3,8,10,1","lookup_TN");
 
 `grep NaN -v lookup_TN |sort -k 3,3 > $disease_abbr\_lookup_TN`;
 
@@ -122,7 +93,7 @@ $parsing->pull_column("$raw_file_dirs[1]\_2","5,6,9,3,8,10,1","lookup_TN");
 #These bad snps will be written into the files within the bad snp directory that was specified or the default one if a directory was not
 print "Now running run_snps\n";
 #run_snps(directory where Genotype data was downloaded,directory where Copy number estimate data was downloaded,TN file generated after the vlookups and pull_column,user defined directory from command line or default directory)
-$Bad_SNP_CNV->run_snps("$SNP_DIR1,$SNP_DIR2","$RNA_Path/$disease_abbr\_lookup_TN","$bad_snps");
+$Bad_SNP_CNV->run_snps("$geno_dir,$copy_dir","$RNA_Path/$disease_abbr\_lookup_TN","$bad_snps");
 
 #get_cd_bed will try to lookup these bed snps with affy6.cd.txt
 #The results will be saved into the directory bad_snps_bed
@@ -164,7 +135,7 @@ print "Now running run_cnv.\n";
 mkdir "$RNA_Path/bad_cnvs";
 `rm -f $RNA_Path/bad_cnvs/*`;
 #run_cnv(TN file generated after the vlookups and pull_column,directory where Copy number estimate data was downloaded,directory where Genotype data was downloaded,cnv.hg19.bed file,bad_cnvs directory)
-$Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$SNP_DIR2","$SNP_DIR1","$RNA_Path/$affy_dir/cnv.hg19.bed","$RNA_Path/bad_cnvs");
+$Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$copy_dir","$geno_dir","$RNA_Path/$affy_dir/cnv.hg19.bed","$RNA_Path/bad_cnvs");
 
 print "All jobs have finished for $disease_abbr.\n";
 

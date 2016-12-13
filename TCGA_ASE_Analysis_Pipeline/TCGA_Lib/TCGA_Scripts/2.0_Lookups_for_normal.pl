@@ -22,7 +22,6 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
     'copynumber|c=s' => \my $copynumber,#directory where copy number data was downloaded
-    'affy_dir|a=s' => \my $affy_dir,#either default or user specified directory from script 1.0
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("2.0");
 
@@ -56,12 +55,12 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -69,15 +68,15 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
+    print "$RNA_Path does not exist. Either it was deleted, moved, renamed or the scripts required for it have not been run.\n";
     exit;
 }
 
-$affy_dir = "affy6" unless defined $affy_dir;
-if(!(-d $RNA_Path/$affy_dir))
+my $affy_dir = "affy6";
+if(!(-d "$RNA_Path/$affy_dir"))
 {
-    print "Enter in the the directory that was specified in script 1.0 or run script 1.0 if it hasn't been run yet.\n";
-    $parsing->usage("1.1"); 
+    print STDERR "The directory $RNA_Path/$affy_dir does not exist, It was moved, renamed, deleted or the script that creates it had not run yet.\n";
+    exit; 
 }
 
 my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/$copynumber";

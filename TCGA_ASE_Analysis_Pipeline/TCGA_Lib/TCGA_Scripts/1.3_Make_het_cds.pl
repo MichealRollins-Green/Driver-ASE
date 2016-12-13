@@ -21,20 +21,18 @@ my $impute_plink = TCGA_Lib::Imputation_Plink->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'output|o=s' => \my $imputation,
-    'phased_dir|p=s' => \my $phased,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("1.3");
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("1.3");
+    $parsing->usage;
 }
 
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
-    $parsing->usage("1.3");
+    $parsing->usage;
 }
 
 my $Analysispath = realpath("../../Analysis");
@@ -59,15 +57,14 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-if(!defined $imputation)
-{
-    $imputation = "$RNA_Path/Impute2Plink";
-    print STDERR "using $imputation as default\n"; 
-}
+my $imputation = "$RNA_Path/Impute2Plink";
 
-unless($phased = "$RNA_Path/phased")
+my $phased = "$RNA_Path/phased";
+
+if (!(-d "$RNA_Path/phased"))
 {
-    $phased = realpath("../$phased");
+    print STDERR "The directory $RNA_Path/phased does not exits, It was moved, deleted or script 1.2 has not run.\n";
+    exit;
 }
 
 my $Impute2out="$Analysispath/$disease_abbr/phased_imputed_raw_out";
@@ -76,11 +73,6 @@ chdir "$RNA_Path";
 
 `mkdir -p $imputation` unless(-d "$imputation");
 `rm -f $RNA_Path/$imputation/*`;
-
-unless("$RNA_Path/Impute2Plink")
-{
-    $imputation = realpath("../$imputation");
-}
 
 my @imputeout = $parsing->get_only_files_in_dir("$Impute2out");
 @imputeout = grep {/haps/}@imputeout;

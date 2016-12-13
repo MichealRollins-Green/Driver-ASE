@@ -119,9 +119,9 @@ if (-d "$WGS_Path/wgs_mpileups_ssoe_files")
 chdir "$Analysispath/$disease_abbr/$wgs_dir";
 
 print "Compressing wgs_mpileups directory\n";
-`tar -zcvf wgs_mpileups_varscan.tgz wgs_mpileups`;
+`tar -zcvf wgs_mpileups_varscan.tar.gz wgs_mpileups`;
 mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS" unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS");
-`mv $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups_varscan.tgz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`mv $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups_varscan.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
 
 chdir "$WGS_Path";
 
@@ -137,8 +137,8 @@ mkdir "$WGS_Path/somatic_variants";
 $wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups","$WGS_Path/somatic_variants",20,"Somatic",0.1,0.1);
 
 print "Compressing somatic_variants\n";
-`tar -zcvf somatic_variants.tgz somatic_variants`;
-`mv $WGS_Path/somatic_variants.tgz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`tar -zcvf somatic_variants.tar.gz somatic_variants`;
+`mv $WGS_Path/somatic_variants.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
 
 print "All jobs have finished for $disease_abbr.\n";
 

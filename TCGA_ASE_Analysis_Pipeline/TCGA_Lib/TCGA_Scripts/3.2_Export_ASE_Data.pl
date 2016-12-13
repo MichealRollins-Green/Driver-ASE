@@ -22,7 +22,6 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'ase_dir|a=s' => \my $ase,#ase directory created by the user from the script option or the default one created when now directory was entered from script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl
     'table_file|f=s' => \my $file,#The file that conatains the RNA-Seq table located in the tables directory of the cancer type
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.2");
@@ -52,12 +51,12 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -65,13 +64,13 @@ if(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables")
 {
    if (!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file"))
     {
-        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file does not exist. It was either moved, deleted or either of the 3.0 scipts weren't ran.\n";
+        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file does not exist. It was either moved, renamed, deleted or either of the 3.0 scipts weren't ran.\n";
         exit;
     } 
 }
 else
 {
-    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -79,26 +78,15 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if(!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
+    print "$RNA_Path does not exist. Either it was deleted, moved, renamed or the scripts required for it have not been run.\n";
     exit;
 }
 
-if(defined $ase)
+my $ase = "ase";
+if(!(-d "$RNA_Path/$ase"))
 {
-    if(!(-d "$RNA_Path/$ase"))
-    {
-        print "The directory $ase does not exist, enter in the directory that was entered in script 3.0 or do not enter in the -a option if no directory was specified in 3.0.\n";
-        exit;
-    }
-}
-else
-{
-    $ase = "ase";
-    if(!(-d "$RNA_Path/$ase"))
-    {
-        print "Enter in the directory that was entered in script 3.0 as the default directory does not exist, was deleted or was moved to a different location.\n";
-        exit;
-    }
+    print "The directory $RNA_Path/$ase does not exist. It was moved, renamed, deleted or the script that creates it has not be run yet.\n";
+    exit;
 }
 
 chdir $RNA_Path;

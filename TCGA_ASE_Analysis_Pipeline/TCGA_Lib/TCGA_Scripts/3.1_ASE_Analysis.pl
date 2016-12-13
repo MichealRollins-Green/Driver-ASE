@@ -22,19 +22,18 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'ase_dir|a=s' => \my $ase,#ase directory created by the user from the script option or the default one created when now directory was entered from script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("3.1");
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("3.1");
+    $parsing->usage;
 }
 
 if(!defined $disease_abbr)
 {
     print "Disease Type was not entered!\n";
-    $parsing->usage("3.1");
+    $parsing->usage;
 }
 
 my $database_path = "$TCGA_Pipeline_Dir/Database";
@@ -42,7 +41,7 @@ my $database_path = "$TCGA_Pipeline_Dir/Database";
 #Checks if there is no Database directory
 if(!(-d "$database_path"))
 {
-    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
@@ -68,22 +67,11 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-if(defined $ase)
+my $ase = "ase";
+if(!(-d "$RNA_Path/$ase"))
 {
-    if(!(-d $RNA_Path/$ase))
-    {
-        print "The directory $ase does not exist, enter in the directory that was entered in script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl or do not enter in the -a option if no directory was specified in 3.0.\n";
-        exit;
-    }
-}
-else
-{
-    $ase = "ase";
-    if(!(-d "$RNA_Path/$ase"))
-    {
-        print "Enter in the directory that was entered in script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl as the default directory does not exist, was deleted or moved to a different location.\n";
-        exit;
-    }
+    print "The directory $ase does not exist, enter in the directory that was entered in script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl or do not enter in the -a option if no directory was specified in 3.0.\n";
+    exit;
 }
 
 chdir "$RNA_Path/$ase";

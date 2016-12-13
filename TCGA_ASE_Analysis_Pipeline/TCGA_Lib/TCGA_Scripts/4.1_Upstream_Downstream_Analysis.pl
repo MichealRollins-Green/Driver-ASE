@@ -21,8 +21,7 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'table_file|f=s' => \my $file,
-    'output|o=s' => \my $annotate_vars,
+    'table_file|f=s' => \my $file,#WGS table file
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage;
 
@@ -42,7 +41,7 @@ my $database_path = "$TCGA_Pipeline_Dir/Database";
 #Check if there is not Database directory
 if(!(-d "$database_path"))
 {
-    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
@@ -51,12 +50,12 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is not Analysis directory.
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -64,13 +63,13 @@ if(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables")
 {
    if (!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file"))
     {
-        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file does not exist. It was either moved, deleted or either of the 3.0 scipts weren't ran.\n";
+        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file does not exist. It was either moved, renamed, deleted or either of the 3.0 scipts weren't ran.\n";
         exit;
     } 
 }
 else
 {
-    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -78,7 +77,7 @@ my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
 
 if(!(-d $WGS_Path))
 {
-    print STDERR "$WGS_Path does not exits, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$WGS_Path does not exits, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -86,15 +85,11 @@ chdir "$WGS_Path";
 
 if (!(-d "$WGS_Path/somatic_variants"))
 {
-    print STDERR "$WGS_Path/somatic_variants does not exist. It was either deleted, moved, or script 4.0_Somatic_Variants.pl has not been run yet.\n";
+    print STDERR "$WGS_Path/somatic_variants does not exist. It was either deleted, moved, renamed, or script 4.0_Somatic_Variants.pl has not been run yet.\n";
     exit;
 }
 
-if(!defined $annotate_vars)
-{
-    $annotate_vars = "annotate_vars";
-    print STDERR "using $annotate_vars as default\n";
-}
+my $annotate_vars = "annotate_vars";
 
 `mkdir -p $WGS_Path/$annotate_vars` unless(-d "$WGS_Path/$annotate_vars");
 
@@ -230,8 +225,8 @@ $parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/$file",
 #two files: mut_ase_look.txt and coding_genes.tab are pre-created
 `cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars`;
 `cp $database_path/coding_genes.tab $WGS_Path/$annotate_vars`;
-`tar zcvf somatic_calls.tgz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
-`mv $WGS_Path/$annotate_vars/somatic_calls.tgz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`tar zcvf somatic_calls.tar.gz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
+`mv $WGS_Path/$annotate_vars/somatic_calls.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
 
 chdir "$WGS_Path";
 my @del_files = $parsing->get_only_files_in_dir("$WGS_Path");

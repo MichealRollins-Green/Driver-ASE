@@ -24,19 +24,18 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'output|o=s' => \my $imputation,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("1.2");
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("1.2");
+    $parsing->usage;
 }
 
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
-    $parsing->usage("1.2");
+    $parsing->usage;
 }
 
 my $database_path = "$TCGA_Pipeline_Dir/Database";
@@ -53,12 +52,12 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
     exit;
 }
 
@@ -70,24 +69,16 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-if(-d "$RNA_Path/peds" and -d "$RNA_Path/maps")
+if(!(-d "$RNA_Path/peds") or !(-d "$RNA_Path/maps"))
 {
-            print STDERR "It is going to use the default plink ped and map dirs:\n",
-            "$RNA_Path/peds\n","$RNA_Path/maps\n";
-}
-else
-{
-            print "There are no peds and maps dirs in the dir $RNA_Path\n";
+            print "There are no peds and maps directories in the directory $RNA_Path. They were either moved, renamed, deleted or the script creates them has not been run yet.\n";
             exit;
 } 
 
 chdir "$RNA_Path";
 
-if(!defined $imputation)
-{
-    $imputation = "$RNA_Path/phased";
-    print STDERR "using $imputation as default\n"; 
-}
+my $imputation = "$RNA_Path/phased";
+print STDERR "using $imputation as default\n"; 
 
 `mkdir -p $imputation` unless(-d "$imputation");
 `rm -f $imputation/*`;
