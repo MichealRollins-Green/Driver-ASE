@@ -52,7 +52,7 @@ sub usage
     
     if($script eq "0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e experimental strategy(Genotyping array)] [--key|-k fullpath2gdckey] [--array_type|-a array data type(e.g. Genotypes)] [--output|-o output_dir(e.g. birdseed)] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e experimental strategy(Genotyping array)] [--key|-k fullpath2gdckey] [--array_type|-a array data type(e.g. Genotypes)] [--help|-h]\n";
         
         print"Any names with spaces must be wraped in DOUBLE QUOTES or back slash.\n";
         
@@ -60,47 +60,25 @@ sub usage
         Copy number estimate
         Genotypes', "\n";
     }
-    elsif($script eq "0_table")
-    {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e experimental strategy(Genotyping array)] [--key|-k fullpath2gdckey] [--array_type|-a array data type(e.g. Genotypes)] [--table_dir|-b=s directory where tables download(i.e. tables)] [--help|-h]\n";
-        
-        print"Any names with spaces must be wraped in DOUBLE QUOTES or back slash.\n";
-        
-        print 'Data types used for snps:
-        Copy number estimate
-        Genotypes', "\n";
-    }
     elsif($script eq "1.1")
     {
-       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--output|-o] [--snp_dir|-s(Genotypes directory aka birdseed)] [--affy_dir|-a directory specified in script 1.0] [--help|-h]\n"; 
-    }
-    elsif($script eq "1.3")
-    {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--output|-o output_dir] [--phased_dir|-p phased_directory] [--help|-h]\n";
+       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--snp_dir|-s(Genotypes directory aka birdseed)] [--help|-h]\n"; 
     }
     elsif($script eq "2.0")
     {
-       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--copynumber|-c(Copy number estimate directory aka copy number variant)] [--affy_dir|-a directory specified in script 1.0][--help|-h]\n";  
-    }
-    elsif($script eq "2.1")
-    {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--output|-o output_dir] [--snp_dir|-s Genotypes,\"Copy number estimate\"] [--affy_dir|-a directory specified in script 1.0] [--help|-h]\n";
+       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--copynumber|-c(Copy number estimate directory aka copy number variant)] [--help|-h]\n";  
     }
     elsif($script eq "3.0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--ase_dir|-a ase_directory] [--key|-k fullpath2gdckey] [--choice|-c all, download or mpileups] [--output|-o output_dir(e.g. wgs/bam)] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--var_path|-v path to the VarScan jar] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--key|-k fullpath2gdckey] [--choice|-c all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--var_path|-v path to the VarScan jar] [--help|-h]\n";
     }
     elsif($script eq "3.0_table")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--table_dir|-b=s directory where tables download(i.e. tables)] [--key|-k path to gdc key][--help|-h]\n";
-    }
-    elsif($script eq "3.1")
-    {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--ase_dir|-a ase_directory] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--key|-k path to gdc key] [--help|-h]\n";
     }
     elsif($script eq "3.2")
     {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--ase_dir|-a ase_directory] [--table_file|-f RNA-Seq table file] [--help|-h]\n";
+        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--table_file|-f RNA-Seq table file] [--help|-h]\n";
     }
     elsif($script eq "4.0")
     {
@@ -108,11 +86,11 @@ sub usage
     }
     elsif($script eq "4.1")
     {
-       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--table_file|-f WGS table file] [--output|-o output_dir] [--help|-h]\n"; 
+       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--table_file|-f WGS table file] [--help|-h]\n"; 
     }
     else
     {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--output|-o output_dir] [--help|-h]\n";
+        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--help|-h]\n";
     }
     
     print '
@@ -159,14 +137,14 @@ sub usage
 sub copyfile2newfullpath
 {
     my $gdc_key_fullpath = shift;
-    my $self=$gdc_key_fullpath and $gdc_key_fullpath = shift if ref $gdc_key_fullpath;
+    my $self = $gdc_key_fullpath and $gdc_key_fullpath = shift if ref $gdc_key_fullpath;
     my $newfullpath = shift;
     #check the existense of new dir of the newfullpath;
-    my ($newdir)=$newfullpath =~ /^(.*)\/[^\/]+/;
-    `mkdir -p $newdir` unless (-d $newdir);
+    my ($newdir) = "$newfullpath" =~ /^(.*)\/[^\/]+/;
+    `mkdir -p "$newdir"` unless (-d $newdir);
     if(-f $gdc_key_fullpath)
     {   
-        `cp -f $gdc_key_fullpath $newfullpath`;
+        `cp -f $gdc_key_fullpath \'$newfullpath\'`;
         print "Now copy the key: $gdc_key_fullpath to the new fullpath $newfullpath $!\n";
     }
     else
