@@ -79,24 +79,25 @@ chdir "$Analysispath";
 #defaults to a directory if no output directory was specified in the command line.
 my $Table_Dir = "tables";
 my $Input_Dir;
- if($Exp_Strategy eq "RNA-Seq")
- {   
-    `mkdir -p "$Table_Dir/rna"` unless(-d "$Table_Dir/rna");
-    $Input_Dir = "$Table_Dir";
-    $Table_Dir .= "/rna";
- }
- elsif($Exp_Strategy eq "WGS")
- {
-    `mkdir -p "$Table_Dir/wgs"` unless(-d "$Table_Dir/wgs");
-    $Input_Dir = "$Table_Dir";
-    $Table_Dir .= "/wgs";
-    $Table_Dir = realpath("$Table_Dir");
- }
- else
- {
-     print STDERR "File type must be either RNA-Seq or WGS.\n";
-     exit;
- }
+if($Exp_Strategy eq "RNA-Seq")
+{   
+   `mkdir -p "$Table_Dir/rna"` unless(-d "$Table_Dir/rna");
+   $Input_Dir = "$Table_Dir";
+   $Table_Dir .= "/rna";
+}
+elsif($Exp_Strategy eq "WGS")
+{
+   `mkdir -p "$Table_Dir/wgs"` unless(-d "$Table_Dir/wgs");
+   $Input_Dir = "$Table_Dir";
+   $Table_Dir .= "/wgs";
+}
+else
+{
+    print STDERR "File type must be either RNA-Seq or WGS.\n";
+    exit;
+}
+
+$Table_Dir = realpath("$Table_Dir");
 
 foreach my $disease_abbr(@disease)
 {
