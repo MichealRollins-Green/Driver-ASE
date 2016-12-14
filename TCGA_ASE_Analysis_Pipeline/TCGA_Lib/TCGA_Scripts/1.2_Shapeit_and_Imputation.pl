@@ -78,7 +78,6 @@ if(!(-d "$RNA_Path/peds") or !(-d "$RNA_Path/maps"))
 chdir "$RNA_Path";
 
 my $imputation = "$RNA_Path/phased";
-print STDERR "using $imputation as default\n"; 
 
 `mkdir -p $imputation` unless(-d "$imputation");
 `rm -f $imputation/*`;
@@ -105,6 +104,8 @@ $impute_plink->fetch_Chrom_Sizes("hg19");
 `cat chr_lens_grep_chr | grep -v Un | grep -v random | grep -v hap | grep -v M | grep -v Y | grep chr > chr_lens`;
 
 `cat chr_lens|head -n 11 > file_for_submit`;
+
+mkdir "$Impute2out" unless(-d "$Impute2out");
 #submit first 11 chrs for imputation
 #submit_all(file with chr sizes,path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono,user defened directory from command line or default directory,path to phased_imputed_raw_out)
 my @imput2cmds = $impute_plink->submit_all("file_for_submit", $OneKG_Ref_Path, $Phased_hap, $Impute2out);
