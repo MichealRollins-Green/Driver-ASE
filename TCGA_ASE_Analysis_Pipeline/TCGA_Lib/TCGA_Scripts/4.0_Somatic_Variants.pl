@@ -26,13 +26,13 @@ GetOptions(
 
 if($help)
 {
-    $parsing->usage("4.1");
+    $parsing->usage("4.0");
 }
 
 if(!defined $disease_abbr || !defined $wgs_dir)
 {
     print "disease type and/or wgs directory was not entered!\n";
-    $parsing->usage("4.1");
+    $parsing->usage("4.0");
 }
 
 my $Analysispath = realpath("../../Analysis");
