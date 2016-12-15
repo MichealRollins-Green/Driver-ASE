@@ -129,7 +129,7 @@ chdir "$WGS_Path";
 
 mkdir "$WGS_Path/somatic_variants";
 
-`rm $WGS_Path/somatic_variants/*`;
+`rm -f $WGS_Path/somatic_variants/*`;
 
 #Varscan_filter(full path to wgs mpileups directory,full path to somatic_variants directory,readcutoff,VarType(e.g. Somatic),normal_alt_frq,tumor_alt_frq)
 $wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups","$WGS_Path/somatic_variants",20,"Somatic",0.1,0.1);
