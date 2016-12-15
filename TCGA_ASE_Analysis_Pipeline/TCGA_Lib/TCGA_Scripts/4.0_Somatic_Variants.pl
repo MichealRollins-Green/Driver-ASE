@@ -100,6 +100,8 @@ if(@e)
     }
 }
 
+mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS";
+
 chdir $WGS_Path;
 
 if (-d "$WGS_Path/wgs_mpileups_ssoe_files")
@@ -128,10 +130,6 @@ chdir "$WGS_Path";
 mkdir "$WGS_Path/somatic_variants";
 
 `rm $WGS_Path/somatic_variants/*`;
-
-#launch_prune(path to the mpileups directory,output directory,max_alt_n,min_alt_t,min_cov)
-#$wgs_analysis->launch_prune("$wgs_dir/mpileups","$WGS_Path/somatic_variants",10,10,20);
-
 
 #Varscan_filter(full path to wgs mpileups directory,full path to somatic_variants directory,readcutoff,VarType(e.g. Somatic),normal_alt_frq,tumor_alt_frq)
 $wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups","$WGS_Path/somatic_variants",20,"Somatic",0.1,0.1);
