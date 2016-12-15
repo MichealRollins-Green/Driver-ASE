@@ -720,7 +720,8 @@ sub Syn
     }
     else
     {
-       print STDERR  "Synonymous/NonSynonymous: ", sprintf "%0.*f", 2,$syn/$nsyn, "\n"; 
+       print STDERR  "Synonymous/NonSynonymous: ", sprintf "%0.*f", 2,$syn/$nsyn;
+       print "\n";
     }
     
     `rm ccds.input.out`;
