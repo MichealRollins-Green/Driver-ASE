@@ -20,19 +20,18 @@ my $parsing = TCGA_Lib::Parsing_Routines->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'wgs_dir|w=s' => \my $wgs_dir,#directory that holds the wgs_mpileups directory.
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("4.0");
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("4.0");
+    $parsing->usage;
 }
 
-if(!defined $disease_abbr || !defined $wgs_dir)
+if(!defined $disease_abbr)
 {
-    print "disease type and/or wgs directory was not entered!\n";
-    $parsing->usage("4.0");
+    print "disease type was not entered!\n";
+    $parsing->usage;
 }
 
 my $Analysispath = realpath("../../Analysis");
@@ -40,22 +39,26 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is not Analysis directory.
 if(!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
-elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dir"))
+elsif (!(-d "$Analysispath/$disease_abbr/wgs_dwnlds"))
 {
-    print STDERR "$Analysispath/$disease_abbr/$wgs_dir does not exist. It was either deleted, moved or no bams have been processed with mpileups and varscan.\n";
+    print STDERR "$Analysispath/$disease_abbr/wgs_dwnlds does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
-elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups"))
+elsif (!(-d "$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups"))
 {
-    print STDERR "$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups does not exist. It was either deleted, moved or no bams have been processed with mpileups and varscan.\n";
+    print STDERR "$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 
@@ -63,11 +66,11 @@ my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
 
 `mkdir -p "$WGS_Path"` unless(-d "$WGS_Path");
 
-my @ss = `ls $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups/`;
+my @ss = `ls $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/`;
 @ss = grep{/\.ss/}@ss;
-my @o = `ls $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups/`;
+my @o = `ls $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/`;
 @o = grep{/\.o/}@o;
-my @e = `ls $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups/`;
+my @e = `ls $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/`;
 @e = grep{/\.e/}@e;
 
 if(@ss)
@@ -76,7 +79,7 @@ if(@ss)
     foreach my $s(@ss)
     {
         chomp($s);
-        `mv $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups/$s $WGS_Path/wgs_mpileups_ssoe_files`;
+        `mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/$s $WGS_Path/wgs_mpileups_ssoe_files`;
     }
 }
 
@@ -86,7 +89,7 @@ if(@o)
     foreach my $out(@o)
     {
         chomp($out);
-        `mv $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups/$out $WGS_Path/wgs_mpileups_ssoe_files`;
+        `mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/$out $WGS_Path/wgs_mpileups_ssoe_files`;
     }   
 }
    
@@ -96,7 +99,7 @@ if(@e)
     foreach my $err(@e)
     {
         chomp($err);
-        `mv $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups/$err $WGS_Path/wgs_mpileups_ssoe_files`;   
+        `mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/$err $WGS_Path/wgs_mpileups_ssoe_files`;   
     }
 }
 
@@ -118,12 +121,12 @@ if (-d "$WGS_Path/wgs_mpileups_ssoe_files")
     }
 }
 
-chdir "$Analysispath/$disease_abbr/$wgs_dir";
+chdir "$Analysispath/$disease_abbr/wgs_dwnlds";
 
 print "Compressing wgs_mpileups directory\n";
 `tar -zcvf wgs_mpileups_varscan.tar.gz wgs_mpileups`;
 mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS" unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS");
-`mv $Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups_varscan.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups_varscan.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
 
 chdir "$WGS_Path";
 
@@ -132,7 +135,7 @@ mkdir "$WGS_Path/somatic_variants";
 `rm -f $WGS_Path/somatic_variants/*`;
 
 #Varscan_filter(full path to wgs mpileups directory,full path to somatic_variants directory,readcutoff,VarType(e.g. Somatic),normal_alt_frq,tumor_alt_frq)
-$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dir/wgs_mpileups","$WGS_Path/somatic_variants",20,"Somatic",0.1,0.1);
+$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups","$WGS_Path/somatic_variants",20,"Somatic",0.1,0.1);
 
 print "Compressing somatic_variants\n";
 `tar -zcvf somatic_variants.tar.gz somatic_variants`;

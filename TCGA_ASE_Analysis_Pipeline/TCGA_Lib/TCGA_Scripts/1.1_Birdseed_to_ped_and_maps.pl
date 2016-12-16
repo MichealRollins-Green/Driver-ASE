@@ -20,19 +20,18 @@ my $impute_plink = TCGA_Lib::Imputation_Plink->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'snp_dir|s=s' => \my $snp_dir,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("1.1");
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("1.1");
+    $parsing->usage;
 }
 
-if(!defined $disease_abbr || !defined $snp_dir)
+if(!defined $disease_abbr)
 {
-    print "disease type and/or snp directory was not entered!\n";
-    $parsing->usage("1.1");
+    print "disease type was not entered!\n";
+    $parsing->usage;
 }
 
 my $Analysispath = realpath("../../Analysis");
@@ -40,12 +39,14 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 
@@ -53,15 +54,17 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved, renamed, or the scripts required for it have not been run.\n";
+    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
+    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit;
 }
 
 my $affy_dir = "affy6";
 if(!(-d "$RNA_Path/$affy_dir"))
 {
-    print "The directory $RNA_Path/$affy_dir does not exist, It was moved, renamed, deleted or the script 1.0 has not run yet.\n";
-    $parsing->usage("1.1"); 
+    print STDERR "The directory $RNA_Path/$affy_dir does not exist. It was moved, renamed or deleted.\n";
+    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
+    exit;
 }
 
 chdir "$RNA_Path";
@@ -71,7 +74,14 @@ my $bases_dir = "$RNA_Path/bases";
 `mkdir -p "$bases_dir"` unless(-d "$bases_dir");
 `rm -f $bases_dir/*`;
 
-my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/$snp_dir";
+my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
+
+if (!(-d "$SNP6_Raw_Files_Dir"))
+{
+    print STDERR "The directory $SNP6_Raw_Files_Dir does not exist. It was moved, renamed or deleted";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
+    exit;
+}
 
 #gets all of the files in the the directory that was specified to download the SNP-Array data
 my @birdseed = $parsing->get_only_files_in_dir("$SNP6_Raw_Files_Dir");

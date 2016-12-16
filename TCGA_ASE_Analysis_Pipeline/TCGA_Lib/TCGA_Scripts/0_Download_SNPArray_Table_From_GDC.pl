@@ -37,7 +37,7 @@ if($help)
 
 if(!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
-    print "disease type, data type and/or file type was not entered!\n";
+    print "disease type, array type and/or experimental strategy was not entered!\n";
     $parsing->usage("0");
 }
 
@@ -51,7 +51,7 @@ if ($Exp_Strategy eq "Genotyping array")
 }
 else
 {
-    print "the Eperimental Strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
+    print "The experimental strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
     $parsing->usage("0");
 }
 

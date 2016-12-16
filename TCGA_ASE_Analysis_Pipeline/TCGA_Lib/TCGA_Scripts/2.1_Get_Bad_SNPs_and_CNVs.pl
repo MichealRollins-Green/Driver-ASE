@@ -39,12 +39,14 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 
@@ -52,7 +54,8 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
+    print STDERR "$RNA_Path does not exist. It was deleted, moved or renamed.\n";
+    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit;
 }
 
@@ -61,12 +64,28 @@ my $bad_snps = "$RNA_Path/bad_snps";
 my $affy_dir = "affy6";
 if(!(-d "$RNA_Path/$affy_dir"))
 {
-    print STDERR "The directory $RNA_Path/$affy_dir does not exist, it was moved, renamed. deleted or the script that creates it has not run.\n";
-    exit; 
+    print "The directory $RNA_Path/$affy_dir does not exist. It was moved, renamed or deleted.\n";
+    print "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
+    exit;
 }
 
 my $geno_dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
+
+if (!(-d "$geno_dir"))
+{
+    print STDERR "The dirctory $geno_dir does not exist. It was moved, renamed, or deleted.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl if the directory $geno_dir is not present at all.\n";
+    exit;
+}
+
 my $copy_dir = "$Analysispath/$disease_abbr/SNP6/Copy number estimate";
+
+if (!(-d "$copy_dir"))
+{
+    print STDERR "The dirctory $copy_dir does not exist. It was moved, renamed, or deleted.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl if the directory $copy_dir is not present at all.\n";
+    exit;
+}
 
 chdir "$RNA_Path";
 

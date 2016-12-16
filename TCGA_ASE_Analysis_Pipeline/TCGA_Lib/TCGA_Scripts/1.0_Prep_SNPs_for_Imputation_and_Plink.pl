@@ -40,12 +40,14 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist. It was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 
@@ -54,7 +56,7 @@ my $database_path = "$TCGA_Pipeline_Dir/Database";
 #Checks if there is no Database directory
 if(!(-d "$database_path"))
 {
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$database_path does not exist. It was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
@@ -71,7 +73,7 @@ $affy_dir =~ s/\/$//;
 if (-e "$RNA_Path/$affy_dir/snp6.anno.txt" and -e "$RNA_Path/$affy_dir/snp6.cd.txt") 
 {
     print "the necessary files (snp6.anno.txt and snp6.cd.txt) have already been processed and reside in $RNA_Path/$affy_dir/\n";
-    print "proceed to script 1.1\n";
+    print "proceed to script 1.1_Birdseed_to_ped_and_maps.pl\n";
     exit;
 }
 else

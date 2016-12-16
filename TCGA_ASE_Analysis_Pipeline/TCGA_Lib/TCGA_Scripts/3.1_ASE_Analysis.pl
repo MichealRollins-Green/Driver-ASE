@@ -32,7 +32,7 @@ if($help)
 
 if(!defined $disease_abbr)
 {
-    print "Disease Type was not entered!\n";
+    print "disease type was not entered!\n";
     $parsing->usage;
 }
 
@@ -50,12 +50,14 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if(!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 
@@ -63,14 +65,16 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
+    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
+    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit;
 }
 
 my $ase = "ase";
 if(!(-d "$RNA_Path/$ase"))
 {
-    print "The directory $ase does not exist, enter in the directory that was entered in script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl or do not enter in the -a option if no directory was specified in 3.0.\n";
+    print STDERR "The directory $RNA_Path/$ase does not exist. It was moved renamed or deleted.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 
@@ -82,6 +86,14 @@ mkdir "logs" unless(-d "logs");
 mkdir "ase_counts" unless(-d "ase_counts");
 
 `ls $RNA_Path/$ase/cds_sorted_ase > $RNA_Path/$ase/done_sorted_ase.txt`;
+
+if (!(-d "$RNA_Path/cds_sorted"))
+{
+    print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+    print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
+    exit;
+}
+
 `ls $RNA_Path/cds_sorted > $RNA_Path/$ase/cds_for_change_beds.txt`;
 
 #checks for bed files that have not yet been done and processes them for cds_sorted_ase. This only accounts for beds that are not in the directory and any incomplete beds will not be processed so if there are any beds suspected to not be complete, delete them before running this script.

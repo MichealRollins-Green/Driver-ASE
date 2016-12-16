@@ -42,7 +42,7 @@ if($help)
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $disease_abbr || !defined $Exp_Strategy)
 {
-    print "disease type and/or file type was not entered!\n";
+    print "disease type and/or experimental strategy was not entered!\n";
     $parsing->usage("3.0");
 }
 
@@ -278,6 +278,13 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
         
         copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
         
+        if(!(-d "$RNA_Path/cds_sorted"))
+        {
+            print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+            print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
+            exit;
+        }
+        
         #Downloads RNA BAMs and runs mpileups on them.
         #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
         $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
@@ -307,6 +314,13 @@ else
         mkdir "$ase/rna_mpileups" unless(-d "$ase/rna_mpileups");
         
         chdir "$rna_wgs_dir";
+        
+        if(!(-d "$RNA_Path/cds_sorted"))
+        {
+            print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+            print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
+            exit;
+        }
         
         #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
         $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);

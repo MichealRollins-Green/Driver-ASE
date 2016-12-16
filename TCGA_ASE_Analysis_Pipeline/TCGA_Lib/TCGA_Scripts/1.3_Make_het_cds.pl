@@ -40,12 +40,14 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 
@@ -53,7 +55,8 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved or the scripts required for it have not been run.\n";
+    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
+    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit;
 }
 
@@ -63,11 +66,19 @@ my $phased = "$RNA_Path/phased";
 
 if (!(-d "$RNA_Path/phased"))
 {
-    print STDERR "The directory $RNA_Path/phased does not exits, It was moved, deleted or script 1.2 has not run.\n";
+    print STDERR "The directory $RNA_Path/phased does not exist. It was moved, renamed or deleted.\n";
+    print STDERR "Please run script 1.2_Shapeit_and_Imputation.pl.\n";
     exit;
 }
 
-my $Impute2out="$Analysispath/$disease_abbr/phased_imputed_raw_out";
+my $Impute2out = "$Analysispath/$disease_abbr/phased_imputed_raw_out";
+
+if(!(-d "$Impute2out"))
+{
+    print STDERR "The directory $Impute2out does not exist. It was moved, renamed or deleted.\n";
+    print STDERR "Please run script 1.2_Shapeit_and_Imputation.pl.\n";
+    exit;
+}
 
 chdir "$RNA_Path";
 
@@ -236,7 +247,7 @@ mce_map
 #If there are some errors in cds_sorted or cds_sorted_tmp
 #Use info in the tar.gz to get right cd files!
 chdir "$RNA_Path/cds_plink";
-mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_RNA";
+mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_RNA" unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_RNA");
 print "Now compressing All_Het_Haps and snplists files from cds_plink directory.\n";
 `tar -zcvf $disease_abbr\_Imputation_Haps.tar.gz All_Hets_Haps.chr*.sorted.bed TCGA*.snplist`;
 `mv $disease_abbr\_Imputation_Haps.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_RNA`;

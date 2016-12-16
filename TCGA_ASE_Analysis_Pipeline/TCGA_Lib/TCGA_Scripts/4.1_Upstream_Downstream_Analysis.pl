@@ -21,19 +21,18 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'table_file|f=s' => \my $file,#WGS table file
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("4.1");
+    $parsing->usage;
 }
 
-if(!defined $disease_abbr || !defined $file)
+if(!defined $disease_abbr)
 {
-    print "disease type and/or the table file was not entered!\n";
-    $parsing->usage("4.1");
+    print "disease type was not entered!\n";
+    $parsing->usage;
 }
 
 my $database_path = "$TCGA_Pipeline_Dir/Database";
@@ -50,26 +49,30 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is not Analysis directory.
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 
 if(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables")
 {
-   if (!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file"))
+   if (!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt"))
     {
-        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/$file does not exist. It was either moved, renamed, deleted or either of the 3.0 scipts weren't ran.\n";
+        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt does not exist. It was either moved, renamed or deleted.\n";
+        print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
         exit;
     } 
 }
 else
 {
-    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist. It was either moved, renamed or deleted,\n";
+    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 
@@ -77,7 +80,8 @@ my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
 
 if(!(-d $WGS_Path))
 {
-    print STDERR "$WGS_Path does not exits, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$WGS_Path does not exits, it was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 4.0_Somatic_Variants.pl.\n";
     exit;
 }
 
@@ -85,7 +89,8 @@ chdir "$WGS_Path";
 
 if (!(-d "$WGS_Path/somatic_variants"))
 {
-    print STDERR "$WGS_Path/somatic_variants does not exist. It was either deleted, moved, renamed, or script 4.0_Somatic_Variants.pl has not been run yet.\n";
+    print STDERR "$WGS_Path/somatic_variants does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 4.0_Somatic_Variants.pl.\n";
     exit;
 }
 
@@ -98,9 +103,9 @@ $wgs_analysis->mk_files_for_wgs("$WGS_Path/somatic_variants","$WGS_Path/ff");
 
 $parsing->matricize("$WGS_Path/ff","$WGS_Path/ff",1,6,"$WGS_Path");
 
-`tar zcvf mutations.tgz matrix.tab rowlabels.txt collabels.txt`;
+`tar zcvf mutations.tar.gz matrix.tab rowlabels.txt collabels.txt`;
 mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS" unless(-d "$disease_abbr\_finished_analysis_WGS");
-`mv $WGS_Path/mutations.tgz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`mv $WGS_Path/mutations.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
 
 #var_ID_to_bed(rowlabels.txt file created from matricize,output file)
 $wgs_analysis->var_ID_to_bed("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/vars.bed");
@@ -210,9 +215,9 @@ $parsing->vlookup("$WGS_Path/$annotate_vars/t2",1,"$WGS_Path/$annotate_vars/t1",
 
 $parsing->pull_column("$WGS_Path/$annotate_vars/syn_pull","2,3,4","$WGS_Path/$annotate_vars/syn.tab");
 
-`tar zcvf annotations.tgz matrix.tab rowlabels.txt collabels.txt syn.tab`;
+`tar zcvf annotations.tar.gz matrix.tab rowlabels.txt collabels.txt syn.tab`;
 mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS" unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS");
-`mv $WGS_Path/$annotate_vars/annotations.tgz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`mv $WGS_Path/$annotate_vars/annotations.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
 
 `overlapSelect $database_path/ccds.hg19.bed $WGS_Path/$annotate_vars/vars.bed $WGS_Path/$annotate_vars/o.bed`;
 `overlapSelect $WGS_Path/$annotate_vars/o.bed $database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed -idOutput $WGS_Path/$annotate_vars/out`;
@@ -220,7 +225,7 @@ mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS" unless(
 $parsing->strip_head("$WGS_Path/$annotate_vars/out","$WGS_Path/$annotate_vars/out_pull");
 $parsing->pull_column("$WGS_Path/$annotate_vars/out_pull","2,1","$WGS_Path/$annotate_vars/var2gene.coding.tab");
 
-$parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/$file","1,7","$WGS_Path/$annotate_vars/look.tab");
+$parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt","1,7","$WGS_Path/$annotate_vars/look.tab");
 
 #two files: mut_ase_look.txt and coding_genes.tab are pre-created
 `cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars`;

@@ -35,7 +35,7 @@ if($help)
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $disease_abbr || !defined $Exp_Strategy)
 {
-    print "disease type and/or file type was not entered!\n";
+    print "disease type and/or experimental strategy was not entered!\n";
     $parsing->usage("3.0_table");
 }
 #If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.

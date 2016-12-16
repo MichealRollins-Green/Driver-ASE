@@ -37,7 +37,7 @@ if ($help)
 
 if (!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
-    print "disease type, file type and/or data type was not entered!\n";
+    print "disease type, experimental strategy and/or array type was not entered!\n";
     $parsing->usage("0");
 }
 
@@ -51,7 +51,7 @@ if ("$Exp_Strategy" eq "Genotyping array")
 }
 else
 {
-    print "the Eperimental Strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
+    print "The experimental strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
     $parsing->usage("0");
 }
 
@@ -65,7 +65,7 @@ if (!defined $key or (!(-f $key)))
 #Check if the Database directory does not exist
 if(!(-d "$TCGA_Pipeline_Dir/Database"))
 {
-    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 

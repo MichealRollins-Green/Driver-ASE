@@ -21,24 +21,18 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'copynumber|c=s' => \my $copynumber,#directory where copy number data was downloaded
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("2.0");
+) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage("2.0");
+    $parsing->usage;
 }
 
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
-    $parsing->usage("2.0");
-}
-if(!defined $copynumber)
-{
-    print STDERR "Enter the directory where your copy number variation data was downloaded.\n";
-    $parsing->usage("2.0");
+    $parsing->usage;
 }
 
 my $database_path = "$TCGA_Pipeline_Dir/Database";
@@ -46,7 +40,7 @@ my $database_path = "$TCGA_Pipeline_Dir/Database";
 #Checks if there is no Database directory
 if(!(-d "$database_path"))
 {
-    print STDERR "$database_path does not exist, it was either moved, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$database_path does not exist. It was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 
@@ -55,12 +49,14 @@ my $Analysispath = realpath("../../Analysis");
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
 {
-    print STDERR "$Analysispath does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "$Analysispath does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 elsif(!(-d "$Analysispath/$disease_abbr"))
 {
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
+    print STDERR "The Directory $Analysispath/$disease_abbr does not exist. It was either deleted, moved or renamed.\n";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
     exit;
 }
 
@@ -68,18 +64,27 @@ my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if (!(-d $RNA_Path))
 {
-    print "$RNA_Path does not exist. Either it was deleted, moved, renamed or the scripts required for it have not been run.\n";
+    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
+    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit;
 }
 
 my $affy_dir = "affy6";
 if(!(-d "$RNA_Path/$affy_dir"))
 {
-    print STDERR "The directory $RNA_Path/$affy_dir does not exist, It was moved, renamed, deleted or the script that creates it had not run yet.\n";
+    print "The directory $RNA_Path/$affy_dir does not exist. It was moved, renamed or deleted.\n";
+    print "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit; 
 }
 
-my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/$copynumber";
+my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Copy number estimate";
+
+if(!(-d "$SNP6_Raw_Files_Dir"))
+{
+    print STDERR "The directory $SNP6_Raw_Files_Dir does not exist. It was moved, renamed or deleted";
+    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
+    exit;
+}
 
 chdir "$RNA_Path";
 
