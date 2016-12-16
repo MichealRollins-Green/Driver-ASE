@@ -46,7 +46,7 @@ warnings -  perl -e 'use warnings;'
 
 aria2 - https://aria2.github.io/
 
-####if openssl is not installed then you will have to install that as well because it is needed for https support for aria2.
+####if openssl is not installed then you will have to install that as well because aria2 needs it to enable https support.
 
 sudo yum install openssl openssl-devel
 
@@ -186,7 +186,12 @@ https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
 ####GDC Key Required
 
-You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to https://gdc-portal.nci.nih.gov/ an go to login. after logging into your account click on your logging name to open the drop down and click download token. after the token is done downloading, rename it gdc.key and place it in the where ever you wish though it makes sense to put it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
+You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to https://gdc-portal.nci.nih.gov/ 
+
+###1. An go to login. 
+###2. Click on your logging name to open the drop down and click download token. 
+###3. Rename the downloaded token to gdc.key
+###4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the script directory to your path if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
 
