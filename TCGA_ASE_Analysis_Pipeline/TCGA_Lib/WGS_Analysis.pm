@@ -165,7 +165,7 @@ sub Varscan_filter
     #21: normal_reads2_plus       0
     #22: normal_reads2_minus      0
     
-    opendir(DD,$input) or die "no dir\n";
+opendir(DD,$input) or die "no dir\n";
     my @dd = readdir(DD);
        @dd=grep{!/^\./}@dd;
     closedir(DD);
@@ -207,7 +207,7 @@ sub Varscan_filter
                 )
             {
                 #for single somatic mutations
-                print SOM VarscanTable2Simple($l),"\n";  
+                print SOM VarscanTable2Simple($l),"\n" if $l =~ /^(chr)*(\d+|x|y)\b/i;  
                 
             }
             elsif($as[3] =~ /[+-]/ and
@@ -216,7 +216,7 @@ sub Varscan_filter
                 )
             {
                 #for indels, only consider read cutoff;
-                print SOM VarscanTable2Simple($l),"\n";
+                print SOM VarscanTable2Simple($l),"\n" if $l =~ /^(chr)*(\d+|x|y)\b/i;
             }
             
             #For het geno in normal, that is T_alt_frq >45;
@@ -226,18 +226,17 @@ sub Varscan_filter
         }
         close $V;
         close SOM;
-    }
-    
+    } 
 }
 
-sub VarscanTable2Simple{
-    my $l=shift;
-    chomp($l);
-    my @a=split("\t",$l);
-    my $var=$a[2]."|".$a[3];
-       $a[0]="chr".$a[0] unless $a[0]=~/^chr/i;
-    my $new_line=$a[0]."-".$a[1]."-".$var."\t".$a[0]."\t".($a[1]-1)."\t".$a[1]."\t".$var."\t".1;
-    return $new_line;
+sub VarscanTable2Simple
+{
+    my $l = shift;
+    my @as = split("\t",$l);
+    $as[0] = "chr".$as[0] unless $as[0] =~ /^chr/i;
+    my $ref_alt = $as[2]."|".$as[3];
+    my $out = $as[0]."-".$as[1]."-".$ref_alt."\t".$as[0]."\t".($as[1]-1)."\t".$as[1]."\t".$ref_alt."\t1";
+    return $out;
 }
 #################################prune_varscan sub##############################
 sub alt_it

@@ -60,14 +60,6 @@ sub usage
         Copy number estimate
         Genotypes', "\n";
     }
-    elsif($script eq "1.1")
-    {
-       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--snp_dir|-s(Genotypes directory aka birdseed)] [--help|-h]\n"; 
-    }
-    elsif($script eq "2.0")
-    {
-       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--copynumber|-c(Copy number estimate directory aka copy number variant)] [--help|-h]\n";  
-    }
     elsif($script eq "3.0")
     {
         print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--key|-k fullpath2gdckey] [--choice|-c all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--var_path|-v path to the VarScan jar] [--help|-h]\n";
@@ -75,18 +67,6 @@ sub usage
     elsif($script eq "3.0_table")
     {
         print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--key|-k path to gdc key] [--help|-h]\n";
-    }
-    elsif($script eq "3.2")
-    {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--table_file|-f RNA-Seq table file] [--help|-h]\n";
-    }
-    elsif($script eq "4.0")
-    {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--wgs_dir|-w wgs_dir] [--help|-h]\n";
-    }
-    elsif($script eq "4.1")
-    {
-       print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--table_file|-f WGS table file] [--help|-h]\n"; 
     }
     else
     {
