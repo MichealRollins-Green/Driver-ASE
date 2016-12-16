@@ -252,7 +252,6 @@ print "Now compressing All_Het_Haps and snplists files from cds_plink directory.
 `tar -zcvf $disease_abbr\_Imputation_Haps.tar.gz All_Hets_Haps.chr*.sorted.bed TCGA*.snplist`;
 `mv $disease_abbr\_Imputation_Haps.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_RNA`;
 chdir $RNA_Path;
-`rm -rf cds_plink`;
 
 print "All Jobs have finished for $disease_abbr.\n";
 
