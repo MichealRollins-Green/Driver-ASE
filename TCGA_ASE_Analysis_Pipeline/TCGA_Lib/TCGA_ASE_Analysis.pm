@@ -64,7 +64,7 @@ sub compile_ase_no_tum_norm
         my $cd = $a[1];
         # have both tumor and normal pileups
         print STDERR "working on $cd\n";
-        pileup_at_cd("mpileups/$mpileup","$cds_dir/$cd","ase_counts/$mpileup")
+        pileup_at_cd("rna_mpileups/$mpileup","$cds_dir/$cd","ase_counts/$mpileup")
     }@TN;
 }
 
