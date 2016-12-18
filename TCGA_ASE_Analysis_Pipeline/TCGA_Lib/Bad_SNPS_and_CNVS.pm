@@ -283,8 +283,7 @@ sub run_cnv
     my $cnv_bed = shift;#./affy6/cnv.hg19.bed
     my $RNA_Path_cnvs = shift;
     
-    system("rm -r temp");
-    system("mkdir temp");
+    `mkdir temp` unless(-d "temp");
 
     open(my $CIN,"$infile") or die "Can't open $infile: $!\n";
     my @CNVS = <$CIN>;
