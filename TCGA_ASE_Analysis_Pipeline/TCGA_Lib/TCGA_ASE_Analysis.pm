@@ -52,6 +52,7 @@ sub compile_ase_no_tum_norm
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
     my $cds_dir = shift;
+    my $mpileups_path = shift;
     
     $cds_dir =~ s/\/$//;
     open(my $CANTN,$infile) or die "Can't open $infile: $!.\n";
@@ -64,7 +65,7 @@ sub compile_ase_no_tum_norm
         my $cd = $a[1];
         # have both tumor and normal pileups
         print STDERR "working on $cd\n";
-        pileup_at_cd("rna_mpileups/$mpileup","$cds_dir/$cd","ase_counts/$mpileup")
+        pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","ase_counts/$mpileup")
     }@TN;
 }
 
