@@ -78,6 +78,8 @@ if(!(-d "$RNA_Path/$ase"))
     exit;
 }
 
+my $mpileups_path = "$RNA_Path/$ase/rna_mpileups";
+
 chdir "$RNA_Path/$ase";
  
 mkdir "cds_sorted_ase" unless(-d "cds_sorted_ase");
@@ -108,8 +110,8 @@ if(-s "cds_for_beds_gl.txt" > 0)
     $ase_analysis->change_beds_gl_ase("$RNA_Path/$ase/cds_for_beds_gl.txt","$RNA_Path","$ase");
 }
 
-my @mpileups = `ls rna_mpileups|grep ':'`;
-@mpileups = grep{chomp;-s "rna_mpileups/$_";}@mpileups;
+my @mpileups = `ls $mpileups_path|grep ':'`;
+@mpileups = grep{chomp;-s "$mpileups_path/$_";}@mpileups;
 
 my @cds = `ls $RNA_Path/cds_sorted`;
 
@@ -126,7 +128,7 @@ close(MP);
 #Get already done files in ase_counts and lookup it with RNA_seq4ASEPipeup.txt
 #Only run these files absent in the ase_counts dir
 `ls ase_counts > already_done.txt`;
-`ls rna_mpileups/ > ase_wish_list.txt`;
+`ls $mpileups_path/ > ase_wish_list.txt`;
 
 $parsing->vlookup("$RNA_Path/$ase/ase_wish_list.txt",1,"$RNA_Path/$ase/already_done.txt",1,1,"y","left_ase_grep_NaN.txt");
 `grep NaN left_ase_grep_NaN.txt > left_ase_pull_column.txt`;
@@ -156,12 +158,12 @@ $parsing->pull_column("RNA_seq_id_pull_column.txt","1,2","RNA_seq_id_ase_no_tum_
 # The final results containing the number of ase_counts will be saved in dir ase_counts
 # The ase_counts is CNV level count
 #compile_ase_no_tum_norm(file that conatins list of mpileups and associated bed files, cds_sorted directory)
-$ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Path/cds_sorted");
+$ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Path/cds_sorted","$mpileups_path");
 
 #get gene level ase_counts
 mkdir "$RNA_Path/$ase/gene_level";
 `ls $RNA_Path/$ase/gene_level > already_done_genes.txt`;
-`ls $RNA_Path/$ase/rna_mpileups/ > ases.txt`;
+`ls $RNA_Path/$ase/$mpileups_path/ > ases.txt`;
 
 $parsing->vlookup("$RNA_Path/$ase/ases.txt",1,"$RNA_Path/$ase/already_done_genes.txt",1,1,"y","$RNA_Path/$ase/left_gene_grep_NaN.txt");
 `grep NaN $RNA_Path/$ase/left_gene_grep_NaN.txt > $RNA_Path/$ase/left_gene_pull_collumn.txt`;
