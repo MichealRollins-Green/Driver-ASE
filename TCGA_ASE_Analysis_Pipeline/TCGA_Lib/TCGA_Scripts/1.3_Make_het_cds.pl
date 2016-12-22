@@ -189,7 +189,7 @@ my @split_bed_haps_cmds = $impute_plink->Split_Bed_Haps_for_individuals("$RNA_Pa
 
 mce_map
 {
-    system("$split_bed_haps_cmds[$_]");
+    `$split_bed_haps_cmds[$_]`;
 }0..$#split_bed_haps_cmds;
 
 chdir "$RNA_Path/cds_plink";
