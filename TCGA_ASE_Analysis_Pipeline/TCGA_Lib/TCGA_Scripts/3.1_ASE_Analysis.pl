@@ -163,7 +163,7 @@ $ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Pa
 #get gene level ase_counts
 mkdir "$RNA_Path/$ase/gene_level";
 `ls $RNA_Path/$ase/gene_level > already_done_genes.txt`;
-`ls $RNA_Path/$ase/$mpileups_path/ > ases.txt`;
+`ls $mpileups_path/ > ases.txt`;
 
 $parsing->vlookup("$RNA_Path/$ase/ases.txt",1,"$RNA_Path/$ase/already_done_genes.txt",1,1,"y","$RNA_Path/$ase/left_gene_grep_NaN.txt");
 `grep NaN $RNA_Path/$ase/left_gene_grep_NaN.txt > $RNA_Path/$ase/left_gene_pull_collumn.txt`;
