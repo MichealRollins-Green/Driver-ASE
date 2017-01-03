@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
-BEGIN{
-	    push @INC, "/home/hpc3256/NGS_lib/Linux_codes_SAM/usr/share/perl5";
-	}
+
 use MCE::Map;
 use FindBin qw($Bin);
 use lib "$Bin/..";
