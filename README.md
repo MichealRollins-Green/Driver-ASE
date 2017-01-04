@@ -165,8 +165,9 @@ mv plink1 plink
 
 download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/overlapSelect
 
-place the downloaded software in the bin directory
+place the downloaded software in the bin directory and chand the permissions so that it can be executed.
 
+chmod a+x overlapSelect
 
 ####VarScan(need java installed in order to run it) 
 
