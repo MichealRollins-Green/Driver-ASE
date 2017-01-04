@@ -14,6 +14,24 @@ This pipeline was coded on a Centos 7 x86_64 system and some of the software lis
 
 Make sure you have these perl modules installed before you run these scripts.
 
+####Packages
+
+This pipeline also requires some packages to be installed as the other software it uses within it needs them.
+
+openssl - sudo yum install openssl
+
+openssl-devel - sudo yum install openssl-devel
+
+EPEL repository - sudo yum install epel-release
+
+yaml - sudo yum install yaml-cpp.x86_64 yaml-cpp-devel.x86_64
+
+gcc - sudo yum install gcc
+
+gcc-c++ - sudo yum install gcc-c++.x86_64
+
+ncurses-devel - sudo yum install ncurses-devel.x86_64
+
 ####In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
 
 If you are using cpan and it is not installed, install it and run it.
@@ -48,10 +66,6 @@ warnings -  perl -e 'use warnings;'
 
 aria2 - https://aria2.github.io/
 
-####if openssl is not installed then you will have to install that as well because aria2 needs it to enable https support.
-
-sudo yum install openssl openssl-devel
-
 ####The commands to install aria2 are as follows
 
 ./configure --with-openssl
@@ -83,7 +97,7 @@ Place the compressed archive in the bin directory and decompress it
 
 ####Installing samtools
 
-tar -jxvf samtools-1.3.1.tar.bz2
+tar -jxvf samtools-1.3.1.tar.bz2(version number may be different)
 
 Change the name of the directory to samtools
 
