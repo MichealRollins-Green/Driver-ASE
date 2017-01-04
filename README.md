@@ -198,7 +198,7 @@ The directory with the files can be downloaded from the link below.
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
-####Once downloaded place the directory in the TCGA_ASE_Analysis/TCGA_Pipeline/ directory and decompress it.
+####Once downloaded place the directory in the TCGA_ASE_Analysis_Pipeline directory and decompress it.
 
 ####GDC Key Required
 
