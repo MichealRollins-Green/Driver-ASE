@@ -16,7 +16,9 @@ Make sure you have these perl modules installed before you run these scripts.
 
 ####In order to install these modules, you will need to use cpan.
 
-Before installing this module it is a good idea to check if they are not already installed:
+If cpan is not installed, you will need to install it as well.
+
+Before installing these modules, it is a good idea to check if they are not already installed:
 
 If the module is installed, then nothing will happen but if it is not, it will display an error saying that it could not be found.
 
