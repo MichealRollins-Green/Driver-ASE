@@ -14,9 +14,9 @@ This pipeline was coded on a Centos 7 x86_64 system and some of the software lis
 
 Make sure you have these perl modules installed before you run these scripts.
 
-####In order to install these modules, you will need to use cpan.
+####In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
 
-If cpan is not installed, you will need to install it as well.
+If you are using cpan and it is not installed, install it and run it.
 
 Before installing these modules, it is a good idea to check if they are not already installed:
 
