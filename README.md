@@ -40,9 +40,15 @@ Before installing these modules, it is a good idea to check if they are not alre
 
 If the module is installed, then nothing will happen but if it is not, it will display an error saying that it could not be found.
 
+also install YAML as some of the other modules rely on it to install
+
+cpan YAML
+
 FindBin - perl -e 'use FindBin;'
 
 File::Copy - perl -e 'use File::Copy;'
+
+File::Basename - perl -e 'use File::Basename;'
 
 FileHandle - perl -e 'use FileHandle;'
 
@@ -53,6 +59,8 @@ Cwd - perl -e 'use Cwd;'
 Math::CDF - perl -e 'use Math::CDF;'
 
 Getopt::Long - perl -e 'use Getopt::Long;'
+
+LWP::Simple - perl -e 'use LWP::Simple;'
 
 autodie - perl -e 'use autodie;'
 
