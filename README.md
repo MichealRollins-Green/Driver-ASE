@@ -78,7 +78,7 @@ aria2 - https://aria2.github.io/
 
 ./configure --with-openssl
 
-make
+sudo make
 
 sudo make install
 
