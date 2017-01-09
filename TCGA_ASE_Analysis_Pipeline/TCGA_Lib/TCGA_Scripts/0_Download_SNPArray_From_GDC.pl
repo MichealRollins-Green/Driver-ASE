@@ -132,7 +132,21 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/$disease_abbr.$array_
     #The columns of each cancer type may be different
     #QueryBase(.result.txt file from gdc_parser,query column,.metadata.txt file from the curl command,reqular expression,output file,column(s) to keep)
     $parsing->QueryBase("$disease_abbr.$array_type.result.txt",1,"$disease_abbr\_$array_type.metadata.txt",'TCGA-\w+-\w+-\w+',"t1.txt",0);
-    $parsing->QueryBase("t1.txt",1,"$disease_abbr\_$array_type.metadata.txt",'(tumor|blood|normal)',"$disease_abbr.$array_type.id2uuid.txt",1);
+    $parsing->QueryBase("t1.txt",1,"$disease_abbr\_$array_type.metadata.txt",'(tumor|blood|normal)',"$disease_abbr.$array_type.id2uuid_query.txt",1);
+    
+    open(IDI,"$disease_abbr.$array_type.id2uuid_query.txt") or die "Can't open file $disease_abbr.$array_type.id2uuid_query.txt: $!\n";
+    open(IDO,">$disease_abbr.$array_type.id2uuid.txt") or die "Can't open file $disease_abbr.$array_type.id2uuid.txt: $!\n";
+    
+    while(my $r = <IDI>)
+    {
+	chomp($r);
+	my @a = split("\t",$r);
+	my $TCGA = $a[1];
+	$TCGA =~ s/-\d\d\D+//;
+	print IDO "$r\t$TCGA\n";
+    }
+    close(IDI);
+    close(IDO);
     
     #downloads files from gdc
     #download_files_from_gdc(download file,gdc key file directory,output directory,data type(e.g. Genotypes))

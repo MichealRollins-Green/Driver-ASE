@@ -145,7 +145,21 @@ foreach my $disease_abbr(@disease)
         #The columns of each cancer type may be different
         #QueryBase(.result.txt file from gdc_parser,query column,.metadata.txt file from the curl command,reqular expression,output file,column(s) to keep)
         $parsing->QueryBase("$disease_abbr.$array_type.result.txt",1,"$disease_abbr\_$array_type.metadata.txt",'TCGA-\w+-\w+-\w+',"t1.txt",0);
-        $parsing->QueryBase("t1.txt",1,"$disease_abbr\_$array_type.metadata.txt",'(tumor|blood|normal)',"$disease_abbr.$array_type.id2uuid.txt",1);
+        $parsing->QueryBase("t1.txt",1,"$disease_abbr\_$array_type.metadata.txt",'(tumor|blood|normal)',"$disease_abbr.$array_type.id2uuid_query.txt",1);
+	
+	open(IDI,"$disease_abbr.$array_type.id2uuid_query.txt") or die "Can't open file $disease_abbr.$array_type.id2uuid_query.txt: $!\n";
+	open(IDO,">$disease_abbr.$array_type.id2uuid.txt") or die "Can't open file $disease_abbr.$array_type.id2uuid.txt: $!\n";
+	
+	while(my $r = <IDI>)
+	{
+	    chomp($r);
+	    my @a = split("\t",$r);
+	    my $TCGA = $a[1];
+	    $TCGA =~ s/-\d\d\D+//;
+	    print IDO "$r\t$TCGA\n";
+	}
+	close(IDI);
+	close(IDO);
         
         `mkdir $Analysispath/$disease_abbr/$disease_abbr\_tables` unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables");
         
