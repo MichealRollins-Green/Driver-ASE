@@ -137,12 +137,11 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/$disease_abbr.$array_
     open(IDI,"$disease_abbr.$array_type.id2uuid_query.txt") or die "Can't open file $disease_abbr.$array_type.id2uuid_query.txt: $!\n";
     open(IDO,">$disease_abbr.$array_type.id2uuid.txt") or die "Can't open file $disease_abbr.$array_type.id2uuid.txt: $!\n";
     
-    while(my $r = <IDI>)
+   while(my $r = <IDI>)
     {
 	chomp($r);
 	my @a = split("\t",$r);
-	my $TCGA = $a[1];
-	$TCGA =~ s/-\d\d\D+//;
+	my $TCGA = substr($a[1],0,12);
 	print IDO "$r\t$TCGA\n";
     }
     close(IDI);

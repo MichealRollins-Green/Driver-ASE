@@ -23,7 +23,7 @@ my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'disease|d=s' => \my $disease_abbr,#e.g. OV 
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. Genotyping array
     'array_type|a=s' =>\my $array_type,#e.g Genotypes
     'key|k=s'=> \my $key,
@@ -154,8 +154,7 @@ foreach my $disease_abbr(@disease)
 	{
 	    chomp($r);
 	    my @a = split("\t",$r);
-	    my $TCGA = $a[1];
-	    $TCGA =~ s/-\d\d\D+//;
+	    my $TCGA = substr($a[1],0,12);
 	    print IDO "$r\t$TCGA\n";
 	}
 	close(IDI);
