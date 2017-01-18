@@ -218,6 +218,11 @@ You will also need to have a GDC account to get the key for downloading as it do
 ####3. Rename the downloaded token to gdc.key
 ####4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
+#After Download
+
+####1. Copy it to a directory and extract it.
+####2. Enter the directory and copy the TCGA_ASE_Analysis_Pipeline dirctory to a new location.
+
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the script directory to your path if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
 
 #Scripts
