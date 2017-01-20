@@ -86,6 +86,10 @@ sudo make install
 
 sudo yum install curl
 
+#NOTE
+
+There is a version to the Dwnld_WGS_RNA.pm module that only uses curl. If there is no way to download and install aria2 then put this script in the TCGA_ASE_Analysis_Pipeline/TCGA_Lib directory replacing the other file in there.
+
 You will need to install the software below as well
 ####Create a bin directory in your home directory and install the software below to it
 
