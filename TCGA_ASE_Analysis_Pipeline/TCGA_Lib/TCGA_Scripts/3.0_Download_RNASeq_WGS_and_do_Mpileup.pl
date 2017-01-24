@@ -262,32 +262,39 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
         $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa");
         copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
     }
-    else
+    elsif($Exp_Strategy eq "RNA-Seq")
     {
         #filter table and remove bams that may be aligned to HG18, HG19_Broad_variant, GRChr37-lite, NCBI36 or non aligned bams;
         `cat final_downloadtable_$disease_abbr.txt|grep NCBI36 -v|grep -v HG18 |grep -v HG19_Broad_variant |grep -v GRCh37-lite |grep -v NaN > final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-        chdir $RNA_Path;
         
-        `mkdir $ase` unless(-d "$ase");
-        
-        chdir "$ase";
-        
-        mkdir "rna_mpileups" unless(-d "rna_mpileups");
-        
-        chdir "$rna_wgs_dir";
-        
-        copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
-        
-        if(!(-d "$RNA_Path/cds_sorted"))
-        {
-            print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
-            print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
-            exit;
-        }
-        
-        #Downloads RNA BAMs and runs mpileups on them.
-        #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
+	if ($choice ne "download")
+	{
+	     if(!(-d "$RNA_Path/cds_sorted"))
+	    {
+		print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
+		exit;
+	    }
+	    
+	    chdir $RNA_Path;
+	    
+	    `mkdir $ase` unless(-d "$ase");
+	    
+	    chdir "$ase";
+	    
+	    mkdir "rna_mpileups" unless(-d "rna_mpileups");
+	    
+	    chdir "$rna_wgs_dir";
+	    
+	    copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+	}
+        else
+	{
+	    #Downloads RNA BAMs and runs mpileups on them.
+	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
         $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
+	}
+        
     }
 }
 else
@@ -307,23 +314,25 @@ else
     }
     elsif($Exp_Strategy eq "RNA-Seq")
     {
-        chdir $RNA_Path;
-        
-        `mkdir $ase` unless(-d "$ase");
-        
-        mkdir "$ase/rna_mpileups" unless(-d "$ase/rna_mpileups");
-        
-        chdir "$rna_wgs_dir";
-        
-        if(!(-d "$RNA_Path/cds_sorted"))
-        {
-            print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
-            print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
-            exit;
-        }
-        
-        #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
+	if ($choice ne "download")
+	{
+	    if(!(-d "$RNA_Path/cds_sorted"))
+	    {
+		print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
+		exit;
+	    }
+	    
+	    chdir $RNA_Path;
+	    
+	    `mkdir $ase` unless(-d "$ase");
+	    
+	    mkdir "$ase/rna_mpileups" unless(-d "$ase/rna_mpileups");
+	    
+	    chdir "$rna_wgs_dir";
+	}
+	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
+	    $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);   
     }
 }
 
