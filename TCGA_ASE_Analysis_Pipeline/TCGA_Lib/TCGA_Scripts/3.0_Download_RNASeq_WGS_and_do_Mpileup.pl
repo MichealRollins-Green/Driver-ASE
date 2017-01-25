@@ -263,7 +263,7 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
                 my @con = split("\t",$r);
                 my $vert = pop @con;
                 $vert = $vert/1000/1000/1000;
-                $vert = eval sprintf('%2f',$vert);
+                $vert = eval sprintf('%.2f',$vert);
                 push(@con,$vert);
                 my $size_wgs = join("\t",@con);
                 print SO $size_wgs,"\n";
