@@ -133,7 +133,7 @@ sub Varscan_filter
        $normal_alt_frq *= 100;
     my $tumor_alt_frq = shift || 0;
        $tumor_alt_frq *= 100;
-    print STDERR "Please be noted that your parameters for Varscan_Filter are listed at bellowing:\n",
+    print STDERR "Please be noted that your parameters for Varscan_Filter are listed below:\n",
                  "VarscanOutput: $input\n","readcutoff: $readcutoff\n",
                  "VarType: $VarType\n","normal_alt_frq: $normal_alt_frq\n",
                  "tumor_alt_frq: $tumor_alt_frq\n";
