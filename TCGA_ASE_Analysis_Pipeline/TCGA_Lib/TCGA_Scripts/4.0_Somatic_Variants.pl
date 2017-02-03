@@ -28,13 +28,19 @@ if($help)
     $parsing->usage;
 }
 
+my $Analysispath = realpath("../../Analysis");
+my $wgs_dwnlds = "wgs_dwnlds";
+my $wgs_mpileups = "wgs_mpileups";
+my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
+my $ssoe_dir = "wgs_mpileups_ssoe_files";
+my $finished_WGS = "$disease_abbr\_finished_analysis_WGS";
+my $somatic = "somatic_variants";
+
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage;
 }
-
-my $Analysispath = realpath("../../Analysis");
 
 #Checks if there is not Analysis directory.
 if(!(-d "$Analysispath"))
@@ -49,97 +55,96 @@ elsif(!(-d "$Analysispath/$disease_abbr"))
     print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
-elsif (!(-d "$Analysispath/$disease_abbr/wgs_dwnlds"))
+elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dwnlds"))
 {
     print STDERR "$Analysispath/$disease_abbr/wgs_dwnlds does not exist. It was either deleted, moved or renamed.\n";
     print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
-elsif (!(-d "$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups"))
+elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups"))
 {
     print STDERR "$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups does not exist. It was either deleted, moved or renamed.\n";
     print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
     exit;
 }
 
-my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
-
 `mkdir -p "$WGS_Path"` unless(-d "$WGS_Path");
 
-my @ss = `ls $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/`;
+my @ss = `ls $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/`;
 @ss = grep{/\.ss/}@ss;
-my @o = `ls $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/`;
+my @o = `ls $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/`;
 @o = grep{/\.o/}@o;
-my @e = `ls $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/`;
+my @e = `ls $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/`;
 @e = grep{/\.e/}@e;
 
-if(@ss)
+if (@ss or @o or @e)
 {
-    `mkdir $WGS_Path/wgs_mpileups_ssoe_files` unless(-d "$WGS_Path/wgs_mpileups_ssoe_files");
-    foreach my $s(@ss)
-    {
-        chomp($s);
-        `mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/$s $WGS_Path/wgs_mpileups_ssoe_files`;
-    }
-}
+    `mkdir $WGS_Path/$ssoe_dir` unless(-d "$WGS_Path/$ssoe_dir");
 
-if(@o)
-{
-    `mkdir $WGS_Path/wgs_mpileups_ssoe_files` unless(-d "$WGS_Path/wgs_mpileups_ssoe_files");
-    foreach my $out(@o)
+    if(@ss)
     {
-        chomp($out);
-        `mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/$out $WGS_Path/wgs_mpileups_ssoe_files`;
-    }   
-}
+        foreach my $s(@ss)
+        {
+            chomp($s);
+            `mv $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/$s $WGS_Path/$ssoe_dir`;
+        }
+    }
+
+    if(@o)
+    {
+        foreach my $out(@o)
+        {
+            chomp($out);
+            `mv $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/$out $WGS_Path/$ssoe_dir`;
+        }   
+    }
    
-if(@e)
-{
-    `mkdir $WGS_Path/wgs_mpileups_ssoe_files` unless(-d "$WGS_Path/wgs_mpileups_ssoe_files");
-    foreach my $err(@e)
+    if(@e)
     {
-        chomp($err);
-        `mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups/$err $WGS_Path/wgs_mpileups_ssoe_files`;   
+        foreach my $err(@e)
+        {
+            chomp($err);
+            `mv $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/$err $WGS_Path/$ssoe_dir`;   
+        }
     }
 }
 
-mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS";
+mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless (-d "$Analysispath/$disease_abbr/$finished_WGS");
 
 chdir $WGS_Path;
 
-if (-d "$WGS_Path/wgs_mpileups_ssoe_files")
+if (-d "$WGS_Path/$ssoe_dir")
 {
-    if (-e "wgs_mpileups_ssoe_files.tar.gz")
+    if (-e "$ssoe_dir.tar.gz")
     {
-        `tar -zcvkf wgs_mpileups_ssoe_files.tar.gz wgs_mpileups_ssoe_files`;
-        `mv wgs_mpileups_ssoe_files.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+        `tar -zcvkf $ssoe_dir.tar.gz $ssoe_dir`;
+        `mv $ssoe_dir.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
     }
     else
     {
-        `tar -zcvf wgs_mpileups_ssoe_files.tar.gz wgs_mpileups_ssoe_files`;
-        `mv wgs_mpileups_ssoe_files.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+        `tar -zcvf $ssoe_dir.tar.gz $ssoe_dir`;
+        `mv $ssoe_dir.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
     }
 }
 
-chdir "$Analysispath/$disease_abbr/wgs_dwnlds";
+chdir "$Analysispath/$disease_abbr/$wgs_dwnlds";
 
 print "Compressing wgs_mpileups directory\n";
-`tar -zcvf wgs_mpileups_varscan.tar.gz wgs_mpileups`;
-mkdir "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS" unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS");
-`mv $Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups_varscan.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`tar -zcvf wgs_mpileups_varscan.tar.gz $wgs_mpileups`;
+`mv $Analysispath/$disease_abbr/$wgs_dwnlds/wgs_mpileups_varscan.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
 chdir "$WGS_Path";
 
-mkdir "$WGS_Path/somatic_variants";
+mkdir "$WGS_Path/$somatic";
 
-`rm -f $WGS_Path/somatic_variants/*`;
+`rm -f $WGS_Path/$somatic/*`;
 
 #Varscan_filter(full path to wgs mpileups directory,full path to somatic_variants directory,readcutoff,VarType(e.g. Somatic),normal_alt_frq,tumor_alt_frq)
-$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups","$WGS_Path/somatic_variants",20,"Somatic",0.1,0.1);
+$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups","$WGS_Path/$somatic",20,"Somatic",0.1,0.1);
 
 print "Compressing somatic_variants\n";
-`tar -zcvf somatic_variants.tar.gz somatic_variants`;
-`mv $WGS_Path/somatic_variants.tar.gz $Analysispath/$disease_abbr/$disease_abbr\_finished_analysis_WGS`;
+`tar -zcvf $somatic.tar.gz $somatic`;
+`mv $WGS_Path/$somatic.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
 print "All jobs have finished for $disease_abbr.\n";
 
