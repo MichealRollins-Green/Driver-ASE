@@ -17,7 +17,6 @@ chdir $Bin;
 
 my $imput_plink = TCGA_Lib::Imputation_Plink->new;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
-my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -29,13 +28,17 @@ if ($help)
     $parsing->usage;
 }
 
+my $TCGA_Pipeline_Dir = realpath("../../");
+my $Analysispath = realpath("../../Analysis");
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $affy_dir = "affy6";
+
 if (!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage;
 }
-
-my $Analysispath = realpath("../../Analysis");
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -51,8 +54,6 @@ elsif(!(-d "$Analysispath/$disease_abbr"))
     exit;
 }
 
-my $database_path = "$TCGA_Pipeline_Dir/Database";
-
 #Checks if there is no Database directory
 if(!(-d "$database_path"))
 {
@@ -60,10 +61,7 @@ if(!(-d "$database_path"))
     exit;
 }
 
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 mkdir "$Analysispath/$disease_abbr/RNA_Seq_Analysis" unless(-d "$Analysispath/$disease_abbr/RNA_Seq_Analysis");
-
-my $affy_dir = "affy6";
 
 chdir $RNA_Path;
 
