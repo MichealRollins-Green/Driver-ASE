@@ -20,7 +20,6 @@ chdir $Bin;
 
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
-my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV 
@@ -34,6 +33,12 @@ if($help)
 {
     $parsing->usage("0");
 }
+
+my $TCGA_Pipeline_Dir = realpath("../../");
+mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
+my $Analysispath = realpath("../../Analysis");
+my $Table_Dir = "$Analysispath/tables";
+my $tables = "$disease_abbr\_tables";
 
 if(!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
@@ -79,13 +84,8 @@ if(!(-d "$TCGA_Pipeline_Dir/Database"))
     exit;
 }
 
-mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
-
 chdir $Analysispath;
 
-   
-my $Table_Dir = "$Analysispath/tables";
 `mkdir -p "$Table_Dir"`;
 
 chdir $Table_Dir or die "Can't change to directory $Table_Dir: $!\n";
@@ -98,7 +98,7 @@ foreach my $disease_abbr(@disease)
     #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
     $parsing->copyfile2newfullpath("$key","$Table_Dir/gdc.key");
     
-    if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/$disease_abbr.$array_type.id2uuid.txt"))
+    if(!(-f "$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.txt"))
     {
         #gets the manifest file from gdc and gets the UUIDs from it
         #gdc_parser(cancer type(e.g. OV),type of data (Genotyping array),data type)
@@ -155,14 +155,17 @@ foreach my $disease_abbr(@disease)
 	    chomp($r);
 	    my @a = split("\t",$r);
 	    my $TCGA = substr($a[1],0,12);
-	    print IDO "$r\t$TCGA\n";
+	    my $sample = [split("-",$a[1])]->[-1];
+	    $sample =~ s/\D+//;
+            $sample =~s/^0//;
+	    print IDO "$a[0]\t$a[1]\t$sample\t$a[2]\t$TCGA\n";
 	}
 	close(IDI);
 	close(IDO);
         
-        `mkdir $Analysispath/$disease_abbr/$disease_abbr\_tables` unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables");
+        `mkdir $Analysispath/$disease_abbr/$tables` unless(-d "$Analysispath/$disease_abbr/$tables");
         
-        copy("$disease_abbr.$array_type.id2uuid.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+        copy("$disease_abbr.$array_type.id2uuid.txt","$Analysispath/$disease_abbr/$tables");
     }
     else
     {
