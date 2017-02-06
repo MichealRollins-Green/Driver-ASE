@@ -156,7 +156,7 @@ rename the directory impute2
 remove or backup the archive
 
 
-####plink(Stable) 
+####plink1.9(or later) 
 
 download link - https://www.cog-genomics.org/plink2
 
