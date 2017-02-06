@@ -97,7 +97,7 @@ cd ~
 
 mkdir bin
 
-####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere.
+####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
 ####If you don't have root permissions to install the software, contact you system admin to have the software installed.
 
