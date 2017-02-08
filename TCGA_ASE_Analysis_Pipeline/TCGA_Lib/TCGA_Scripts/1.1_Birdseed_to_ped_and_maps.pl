@@ -28,13 +28,19 @@ if($help)
     $parsing->usage;
 }
 
+my $Analysispath = realpath("../../Analysis");
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $affy_dir = "affy6";
+my $bases_dir = "$RNA_Path/bases";
+my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
+my $map_dir = "maps";
+my $ped_dir = "peds";
+
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage;
 }
-
-my $Analysispath = realpath("../../Analysis");
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -50,8 +56,6 @@ elsif(!(-d "$Analysispath/$disease_abbr"))
     exit;
 }
 
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
-
 if (!(-d $RNA_Path))
 {
     print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
@@ -59,7 +63,6 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-my $affy_dir = "affy6";
 if(!(-d "$RNA_Path/$affy_dir"))
 {
     print STDERR "The directory $RNA_Path/$affy_dir does not exist. It was moved, renamed or deleted.\n";
@@ -69,12 +72,8 @@ if(!(-d "$RNA_Path/$affy_dir"))
 
 chdir "$RNA_Path";
 
-my $bases_dir = "$RNA_Path/bases";
-
 `mkdir -p "$bases_dir"` unless(-d "$bases_dir");
 `rm -f $bases_dir/*`;
-
-my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
 
 if (!(-d "$SNP6_Raw_Files_Dir"))
 {
@@ -98,7 +97,7 @@ my @t_files = `ls $bases_dir`;
 chdir "$bases_dir";
 for(my $i = 0;$i < scalar(@t_files);$i++)
 {
-    if($t_files[$i] =~ /.t/)
+    if($t_files[$i] =~ /\.t/)
     {
         chomp($t_files[$i]);
         `rm '$bases_dir'/$t_files[$i]`;  
@@ -108,23 +107,23 @@ for(my $i = 0;$i < scalar(@t_files);$i++)
 chdir "$RNA_Path";
 
 my @files = $parsing->get_only_files_in_dir("$bases_dir");
-   @files=grep{!/\.$/}@files;
+   @files=grep{!/^\.$/}@files;
 my $selected_file = $files[-1];
 #pull_column(file to pull column from,column(s) to pull, output file)
 $parsing->pull_column("$bases_dir/$selected_file","1","$disease_abbr\_t");
 
-mkdir "maps" unless(-d "$RNA_Path/maps");
-`rm -f $RNA_Path/maps/*`;
+mkdir "$map_dir" unless(-d "$RNA_Path/$map_dir");
+`rm -f $RNA_Path/$map_dir/*`;
 
 $parsing->vlookup("$disease_abbr\_t",1,"$RNA_Path/$affy_dir/snp6.cd.txt",4,"1,3","y","map_for_sort");
 
 `sort -k 2,2 -k 3,3n map_for_sort > map_for_pull_column`;
 $parsing->pull_column("map_for_pull_column","2,3,1","mk_map_file");
 #mk_map(file used to make maps, path to RNA_Seq_Analysis directory)
-$impute_plink->mk_map("mk_map_file","$RNA_Path");
+$impute_plink->mk_map("mk_map_file","$RNA_Path/$map_dir");
 
-my @maps = $parsing->get_only_files_in_dir("$RNA_Path/maps");
-@maps = grep{!/\.$/ and /^[0-9x]+.map$/i}@maps;
+my @maps = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
+@maps = grep{!/^\.$/ and /^[0-9x]+.map$/i}@maps;
 open(CHR,">chrs") or die("Can't open filehandle: $!");
 for(my $i=0;$i<scalar(@maps);$i++)
 {
@@ -132,8 +131,8 @@ for(my $i=0;$i<scalar(@maps);$i++)
 }
 close(CHR);
 
-mkdir "$RNA_Path/peds" unless(-d "$RNA_Path/peds");
-`rm -f $RNA_Path/peds/*`;
+mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
+`rm -f $RNA_Path/$ped_dir/*`;
 
 #mk_ped_list_4_plink(file with chr.map,user or default output directory from command line,outfile for peds,path to RNA_Seq_Analysis directory)
 $impute_plink->mk_ped_list_4_plink("chrs","$bases_dir","ped_list","$RNA_Path");
@@ -146,12 +145,12 @@ mce_map_f
     my $tn = [split("-",$lines[1])]->[-1];
     $tn =~ s/\D+//;
     #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,user or default output directory from command line)
-    $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir") if $tn > 9;
+    $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir") if $tn > 9;
 }"$RNA_Path/ped_list";
 
-my @maps_bim = $parsing->get_only_files_in_dir("$RNA_Path/maps");
+my @maps_bim = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
 @maps_bim = grep {/bim/}@maps_bim;
-open(BIMS,">$RNA_Path/maps/Small_Bims.txt") or die("Can't open file for output: $!");
+open(BIMS,">$RNA_Path/$map_dir/Small_Bims.txt") or die("Can't open file for output: $!");
 for(my $i=0;$i<scalar(@maps_bim);$i++)
 {
     $maps_bim[$i] =~ s/.bim//;
@@ -159,42 +158,42 @@ for(my $i=0;$i<scalar(@maps_bim);$i++)
 }
 close(BIMS);
 
-chdir "$RNA_Path/maps";
+chdir "$RNA_Path/$map_dir";
 #Merge all bims in dir maps with plink
 `plink --merge-list Small_Bims.txt --out $disease_abbr\_TN_TCGA_All`;
 
 chdir "$RNA_Path";
-`mv $RNA_Path/maps/$disease_abbr\_TN_TCGA_All.* $RNA_Path`;
+`mv $RNA_Path/$map_dir/$disease_abbr\_TN_TCGA_All.* $RNA_Path`;
 
 #To save space
 `rm -r $bases_dir` unless(!(-d "$bases_dir"));
-my @del_files = `ls $RNA_Path/maps`;
+my @del_files = `ls $RNA_Path/$map_dir`;
 
 for(my $i = 0;$i < scalar(@del_files);$i++)
 {
     if ($del_files[$i] =~ /.bim$/)
     {
-        `rm -f $RNA_Path/maps/$del_files[$i]`;
+        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
     }
     elsif($del_files[$i] =~ /.bed$/)
     {
-        `rm -f $RNA_Path/maps/$del_files[$i]`;
+        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
     }
     elsif($del_files[$i] =~ /.fam$/)
     {
-      `rm -f $RNA_Path/maps/$del_files[$i]`; 
+      `rm -f $RNA_Path/$map_dir/$del_files[$i]`; 
     }
     elsif($del_files[$i] =~ /.log$/)
     {
-        `rm -f $RNA_Path/maps/$del_files[$i]`;
+        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
     }
     elsif($del_files[$i] =~ /.ped$/)
     {
-        `rm -f $RNA_Path/maps/$del_files[$i]`;  
+        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
     }
     elsif($del_files[$i] =~ /.pro$/)
     {
-        `rm -f $RNA_Path/maps/$del_files[$i]`;  
+        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
     }
 }
 
@@ -203,7 +202,7 @@ my @chrs=(1..23);
 my @plink_cmds;
 while(my $chr=<@chrs>)
 {
-    push @plink_cmds,"plink --bfile $disease_abbr\_TN_TCGA_All --chr $chr --recode --out $RNA_Path/peds/$chr";
+    push @plink_cmds,"plink --bfile $disease_abbr\_TN_TCGA_All --chr $chr --recode --out $RNA_Path/$ped_dir/$chr";
 }
 
 mce_map
@@ -211,8 +210,8 @@ mce_map
     system("$plink_cmds[$_]");
 }0..$#plink_cmds;
 
-`rm -f peds/*.map`;
-`rm -f peds/*.log`;
+`rm -f $ped_dir/*.map`;
+`rm -f $ped_dir/*.log`;
 
 print "All Jobs have finished for $disease_abbr.\n";
 
