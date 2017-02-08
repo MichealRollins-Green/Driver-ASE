@@ -140,7 +140,8 @@ sub get_only_files_in_dir
     my $self = $path and $path = shift if ref $path;
     opendir my $dir, "$path" or die("Can't open the directory $path: $!\n");
     my @get_files = readdir $dir;
-    
+    close($dir);    
+
     @get_files = grep{-f "$path/$_"}@get_files; 
     
     return @get_files;
