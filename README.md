@@ -10,9 +10,11 @@ The pipeline performs ASE analysis with using RNA-Seq, affymetrix genotyping arr
 
 #Install
 
-This pipeline was coded on a Centos 7 x86_64 system and some of the software listed below are for an x86_64 linux distribution and some of the software may not be compatible with i686 or other versions.
+This pipeline was coded on a Centos 7 x86_64 system and some of the software listed below are for an x86_64 linux distribution and some of the software may not be compatible with i686 or other versions. The commands below may also be different based on what distribution is being used.
 
-Make sure you have these perl modules installed before you run these scripts.
+####Firewall and Other
+
+Make sure that the firewall allows for incoming and outgoing of traffic for HTTPS/HTTP and FTP. Also make sure that MySQL and WGET are installed.
 
 ####Packages
 
@@ -31,6 +33,8 @@ gcc - sudo yum install gcc
 gcc-c++ - sudo yum install gcc-c++.x86_64
 
 ncurses-devel - sudo yum install ncurses-devel.x86_64
+
+Make sure you have these perl modules installed before you run these scripts.
 
 ####In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
 
