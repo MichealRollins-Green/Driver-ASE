@@ -18,7 +18,6 @@ chdir $Bin;
 
 my $impute_plink = TCGA_Lib::Imputation_Plink->new;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
-my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -30,13 +29,22 @@ if($help)
     $parsing->usage;
 }
 
+my $TCGA_Pipeline_Dir = realpath("../../");
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $Analysispath = realpath("../../Analysis");
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $map_dir = "maps";
+my $ped_dir = "peds";
+my $logs = "logs";
+my $imputation = "$RNA_Path/phased";
+my $OneKG_Ref_Path = "$database_path/ALL.integrated_phase1_SHAPEIT_16-06-14.nomono";
+my $Impute2out = "$Analysispath/$disease_abbr/phased_imputed_raw_out";
+
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage;
 }
-
-my $database_path = "$TCGA_Pipeline_Dir/Database";
 
 #Check if there is no Database directory
 if(!(-d "$database_path"))
@@ -44,8 +52,6 @@ if(!(-d "$database_path"))
     print STDERR "$database_path does not exist. It was either moved, renames, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
-
-my $Analysispath = realpath("../../Analysis");
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -61,8 +67,6 @@ elsif(!(-d "$Analysispath/$disease_abbr"))
     exit;
 }
 
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
-
 if (!(-d $RNA_Path))
 {
     print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
@@ -70,31 +74,21 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-if(!(-d "$RNA_Path/peds") or !(-d "$RNA_Path/maps"))
+if(!(-d "$RNA_Path/$ped_dir") or !(-d "$RNA_Path/$map_dir"))
 {
-    print STDERR "There are no peds and maps directories in the directory $RNA_Path. They were either moved, renamed or deleted.\n";
+    print STDERR "The directory $RNA_Path/$ped_dir and/or directory $RNA_Path/$map_dir does not exist. They were either moved, renamed or deleted.\n";
     print STDERR "Please run script 1.1_Birdseed_to_ped_and_maps.pl.\n";
     exit;
 } 
 
 chdir "$RNA_Path";
 
-my $imputation = "$RNA_Path/phased";
-
 `mkdir -p $imputation` unless(-d "$imputation");
 `rm -f $imputation/*`;
+`mkdir -p $logs` unless(-d "$logs";
 
-`mkdir "$RNA_Path/logs"` unless(-d "$RNA_Path/logs");
-`rm -f $RNA_Path/logs/*`;
-
-my $OneKG_Ref_Path = "$database_path/ALL.integrated_phase1_SHAPEIT_16-06-14.nomono";
-
-my $Phased_hap = "$imputation";
-
-my $Impute2out = "$Analysispath/$disease_abbr/phased_imputed_raw_out";
-
-#submit_shapeit(path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono,path to the RNA_Seq_Analysis directory,user defened directory from command line or default directory)
-my @shapeit_cmds = $impute_plink->submit_shapeit("$OneKG_Ref_Path","$RNA_Path","$imputation");
+#submit_shapeit(path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono,path to the RNA_Seq_Analysis directory,phased directory,maps directory,peds directory,logs directory)
+my @shapeit_cmds = $impute_plink->submit_shapeit("$OneKG_Ref_Path","$RNA_Path","$imputation","$map_dir","$ped_dir","$logs");
 
 mce_map {
       system("$shapeit_cmds[$_]");
@@ -110,11 +104,12 @@ $impute_plink->fetch_Chrom_Sizes("hg19");
 mkdir "$Impute2out" unless(-d "$Impute2out");
 #submit first 11 chrs for imputation
 #submit_all(file with chr sizes,path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono,user defened directory from command line or default directory,path to phased_imputed_raw_out)
-my @imput2cmds = $impute_plink->submit_all("file_for_submit", $OneKG_Ref_Path, $Phased_hap, $Impute2out);
+my @imput2cmds = $impute_plink->submit_all("file_for_submit", $OneKG_Ref_Path, $imputation, $Impute2out);
 
-mce_map {
-      system("$imput2cmds[$_]");
-                  } 0..$#imput2cmds;
+mce_map
+{
+   system("$imput2cmds[$_]");
+} 0..$#imput2cmds;
 
 #To save disk space;
 #remove them permentately!
@@ -127,11 +122,10 @@ mce_map {
 `cat chr_lens|tail -n 12 > file_for_submit`;
 #submit next 12 chrs for imputation
 undef @imput2cmds;
-@imput2cmds = $impute_plink->submit_all( "file_for_submit", $OneKG_Ref_Path, $Phased_hap, $Impute2out);
+@imput2cmds = $impute_plink->submit_all( "file_for_submit", $OneKG_Ref_Path, $imputation, $Impute2out);
 mce_map
 {
-            system("$imput2cmds[$_]");
-
+    system("$imput2cmds[$_]");
 } 0..$#imput2cmds;
 
 #To save disk space;
