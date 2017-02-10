@@ -88,7 +88,7 @@ my @birdseed = $parsing->get_only_files_in_dir("$SNP6_Raw_Files_Dir");
 mce_map
 {
     chomp ($_);
-    #Prepare_Genos(Genotype files,directory where Genotype files were downloaded,snp6.cd.txt file created from 1.0,user or default output directory from command line,sample type(e.g. 0(normal), 1(tumor) or 2(normal/tumor))
+    #Prepare_Genos(Genotype files,directory where Genotype files were downloaded,snp6.cd.txt file created from 1.0,$bases_dir,sample type(e.g. 0(normal), 1(tumor) or 2(normal/tumor))
     $impute_plink->Prepare_Genos("$_","$SNP6_Raw_Files_Dir","$RNA_Path/$affy_dir/snp6.cd.txt","$bases_dir",2);
 }@birdseed;
 
@@ -134,7 +134,7 @@ close(CHR);
 mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
 `rm -f $RNA_Path/$ped_dir/*`;
 
-#mk_ped_list_4_plink(file with chr.map,user or default output directory from command line,outfile for peds,path to RNA_Seq_Analysis directory)
+#mk_ped_list_4_plink(file with chr.map,$bases_dir,outfile for peds,path to RNA_Seq_Analysis directory)
 $impute_plink->mk_ped_list_4_plink("chrs","$bases_dir","ped_list","$RNA_Path");
 
 mce_map_f
@@ -144,7 +144,7 @@ mce_map_f
     #only keep normal samples for plink
     my $tn = [split("-",$lines[1])]->[-1];
     $tn =~ s/\D+//;
-    #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,user or default output directory from command line)
+    #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,$bases_dir,$map_dir)
     $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir") if $tn > 9;
 }"$RNA_Path/ped_list";
 
