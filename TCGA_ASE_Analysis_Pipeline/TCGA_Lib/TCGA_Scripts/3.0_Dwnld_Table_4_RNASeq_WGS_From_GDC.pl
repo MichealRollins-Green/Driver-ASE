@@ -27,11 +27,20 @@ GetOptions(
     'key|k=s'=>\my $key,#path to the gdc.key.
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.0_table");
+
 #If -h was specified on the command line then the usage of the program will be printed.
 if($help)
 {
     $parsing->usage("3.0_table");
 }
+
+my $TCGA_Pipeline_Dir = realpath("../../");
+#Directory where all analysis data will be going in.
+mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
+my $Analysispath = realpath("../../Analysis");
+my $Table_Dir = "tables";
+my $tables = "$disiease_abbr\_tables";
+
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $disease_abbr || !defined $Exp_Strategy)
 {
@@ -51,8 +60,6 @@ if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
     exit;
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
-
 #Checks if there is not Database directory
 if(!(-d "$TCGA_Pipeline_Dir/Database"))
 {
@@ -70,14 +77,9 @@ else
    @disease = $disease_abbr; 
 }
 
-#Directory where all analysis data will be going in.
-mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
-
 chdir "$Analysispath";
 
 #defaults to a directory if no output directory was specified in the command line.
-my $Table_Dir = "tables";
 my $Input_Dir;
 if($Exp_Strategy eq "RNA-Seq")
 {   
@@ -111,7 +113,7 @@ foreach my $disease_abbr(@disease)
     $parsing->copyfile2newfullpath("$key","$Table_Dir/gdc.key");
     
     #Checks if a table file does not exist in the tables directory of the cancer type.
-    if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
+    if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
     {
         #parses the gdc website manifest of the specified cancer type and prints to a results file.
         #gdc_parser(cancer type(e.g. OV),type(RNA-Seq or WGS))
@@ -172,7 +174,7 @@ foreach my $disease_abbr(@disease)
         $parsing->vlookup("$disease_abbr.datatable.txt","1","reference.txt","1","2","y","temp");
         $parsing->vlookup("temp","1","index_file_ids.txt","2","3","y","final_downloadtable_$disease_abbr.txt");
         
-        `mkdir "$Analysispath/$disease_abbr/$disease_abbr\_tables"` unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables");
+        `mkdir "$Analysispath/$disease_abbr/$tables"` unless(-d "$Analysispath/$disease_abbr/$tables");
         
         if($Exp_Strategy eq 'WGS')
         {
@@ -200,13 +202,13 @@ foreach my $disease_abbr(@disease)
             
             #filter table and remove bams aligning to NCBI36 or HG18;
             `cat final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt|grep NCBI36 -v | grep -v HG18|grep -v HG18_Broad_variant > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-            copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+           copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
         }
         elsif($Exp_Strategy eq "RNA-Seq")
         {
            `cat final_downloadtable_$disease_abbr.txt |grep NCBI36 -v|grep -v HG18 |grep -v HG18_Broad_variant|grep -v HG19_Broad_variant |grep -v GRCh37-lite |grep -v NaN > final_downloadtable_$disease_abbr\_sort.txt`;
            `sort -k2,2 final_downloadtable_$disease_abbr\_sort.txt > final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;     
-            copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+            copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
         }
     }
     else
