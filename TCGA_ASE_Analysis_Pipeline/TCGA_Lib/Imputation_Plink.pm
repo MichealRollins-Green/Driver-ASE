@@ -162,7 +162,7 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
            
             while(<ONEKG>)
             {
-                chomp;
+                chomp($_);
                 if($. > 1)
                 {
                     my $l = $_;
@@ -248,14 +248,14 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
 
 sub Prepare_Genos
 {
-    my $inline = shift;
-    my $self = $inline and $inline = shift if ref $inline;
+    my $birdseed = shift;
+    my $self = $birdseed and $birdseed = shift if ref $birdseed;
     my $BirdseedPath = shift;
     my $AffxAnno = shift;
     my $bases = shift;
     my $type = shift;
     
-    my @a = split(":",$inline);
+    my @a = split("\\.",$birdseed);
     
     unless (defined($type))
     {
@@ -268,7 +268,6 @@ sub Prepare_Genos
     my $pid = $a[1];
     my $tag = [split("-",$pid)]->[-1];
     $tag =~ s/\D+//g;
-    my $birdseed = $inline;
     my $tmp_f1;
     my $tmp_f2;
     my $tmp_num1 = $parsing->rand_num;
@@ -361,14 +360,14 @@ sub mk_map
 {
     my $filename = shift;
     my $self = $filename and $filename = shift if ref $filename;
-    my $path = shift;
+    my $RNA_map_path = shift;
     
-    open(MKM,$filename) or die("Can't open file for input: $!");
+    open(MKM,$filename) or die("Can't open $filename for input: $!");
     my $old = <MKM>;
     chomp($old);
     my @o = split("\t",$old);
     $o[0] =~ s/chr//;
-    open(OUT,">$path/maps/$o[0].map") or die "no out\n";
+    open(OUT,">$RNA_map_path/$o[0].map") or die "no out\n";
     
     while(my $r = <MKM>) 
     {
@@ -378,7 +377,7 @@ sub mk_map
         print OUT $o[0], "\t", $o[2], "\t0\t", $o[1], "\n";
         if($o[0] ne $a[0])
         {
-            close OUT; open(OUT,">$path/maps/$a[0].map") or die "no out\n";
+            close OUT; open(OUT,">$RNA_map_path/$a[0].map") or die "no out\n";
         }
         @o = @a;
     }
@@ -400,7 +399,7 @@ sub mk_ped_list_4_plink
     $chr_fh->close;
     my $outfile = FileHandle->new(">$pedlist");
     my @samples = $parsing->get_only_files_in_dir("$bases_dir");
-    @samples = grep{!/\.$/}@samples;
+    @samples = grep{!/^\.$/}@samples;
     foreach my $r(@chrs) 
     {
         chomp($r);
@@ -423,22 +422,23 @@ sub Make_Plink_Bed
     my $sampleid = shift;#$i;
     my $path = shift;#$dir_path;
     my $bases = shift;
+    my $map_dir = shift;
     
     #Copy map file to avoid of reading errors when using qsub;
-    copy "$path/maps/$chr.map", "$path/maps/$sample.chr$chr.map";
+    copy "$path/$map_dir/$chr.map", "$path/$map_dir/$sample.chr$chr.map";
     
-    $parsing->vlookup("$path/maps/$sample.chr$chr.map",2,"$bases/$sample",1,2,"y","$path/maps/$sample.chr$chr.pro");
+    $parsing->vlookup("$path/$map_dir/$sample.chr$chr.map",2,"$bases/$sample",1,2,"y","$path/$map_dir/$sample.chr$chr.pro");
     
-    ped_it_4_plink("$sample",$sampleid,"$path/maps/$sample.chr$chr.pro","$path/maps/$sample.chr$chr.ped");
+    ped_it_4_plink("$sample",$sampleid,"$path/$map_dir/$sample.chr$chr.pro","$path/$map_dir/$sample.chr$chr.ped");
    
     #Transform ped into BED of plink;
     print STDERR "Now making plink bed for $sample.chr$chr\n";
-    `plink --map $path/maps/$sample.chr$chr.map --ped $path/maps/$sample.chr$chr.ped --make-bed --out $path/maps/$sample.chr$chr`;
+    `plink --map $path/$map_dir/$sample.chr$chr.map --ped $path/$map_dir/$sample.chr$chr.ped --make-bed --out $path/$map_dir/$sample.chr$chr`;
     
-    unlink("$path/maps/$sample.chr$chr.map",
-           "$path/maps/$sample.chr$chr.ped",
-           "$path/maps/$sample.chr$chr.pro",
-           "$path/maps/$sample.chr$chr.txt");
+    unlink("$path/$map_dir/$sample.chr$chr.map",
+           "$path/$map_dir/$sample.chr$chr.ped",
+           "$path/$map_dir/$sample.chr$chr.pro",
+           "$path/$map_dir/$sample.chr$chr.txt");
 }
 
 sub ped_it_4_plink
@@ -486,6 +486,9 @@ sub submit_shapeit
     my $self = $Ref_Hap_Path and $Ref_Hap_Path = shift if ref $Ref_Hap_Path;
     my $rna_path = shift;
     my $phased = shift;
+    my $map_dir = shift;
+    my $ped_dir = shift;
+    my $logs = shift;
     my @cmds;
     
     $Ref_Hap_Path =~ s/\/$//;
@@ -493,11 +496,11 @@ sub submit_shapeit
     for(my $i = 1;$i < 23;$i++)
     {
         print "Working on $i for shapeit\n";
-        push @cmds,"shapeit --input-ped $rna_path/peds/$i.ped $rna_path/maps/$i.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --output-log $rna_path/logs/$i.shapeit_log";
+        push @cmds,"shapeit --input-ped $rna_path/$ped_dir/$i.ped $rna_path/$map_dir/$i.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --output-log $rna_path/$logs/$i.shapeit_log";
     }
     my $i = 'X';
     print "Working on $i for shapeit\n";
-    push @cmds,"shapeit --input-ped $rna_path/peds/23.ped $rna_path/maps/23.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_nonPAR_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --chrX --output-log $rna_path/logs/$i.shapeit_log";
+    push @cmds,"shapeit --input-ped $rna_path/$ped_dir/23.ped $rna_path/$map_dir/23.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_nonPAR_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --chrX --output-log $rna_path/$logs/$i.shapeit_log";
     
     return @cmds;
 }
@@ -679,12 +682,12 @@ sub Append_snplist_chrs
 
 sub merge_tcga_snplist
 {
-    my $dir_path = shift;
-    my $self = $dir_path and $dir_path = shift if ref $dir_path;
+    my $RNA_cds_plink_path = shift;
+    my $self = $RNA_cds_plink_path and $RNA_cds_plink_path = shift if ref $RNA_cds_plink_path;
 
     for(my $chr = 1;$chr < 24;$chr++)
     {
-        Get_Uniq_SNPS_From_SNPlists( "$dir_path/cds_plink","chr$chr.snplist","Chr$chr\_ALL_SNPLIST.txt");
+        Get_Uniq_SNPS_From_SNPlists( "$RNA_cds_plink_path","chr$chr.snplist","Chr$chr\_ALL_SNPLIST.txt");
     }
 }
 
@@ -945,18 +948,17 @@ sub Merge_All_Chrs_4_Single_TCGA_Bed
     my $snplist_dir = shift;
     my $out_dir = shift;
     
-    my $FH=FileHandle->new("$sample_file") or die "can not open the sample file: $!\n";
     #Get rid of first two lines in phased sample file;
-    <$FH>;
-    <$FH>;
-    my @aa = <$FH>;
-    mce_map
+    my @fam_list = `cat $sample_file`;
+    @fam_list = grep {/TCGA-*-*-*/}@fam_list;
+  
+    for (my $i = 0;$i < scalar(@fam_list);$i++)
     {
-        chomp($_);
-        my @as = split("\t| ",$_);
-        my $id = $as[1];
-        Append_Beds("$as[1]","$snplist_dir","$out_dir");
-    }@aa; 
+        chomp($fam_list[$i]);
+        my @tcga_id = split("\t| ",$fam_list[$i]);
+        my $id = $tcga_id[1];
+        Append_Beds("$id","$snplist_dir","$out_dir");       
+    }
 }
 
 sub Append_Beds
