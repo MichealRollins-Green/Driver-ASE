@@ -21,7 +21,6 @@ chdir $Bin;
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
 my $ase_analysis = TCGA_Lib::TCGA_ASE_Analysis->new;
-my $TCGA_Pipeline_Dir = realpath("../../");
 
 #the different oprions for this script. The out_dir and ase_dir are optional.
 GetOptions(
@@ -33,11 +32,25 @@ GetOptions(
     'var_path|v=s' => \my $VarScan_Path,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.0");
+
 #If -h was specified on the command line then the usage of the program will be printed.
 if($help)
 {
     $parsing->usage("3.0");
 }
+
+my $TCGA_Pipeline_Dir = realpath("../../");
+my $database_path = "$TCGA_Pipeline_Dir/Database";
+#Directory where all analysis data will be going in.
+mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
+my $Analysispath = realpath("../../Analysis");
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $rna_dwnlds = "rna_dwnlds";
+my $wgs_dwnlds = "wgs_dwnlds";
+my $ase = "$RNA_Path/ase";
+my $tables = "$disease_abbr\_tables";
+my $cds_sorted = "cds_sorted";
+my $rna_mpileups = "rna_mpileups";
 
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $disease_abbr || !defined $Exp_Strategy)
@@ -82,20 +95,12 @@ if($choice ne "all" and $choice ne "download" and $choice ne "mpileups")
     $parsing->usage("3.0");
 }
 
-my $database_path = "$TCGA_Pipeline_Dir/Database";
-
 #Check if there is no Database directory
 if(!(-d "$database_path"))
 {
     print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
-
-#Directory where all analysis data will be going in.
-mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
-
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 
 if ($Exp_Strategy eq "RNA-Seq")
 {   
@@ -128,11 +133,11 @@ my $OUT_DIR;
 
 if($Exp_Strategy eq "RNA-Seq")
 {
-    $OUT_DIR = "$Analysispath/$disease_abbr/rna_dwnlds/bam";
+    $OUT_DIR = "$Analysispath/$disease_abbr/$rna_dwnlds/bams";
 }
 elsif($Exp_Strategy eq "WGS")
 {
-    $OUT_DIR = "$Analysispath/$disease_abbr/wgs_dwnlds/bams";
+    $OUT_DIR = "$Analysispath/$disease_abbr/$wgs_dwnlds/bams";
 }
 else
 {
@@ -159,22 +164,19 @@ if($choice eq "mpileups")
     }  
 }
 
-#ase directory is defaulted to ase if no name was specified for the directory.
-my $ase = "ase";
-
 my $rna_wgs_dir = dirname($OUT_DIR);
 chdir "$rna_wgs_dir" or die "Can't change to directory $rna_wgs_dir: $!\n";
 
 
 #Gets the full path to the directory if the path was not set to the default directory.
-unless($OUT_DIR eq "$Analysispath/$disease_abbr/rna_dwnlds/bam" or $OUT_DIR eq "$Analysispath/$disease_abbr/wgs_dwnlds/bams")
+unless($OUT_DIR eq "$Analysispath/$disease_abbr/$rna_dwnlds/bams" or $OUT_DIR eq "$Analysispath/$disease_abbr/$wgs_dwnlds/bams")
 {
     $rna_wgs_dir = realpath("../$rna_wgs_dir");
     $OUT_DIR = realpath("../$OUT_DIR"); 
 }
 
 #Checks if a table file does not exist in the tables directory of the cancer type.
-if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
+if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
 {
     #Check gdc key and mv it to db first!
     #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
@@ -245,53 +247,33 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
     $parsing->vlookup("$disease_abbr.datatable.txt","1","reference.txt","1","2","y","temp");
     $parsing->vlookup("temp","1","index_file_ids.txt","2","3","y","final_downloadtable_$disease_abbr.txt");
     
-    `mkdir $Analysispath/$disease_abbr/$disease_abbr\_tables` unless(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables");
-    
+    `mkdir $Analysispath/$disease_abbr/$tables` unless(-d "$Analysispath/$disease_abbr/$tables");
+ 
     if($Exp_Strategy eq "WGS")
     {
         `sort -k2,2 -k3,3 -k6,6 final_downloadtable_$disease_abbr.txt > final_downloadtable_$disease_abbr\_sorted.txt`;
         #No header in the output, thus no need to strip head!
         #pull_matched_tn_GDC(sorted bamlist,output file)
         $dwnld->pull_matched_tn_GDC("final_downloadtable_$disease_abbr\_sorted.txt","final_downloadtable_$disease_abbr\_$Exp_Strategy.txt");
-	 $parsing->vlookup("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt",1,"$disease_abbr.result.txt",1,4,"y","final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt");
-            open(SIZE,"final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt") or die "can't open file final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt: $!\n";
-            open(SO,">final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt") or die "Can't open file: $!\n";
-            #convert the size of the WGS bams to gigabytes.
-            while (my $r = <SIZE>)
-            {
-                chomp($r);
-                my @con = split("\t",$r);
-                my $vert = pop @con;
-                $vert = $vert/1000/1000/1000;
-                $vert = eval sprintf('%.2f',$vert);
-                push(@con,$vert);
-                my $size_wgs = join("\t",@con);
-                print SO $size_wgs,"\n";
-            }
-            close(SIZE);
-            close(SO);
-            
-            #filter table and remove bams aligning to NCBI36 or HG18;
-            `cat final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt|grep NCBI36 -v | grep -v HG18|grep -v HG18_Broad_variant > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
         #filter table and remove bams aligning to NCBI36 or HG18;
         `cat final_downloadtable_$disease_abbr\_$Exp_Strategy.txt|grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-        copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+        copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
         #Downloads WGS BAMs and runs mpileups on them.
-        #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
+        #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split,"table directory")
         mkdir "$rna_wgs_dir/wgs_mpileups" unless(-d "$rna_wgs_dir/wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa");
-        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$tables");
+        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables");
     }
     elsif($Exp_Strategy eq "RNA-Seq")
     {
         #filter table and remove bams that may be aligned to HG18, HG19_Broad_variant, GRChr37-lite, NCBI36 or non aligned bams;
         `cat final_downloadtable_$disease_abbr.txt|grep NCBI36 -v|grep -v HG18 |grep -v HG19_Broad_variant |grep -v GRCh37-lite |grep -v NaN > final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-        
+  
 	if ($choice ne "download")
 	{
-	     if(!(-d "$RNA_Path/cds_sorted"))
+	     if(!(-d "$RNA_Path/$cds_sorted"))
 	    {
-		print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+		print STDERR "The directory $RNA_Path/$cds_sorted does not exist. It was moved, renamed or deleted\n";
 		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
 		exit;
 	    }
@@ -302,24 +284,24 @@ if(!(-f "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$
 	    
 	    chdir "$ase";
 	    
-	    mkdir "rna_mpileups" unless(-d "rna_mpileups");
+	    mkdir "$rna_mpileups" unless(-d "$rna_mpileups");
 	    
 	    chdir "$rna_wgs_dir";
 	    
-	    copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables");
+	    copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$tables");
 	}
         else
 	{
 	    #Downloads RNA BAMs and runs mpileups on them.
 	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);
+        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$choice,$number);
 	}
         
     }
 }
 else
 {
-    print "It seems that there is a table in the dir already:\n","$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt\n";
+    print "It seems that there is a table in the dir already:\n","$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt\n";
     
     #Check gdc key and mv it to db first!
     #copyfile2newfullpath(path to gdc key,path where gdc key will be copied)
@@ -329,30 +311,30 @@ else
     {
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
         mkdir "$rna_wgs_dir/wgs_mpileups" unless(-d "$rna_wgs_dir/wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa");
-        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$disease_abbr\_tables") if(!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/already_done_WGS.txt"));
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa");
+        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables") if(!(-e "$Analysispath/$disease_abbr/$tables/already_done_WGS.txt"));
     }
     elsif($Exp_Strategy eq "RNA-Seq")
     {
 	if ($choice ne "download")
 	{
-	    if(!(-d "$RNA_Path/cds_sorted"))
+	    if(!(-d "$RNA_Path/$cds_sorted"))
 	    {
-		print STDERR "The directory $RNA_Path/cds_sorted does not exist. It was moved, renamed or deleted\n";
+		print STDERR "The directory $RNA_Path/$cds_sorted does not exist. It was moved, renamed or deleted\n";
 		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
 		exit;
 	    }
 	    
 	    chdir $RNA_Path;
-	    
+
 	    `mkdir $ase` unless(-d "$ase");
 	    
-	    mkdir "$ase/rna_mpileups" unless(-d "$ase/rna_mpileups");
+	    mkdir "$ase/$rna_mpileups" unless(-d "$ase/$rna_mpileups");
 	    
 	    chdir "$rna_wgs_dir";
 	}
 	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-	    $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$RNA_Path/$ase/rna_mpileups","$RNA_Path/cds_sorted",$choice,$number);   
+	    $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$choice,$number);   
     }
 }
 
