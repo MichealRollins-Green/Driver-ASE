@@ -1,10 +1,15 @@
+#!/usr/bin/perl
 package TCGA_Lib::Bad_SNPS_and_CNVS;
+
+BEGIN{
+	    push @INC, "/home/hpc3256/NGS_lib/TCGA_Lib_HPCVL","/home/hpc3256/NGS_lib/Linux_codes_SAM/usr/share/perl5";
+	}
 
 use FindBin qw($Bin);
 use strict;
 use warnings;
 use lib "$Bin/";
-use MCE::Map;
+use MCE::Map max_workers=>6;
 use Parsing_Routines;
 
 require Exporter;
@@ -164,7 +169,7 @@ sub mk_tn_tables
     while(my $r = <HC>)
     {
         chomp($r);
-        my ($UUID,$TCGA) = split(":",$r);
+        my ($UUID,$TCGA) = split("\\.",$r);
         my @tcga_array = split("-",$TCGA);
         my $id = join("-",@tcga_array[0..2]);
         my $tumor_type = $tcga_array[-1];
@@ -201,17 +206,17 @@ sub run_snps
     {
         chomp($_);
         my @a = split("\t",$_);
-        print STDERR "The job was submitted: $a[3]\n";# ? $a[3] is TCGA ID;
+        print STDERR "The job was submitted: $a[0]\n";# ? $a[3] is TCGA ID;
         my $tmp = $parsing->temp_filename();
         if (-f "$bird/$a[1]" and -f "$bird/$a[2]")
         {
             $parsing->vlookup("$bird/$a[2]",1,"$bird/$a[1]",1,2,"y","$tmp.txt");
-            flag_snps("$tmp.txt","$RNA_Path/$a[3]");
+            flag_snps("$tmp.txt","$RNA_Path/$a[0]");
         }
         elsif(-f "$copy/$a[1]" and -f "$copy/$a[2]")
         {
             $parsing->vlookup("$copy/$a[2]",1,"$copy/$a[1]",1,2,"y","$tmp.txt");
-            flag_snps("$tmp.txt","$RNA_Path/$a[3]"); 
+            flag_snps("$tmp.txt","$RNA_Path/$a[0]"); 
         }
         else
         {
@@ -256,7 +261,7 @@ sub get_cd_bed
     opendir(DD,"$bad_snps") or die "no $bad_snps: $!\n";
     my @dd = readdir(DD);
     closedir(DD);
-    @dd = grep{!/\.$/}@dd;#gets rid off . and ..
+    @dd = grep{!/^\./}@dd;#gets rid off . and ..
     mce_map
     {
       print STDERR "working on $_\n";
@@ -290,7 +295,7 @@ my $temp_dir = "temp";
     {
         chomp($_);
         my @a = split("\t",$_);
-        print STDERR "The job was submitted: $a[3]\n";
+        print STDERR "The job was submitted: $a[0]\n";
         
         my $rr = rand();
         $rr = substr($rr,2,6);
@@ -303,7 +308,7 @@ my $temp_dir = "temp";
             `sort -k 4,4 -k 5,5n $temp_dir/t.$rr.2.txt > $temp_dir/t.$rr.3.txt`;
             smooth("$temp_dir/t.$rr.3.txt","$temp_dir/t.$rr.4.txt");
             delin_cnv("$temp_dir/t.$rr.4.txt","$temp_dir/t.$rr.5.txt",0.5);
-            `grep NaN -v $temp_dir/t.$rr.5.txt > $RNA_Path_cnvs/$a[3].bed`;
+            `grep NaN -v $temp_dir/t.$rr.5.txt > $RNA_Path_cnvs/$a[0].bed`;
             `rm $temp_dir/t.$rr $temp_dir/t.$rr.*.txt`;
         }
     }@CNVS;
