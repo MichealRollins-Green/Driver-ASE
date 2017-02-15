@@ -611,7 +611,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             my @es = split("\t",$b);
             if(defined $already_done{$es[0]})
             {
-                print STDERR "The TCGA ID $es[0]:$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
+                print STDERR "The TCGA ID $es[0].$es[1] has pileup results in the $mpileup_outdir and will not be submitted for pileup again\n";
             }
             else
             {
