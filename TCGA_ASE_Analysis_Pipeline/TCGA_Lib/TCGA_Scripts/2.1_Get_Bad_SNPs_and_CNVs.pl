@@ -94,37 +94,37 @@ chdir "$RNA_Path";
 
 #make tumor normal tables for birdseed and copy number
 #mk_tn_tables(directory where Genotype data was downloaded,raw file name(same as directory name but will be used for files))
-#$Bad_SNP_CNV->mk_tn_tables("$geno_dir","$genotype");
+$Bad_SNP_CNV->mk_tn_tables("$geno_dir","$genotype");
 #mk_tn_tables(directory where Copy number estimate data was downloaded,raw file name(same as directory name but will be used for files))
-#$Bad_SNP_CNV->mk_tn_tables("$copy_dir","$cnv");
+$Bad_SNP_CNV->mk_tn_tables("$copy_dir","$cnv");
 
 
-#$parsing->vlookup("look.have_cd",2,"$genotype\_T",3,"1,2,3,4","y","$genotype\_1");
-#$parsing->vlookup("$genotype\_1",2,"$genotype\_N",3,2,"y","$genotype\_2");
-#$parsing->vlookup("$genotype\_2",2,"$cnv\_T",3,2,"y","$cnv\_1");
-#$parsing->vlookup("$cnv\_1",2,"$cnv\_N",3,2,"y","$cnv\_2");
+$parsing->vlookup("look.have_cd",2,"$genotype\_T",3,"1,2,3,4","y","$genotype\_1");
+$parsing->vlookup("$genotype\_1",2,"$genotype\_N",3,2,"y","$genotype\_2");
+$parsing->vlookup("$genotype\_2",2,"$cnv\_T",3,2,"y","$cnv\_1");
+$parsing->vlookup("$cnv\_1",2,"$cnv\_N",3,2,"y","$cnv\_2");
 
 
-#$parsing->pull_column("$cnv\_2","5,6,9,3,8,10,1","lookup_TN");
+$parsing->pull_column("$cnv\_2","5,6,9,3,8,10,1","lookup_TN");
 
-#`grep NaN -v lookup_TN |sort -k 3,3 > $disease_abbr\_lookup_TN`;
+`grep NaN -v lookup_TN |sort -k 3,3 > $disease_abbr\_lookup_TN`;
 
 
 
 #run_snps will link genotype from tumor and normal samples
 #It will call the suproutine flag_snps to find out bad snps
 #These bad snps will be written into the files within the bad snp directory that was specified or the default one if a directory was not
-#print "Now running run_snps\n";
+print "Now running run_snps\n";
 #run_snps(directory where Genotype data was downloaded,directory where Copy number estimate data was downloaded,TN file generated after the vlookups and pull_column,user defined directory from command line or default directory)
-#$Bad_SNP_CNV->run_snps("$geno_dir,$copy_dir","$RNA_Path/$disease_abbr\_lookup_TN","$bad_snps");
+$Bad_SNP_CNV->run_snps("$geno_dir,$copy_dir","$RNA_Path/$disease_abbr\_lookup_TN","$bad_snps");
 
 #get_cd_bed will try to lookup these bed snps with affy6.cd.txt
 #The results will be saved into the directory bad_snps_bed
-#print "Now running get_cd_bed.\n";
-#mkdir "$bad_snps_bed";
-#`rm -f $bad_snps_bed/*`;
+print "Now running get_cd_bed.\n";
+mkdir "$bad_snps_bed";
+`rm -f $bad_snps_bed/*`;
 #get_cd_bed(path to snp6.cd.txt,path to the RNA_Seq_Analysis directory,user defined directory from command line or default directory)
-#$Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/snp6.cd.txt","$bad_snps_bed","$bad_snps");
+$Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/snp6.cd.txt","$bad_snps_bed","$bad_snps");
 
 #run_cnv will use vlookup, strip_head, smooth, and delin_cnv.
 # As CNV only have signal values but not genotypes, this will get the mean difference
