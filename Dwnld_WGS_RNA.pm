@@ -258,8 +258,8 @@ sub ref_parse
         `$curl_cmd`;
     }@table;
     opendir REF, "ref_tmp" or die;
-    my @ref_txts = readdir(REF);
-    @ref_txts = grep{!/^\./}@ref_txts;
+    my @ref_txts = grep{!/^\.$/ && -f "ref_tmp/$_"} readdir(REF);
+    closedir(REF);
     
     foreach my $txt(@ref_txts)
     {
@@ -276,12 +276,13 @@ sub ref_parse
         close JSON;
         $/ = "\n";
     }
-    `rm -r ref_tmp`;
+    
     foreach my $key(keys %refs)
     {
         print RP "$key\t$refs{$key}\n";
     }
     close(RP);
+    `rm -r ref_tmp`;
 }
 
 sub index_ids
