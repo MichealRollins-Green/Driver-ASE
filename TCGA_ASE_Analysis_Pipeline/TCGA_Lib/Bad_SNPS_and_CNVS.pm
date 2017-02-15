@@ -88,21 +88,18 @@ sub pull_normal
     
     open(PN,$infile) or die("Can't open file for input: $!\n");
     open(PNO,">$outfile") or die("Can't open file for output: $!\n");
-    #removes header line;
-    my $r = <PN>;
-    while($r = <PN>)
+
+    while(my $r = <PN>)
     {
         chomp($r);
-        my @a = split("-",$r);
-        my $tumor_type = $a[-1];
+        my $tcga = [split("\\.",$r)]->[-1];#Get TCGA ID
+        my $tumor_type = [split("-",$tcga)]->[-1];#Get tumor/normal sample type
         chop($tumor_type);
-        my @id = split(":",$r);
-        my $tid = $id[-1];
-        chop($tid);
-        my $nid = substr($tid,0,12);
+        my $tid = $tcga;
+        $tid = substr($tid,0,12);
         if($tumor_type > 9)
         {
-            print PNO $r, "\t", $tid, "\t", $nid, "\n";
+            print PNO $r, "\t", $tid, "\t", $tumor_type, "\n";
         }
     }
     close(PN);
@@ -253,7 +250,7 @@ sub get_cd_bed
 {
     my $affy_cd = shift;
     my $self = $affy_cd and $affy_cd = shift if ref $affy_cd;
-    my $RNA_Path = shift;
+    my $bad_snps_bed = shift;
     my $bad_snps = shift;
     
     opendir(DD,"$bad_snps") or die "no $bad_snps: $!\n";
@@ -269,7 +266,7 @@ sub get_cd_bed
        $parsing->vlookup("$bad_snps/$_.uniq",1,"$affy_cd",4,"1,2,3","y","$bad_snps/$tmp.1.txt");
        `grep NaN -v $bad_snps/$tmp.1.txt > $bad_snps/$tmp.2.txt`;
        $parsing->pull_column("$bad_snps/$tmp.2.txt","2,3,4","$bad_snps/$tmp.3.txt");
-       `sort -k 1,1 -k 2,2n $bad_snps/$tmp.3.txt > $RNA_Path/bad_snps_bed/$_.bed`;
+       `sort -k 1,1 -k 2,2n $bad_snps/$tmp.3.txt > $bad_snps_bed/$_.bed`;
        `rm $bad_snps/$tmp.*.txt`;
     }@dd;
 }
@@ -283,7 +280,8 @@ sub run_cnv
     my $cnv_bed = shift;#./affy6/cnv.hg19.bed
     my $RNA_Path_cnvs = shift;
     
-    `mkdir temp` unless(-d "temp");
+my $temp_dir = "temp";
+    `mkdir $temp_dir` unless(-d "$temp_dir");
 
     open(my $CIN,"$infile") or die "Can't open $infile: $!\n";
     my @CNVS = <$CIN>;
@@ -299,14 +297,14 @@ sub run_cnv
         #This will check if the CNV files exist. They should always exist unless there were changes made to the directory prior to this running.
         if (-e "$copy/$a[5]" and -e "$copy/$a[6]")
         {
-            $parsing->vlookup("$copy/$a[5]",1,"$copy/$a[6]",1,2,"y","temp/t.$rr");
-            $parsing->vlookup("temp/t.$rr",1,$cnv_bed,4,"1,2,3","y","temp/t.$rr.1.txt");
-            $parsing->strip_head("temp/t.$rr.1.txt","temp/t.$rr.2.txt",2);
-            `sort -k 4,4 -k 5,5n temp/t.$rr.2.txt > temp/t.$rr.3.txt`;
-            smooth("temp/t.$rr.3.txt","temp/t.$rr.4.txt");
-            delin_cnv("temp/t.$rr.4.txt","temp/t.$rr.5.txt",0.5);
-            `grep NaN -v temp/t.$rr.5.txt > $RNA_Path_cnvs/$a[3].bed`;
-            `rm temp/t.$rr temp/t.$rr.*.txt`;
+            $parsing->vlookup("$copy/$a[5]",1,"$copy/$a[6]",1,2,"y","$temp_dir/t.$rr");
+            $parsing->vlookup("$temp_dir/t.$rr",1,$cnv_bed,4,"1,2,3","y","$temp_dir/t.$rr.1.txt");
+            $parsing->strip_head("$temp_dir/t.$rr.1.txt","$temp_dir/t.$rr.2.txt",2);
+            `sort -k 4,4 -k 5,5n $temp_dir/t.$rr.2.txt > $temp_dir/t.$rr.3.txt`;
+            smooth("$temp_dir/t.$rr.3.txt","$temp_dir/t.$rr.4.txt");
+            delin_cnv("$temp_dir/t.$rr.4.txt","$temp_dir/t.$rr.5.txt",0.5);
+            `grep NaN -v $temp_dir/t.$rr.5.txt > $RNA_Path_cnvs/$a[3].bed`;
+            `rm $temp_dir/t.$rr $temp_dir/t.$rr.*.txt`;
         }
     }@CNVS;
 }
