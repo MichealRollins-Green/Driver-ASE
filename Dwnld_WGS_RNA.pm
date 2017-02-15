@@ -254,13 +254,12 @@ sub ref_parse
    {
         chomp($_);
         my($refID,$UUID) = ($_ =~ /(\S*)\t(\S*)/);
-        my $aria_cmd = "aria2c -s 16 -x 16 --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$refID --dir ref_tmp -o $refID.$UUID";
-        `$aria_cmd`;
+        my $curl_cmd = "curl -# --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'ref_tmp/$refID.$UUID\' ";
+        `$curl_cmd`;
     }@table;
     opendir REF, "ref_tmp" or die;
-    my @ref_txts = grep{!/^\.$/ && -f "ref_tmp/$_"} readdir(REF);
-    #@ref_txts = grep{!/^\./}@ref_txts;
-	closedir(REF);
+    my @ref_txts = readdir(REF);
+    @ref_txts = grep{!/^\./}@ref_txts;
     
     foreach my $txt(@ref_txts)
     {
@@ -277,14 +276,12 @@ sub ref_parse
         close JSON;
         $/ = "\n";
     }
-    
+    `rm -r ref_tmp`;
     foreach my $key(keys %refs)
     {
-        print  RP "$key\t$refs{$key}\n";
+        print RP "$key\t$refs{$key}\n";
     }
     close(RP);
-
-`rm -r ref_tmp`;
 }
 
 sub index_ids
@@ -603,9 +600,9 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
         
         #Get already done pileup files and remove it from the $bamlist;
         print STDERR "Going to check already done pileups in the $mpileup_outdir\n";
-        my @already_done = `ls $mpileup_outdir|grep '-'`;
+        my @already_done = `ls $mpileup_outdir|grep '.'`;
            @already_done = grep{chomp;-s "$mpileup_outdir/$_";}@already_done;
-        my %already_done = map{my($k,$v) = $_ =~ /([^-]+):([^-]+)/;$k=>$v}@already_done;
+        my %already_done = map{my($k,$v) = $_ =~ /([^:]+):([^:]+)/;$k=>$v}@already_done;
         open(my $NBAMs,">$bamlist.new") or die "can not write data into the file $bamlist.new: $!\n";
         while(my $b = <$BAMs>)
         {
@@ -613,7 +610,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             my @es = split("\t",$b);
             if(defined $already_done{$es[0]})
             {
-                print STDERR "The TCGA ID $es[0].$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
+                print STDERR "The TCGA ID $es[0]:$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
             }
             else
             {
@@ -685,7 +682,6 @@ sub launch_RNA_Seq_pileup
         {
             opendir(DIR_FH,$cds_dir) or die "Can't open directory $cds_dir: $!\n";
             my @cds = readdir DIR_FH;
-closedir(DIR_FH);
             @cds = grep{/$a[1]/}@cds;
             #Runs a foreach loop because there may be TCGA IDs that are the same but with different sample types.
             foreach my $cd(@cds)
@@ -726,7 +722,6 @@ closedir(DIR_FH);
     mce_map
     {
         chomp($_);
-        my @aa = split("\\.",$_);
         print STDERR "Going to submit: $_\n";
         `$_`;          
     }@cmds;
@@ -836,14 +831,14 @@ sub dwnld_wgs_or_rna
         my @a = split("\t",$r);
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         mkdir "$output_dir/$a[0]" unless(-d "$output_dir/$a[0]");
-        #if a bam exists and there is no index file, aria will continue downloading the bam otherwise it will download the bam as new
+        #if a bam exists and there is no index file, curl will continue downloading the bam otherwise it will download the bam as new
         if (-f "$output_dir/$a[0]/$a[0].bam" and (!(-f "$output_dir/$a[0]/$a[0].bam.bai")))
         {
-            $cmd = "aria2c -s 16 -x 16 -c --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            $cmd = "curl -C --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$output_dir/$a[0]/$a[0].bam\' ";
         }
         else
         {
-            $cmd = "aria2c -s 16 -x 16 --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            $cmd = "curl --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$output_dir/$a[0]/$a[0].bam\' ";
         }
         
         unless(-f "$output_dir/$a[0]/$a[0].bam.bai")
@@ -964,11 +959,11 @@ sub download_files_from_gdc
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         if (-f "$output_dir/$a[0].$a[1]")
         {
-            $cmd = "aria2c -s 16 -x 16 -c --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            $cmd = "curl -C  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
         }
         else
         {
-            $cmd = "aria2c -s 16 -x 16 --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            $cmd = "curl  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
         }
         
         print STDERR "The following code is submitted: \n$cmd\n\n";
@@ -1059,12 +1054,12 @@ sub launch_wgs_mpileup_and_VarScan
         $norm .= ".".$a[2];
         print $norm," has been submitted\n";
         
-        my $reference = $fasta;
-        my $normal_bam = $a[0];
-        my $tumor_bam = $a[1];
+        my $reference=$fasta;
+        my $normal_bam=$a[0];
+        my $tumor_bam=$a[1];
         
         #Check the size of bam;
-        my $Gb = 1024 * 1024;
+        my $Gb=1024 * 1024;
         if((-s "$tumor_bam") < $Gb and (-s "$normal_bam") < $Gb)
         {
             print STDERR "Your bams are less than 1Gb, which is abnormal\n";
@@ -1171,11 +1166,13 @@ sub Bam_Ref_Checker
                 {
                    print STDERR "Your Bam is aligned to a ref with chrom labeled as 'Chr*'\n",
                                 "Please use the corresponding ref!\n";
+                   print "0";
                 }
                 else
                 {
                    print STDERR "Your Bam is aligned to a ref with chrom labeled in number\n",
-                                "Please use the corresponding ref!\n";                      
+                                "Please use the corresponding ref!\n";
+                   print "1";                        
                 }
                 last;    
             }
