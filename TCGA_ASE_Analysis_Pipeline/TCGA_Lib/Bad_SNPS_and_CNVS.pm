@@ -1,15 +1,11 @@
 #!/usr/bin/perl
 package TCGA_Lib::Bad_SNPS_and_CNVS;
 
-BEGIN{
-	    push @INC, "/home/hpc3256/NGS_lib/TCGA_Lib_HPCVL","/home/hpc3256/NGS_lib/Linux_codes_SAM/usr/share/perl5";
-	}
-
 use FindBin qw($Bin);
 use strict;
 use warnings;
 use lib "$Bin/";
-use MCE::Map max_workers=>6;
+use MCE::Map;
 use Parsing_Routines;
 
 require Exporter;
