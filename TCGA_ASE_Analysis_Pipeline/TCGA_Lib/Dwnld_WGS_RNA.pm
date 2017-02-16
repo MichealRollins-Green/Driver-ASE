@@ -254,16 +254,17 @@ sub ref_parse
    {
         chomp($_);
         my($refID,$UUID) = ($_ =~ /(\S*)\t(\S*)/);
-        my $aria_cmd = "aria2c -s 16 -x 16 --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$refID --dir ref_tmp -o $refID:$UUID";
+        my $aria_cmd = "aria2c -s 16 -x 16 --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$refID --dir ref_tmp -o $refID.$UUID";
         `$aria_cmd`;
     }@table;
     opendir REF, "ref_tmp" or die;
-    my @ref_txts = readdir(REF);
-    @ref_txts = grep{!/^\./}@ref_txts;
+    my @ref_txts = grep{!/^\./ && -f "ref_tmp/$_"} readdir(REF);
+    #@ref_txts = grep{!/^\./}@ref_txts;
+    closedir(REF);
     
     foreach my $txt(@ref_txts)
     {
-        my($RID,$UID) = split(":",$txt);
+        my($RID,$UID) = split("\\.",$txt);
         $/ = undef;
         open(JSON,"ref_tmp/$txt") or die "$!";
         my $info = <JSON>;
@@ -276,12 +277,14 @@ sub ref_parse
         close JSON;
         $/ = "\n";
     }
-    `rm -r ref_tmp`;
+    
     foreach my $key(keys %refs)
     {
-        print RP "$key\t$refs{$key}\n";
+        print  RP "$key\t$refs{$key}\n";
     }
     close(RP);
+
+`rm -r ref_tmp`;
 }
 
 sub index_ids
@@ -385,6 +388,7 @@ sub Dwld_WGSBam_and_do_mpileup
     my $VarScan_Path = shift;
     my $disease_abbr = shift;
     my $alt_ref = shift;
+    my $tables = shift;
     
     $mpileup_outdir =~ s/\/$//;
     
@@ -392,7 +396,7 @@ sub Dwld_WGSBam_and_do_mpileup
     
     if($action eq "all" or $action eq "download")
     {
-        if (-e "../$disease_abbr\_tables/already_done_WGS.txt")
+        if (-e "../$tables/already_done_WGS.txt")
         {
             #Checks if there a NaN in the bamlist file and removes them as it will interfere with the code below.
             open(BAMI,"$bamlist") or die "Can't open $bamlist: $!\n";
@@ -412,13 +416,13 @@ sub Dwld_WGSBam_and_do_mpileup
             close(BAMO);
             
             #Matches the tumor bams in the bam list
-            $parsing->vlookup("$bamlist.parse",1,"../$disease_abbr\_tables/already_done_WGS.txt",1,1,"y","wgs_tum.txt");
+            $parsing->vlookup("$bamlist.parse",1,"../$tables/already_done_WGS.txt",1,1,"y","wgs_tum.txt");
             #greps all that didn't match
             `cat wgs_tum.txt|grep NaN > wgs_NaN.txt`;
             #Gets all columns except for the NaN column
             $parsing->pull_column("wgs_NaN.txt","1,2,3,4,5,6,7","wgs_get_norm.txt");
             #Matches the normal bams
-            $parsing->vlookup("wgs_get_norm.txt",1,"../$disease_abbr\_tables/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
+            $parsing->vlookup("wgs_get_norm.txt",1,"../$tables/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
             #Gets the bams that did not meet any of the above criterea
             `cat wgs_norm.txt|grep NaN > $bamlist.new`;
             `rm wgs_*`;
@@ -513,7 +517,7 @@ sub Dwld_WGSBam_and_do_mpileup
             {
                 my @bam_pairs = mk_files_for_wgs("$key_dir/$newdir/$f","$wgs_output_dir");
                 
-                launch_wgs_mpileup_and_VarScan("$ref_fullpath","$mpileup_outdir",\@bam_pairs,$wgs_output_dir,$VarScan_Path,$disease_abbr,$alt_ref);
+                launch_wgs_mpileup_and_VarScan("$ref_fullpath","$mpileup_outdir",\@bam_pairs,$wgs_output_dir,$VarScan_Path,$disease_abbr,$alt_ref,"$tables");
             }
             
             my $npid = $parsing->Get_PIDs($excluded_pids);
@@ -599,9 +603,9 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
         
         #Get already done pileup files and remove it from the $bamlist;
         print STDERR "Going to check already done pileups in the $mpileup_outdir\n";
-        my @already_done = `ls $mpileup_outdir|grep ':'`;
+        my @already_done = `ls $mpileup_outdir|grep '-'`;
            @already_done = grep{chomp;-s "$mpileup_outdir/$_";}@already_done;
-        my %already_done = map{my($k,$v) = $_ =~ /([^:]+):([^:]+)/;$k=>$v}@already_done;
+        my %already_done = map{my($k,$v) = $_ =~ /([^-]+):([^-]+)/;$k=>$v}@already_done;
         open(my $NBAMs,">$bamlist.new") or die "can not write data into the file $bamlist.new: $!\n";
         while(my $b = <$BAMs>)
         {
@@ -609,7 +613,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             my @es = split("\t",$b);
             if(defined $already_done{$es[0]})
             {
-                print STDERR "The TCGA ID $es[0]:$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
+                print STDERR "The TCGA ID $es[0].$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
             }
             else
             {
@@ -681,13 +685,14 @@ sub launch_RNA_Seq_pileup
         {
             opendir(DIR_FH,$cds_dir) or die "Can't open directory $cds_dir: $!\n";
             my @cds = readdir DIR_FH;
+closedir(DIR_FH);
             @cds = grep{/$a[1]/}@cds;
             #Runs a foreach loop because there may be TCGA IDs that are the same but with different sample types.
             foreach my $cd(@cds)
             {
                 chomp($cd);
                 $cd =~ s/\/$//;
-                my $out_id = "$a[0]:$cd";
+                my $out_id = "$a[0].$cd";
                 $out_id =~ s/\.bed//;
                 $cd = $cds_dir.'/'.$cd;#It will be used by samtool mpileup in combine with comment -l
              
@@ -721,7 +726,7 @@ sub launch_RNA_Seq_pileup
     mce_map
     {
         chomp($_);
-        my @aa = split(":",$_);
+        my @aa = split("\\.",$_);
         print STDERR "Going to submit: $_\n";
         `$_`;          
     }@cmds;
@@ -957,13 +962,13 @@ sub download_files_from_gdc
         my @a = split("\t",$r);
         my $cmd;
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
-        if (-f "$output_dir/$a[0]:$a[1]")
+        if (-f "$output_dir/$a[0].$a[1]")
         {
-            $cmd = "aria2c -s 16 -x 16 -c --dir \'$output_dir/\' -o $a[0]:$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            $cmd = "aria2c -s 16 -x 16 -c --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
         }
         else
         {
-            $cmd = "aria2c -s 16 -x 16 --dir \'$output_dir/\' -o $a[0]:$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            $cmd = "aria2c -s 16 -x 16 --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
         }
         
         print STDERR "The following code is submitted: \n$cmd\n\n";
@@ -1029,10 +1034,11 @@ sub launch_wgs_mpileup_and_VarScan
     my $VarScan_Path = shift;
     my $disease_abbr = shift;
     my $alt_ref = shift;
+    my $tables = shift;
     
-    if (-e "../$disease_abbr\_tables/already_done_WGS.txt")
+    if (-e "../$tables/already_done_WGS.txt")
     {
-        open(DON,">>../$disease_abbr\_tables/already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
+        open(DON,">>../$tables/already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
     }
     else
     {
@@ -1050,15 +1056,15 @@ sub launch_wgs_mpileup_and_VarScan
         
         $a[0] =~ /([^\/]+)\/[^\/]+\.bam$/;#revised!
         my $norm = $1;
-        $norm .= ":".$a[2];
+        $norm .= ".".$a[2];
         print $norm," has been submitted\n";
         
-        my $reference=$fasta;
-        my $normal_bam=$a[0];
-        my $tumor_bam=$a[1];
+        my $reference = $fasta;
+        my $normal_bam = $a[0];
+        my $tumor_bam = $a[1];
         
         #Check the size of bam;
-        my $Gb=1024 * 1024;
+        my $Gb = 1024 * 1024;
         if((-s "$tumor_bam") < $Gb and (-s "$normal_bam") < $Gb)
         {
             print STDERR "Your bams are less than 1Gb, which is abnormal\n";
@@ -1165,13 +1171,11 @@ sub Bam_Ref_Checker
                 {
                    print STDERR "Your Bam is aligned to a ref with chrom labeled as 'Chr*'\n",
                                 "Please use the corresponding ref!\n";
-                   print "0";
                 }
                 else
                 {
                    print STDERR "Your Bam is aligned to a ref with chrom labeled in number\n",
-                                "Please use the corresponding ref!\n";
-                   print "1";                        
+                                "Please use the corresponding ref!\n";                      
                 }
                 last;    
             }
