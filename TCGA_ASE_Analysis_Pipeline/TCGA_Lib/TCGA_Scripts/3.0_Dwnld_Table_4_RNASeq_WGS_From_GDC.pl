@@ -39,7 +39,7 @@ my $TCGA_Pipeline_Dir = realpath("../../");
 mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
 my $Table_Dir = "tables";
-my $tables = "$disiease_abbr\_tables";
+my $tables = "$disease_abbr\_tables";
 
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $disease_abbr || !defined $Exp_Strategy)
