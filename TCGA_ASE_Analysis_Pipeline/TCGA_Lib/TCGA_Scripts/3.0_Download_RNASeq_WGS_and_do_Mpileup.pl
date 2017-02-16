@@ -5,7 +5,6 @@ use FindBin qw($Bin);
 use lib "$Bin/..";
 use Parsing_Routines;
 use Dwnld_WGS_RNA;
-use TCGA_ASE_Analysis;
 use File::Copy;
 use Getopt::Long;
 use autodie;
@@ -20,7 +19,6 @@ chdir $Bin;
 #Creates objects of the modules that are going to be used in this script.
 my $parsing = TCGA_Lib::Parsing_Routines->new;
 my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
-my $ase_analysis = TCGA_Lib::TCGA_ASE_Analysis->new;
 
 #the different oprions for this script. The out_dir and ase_dir are optional.
 GetOptions(
