@@ -603,7 +603,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
         
         #Get already done pileup files and remove it from the $bamlist;
         print STDERR "Going to check already done pileups in the $mpileup_outdir\n";
-        my @already_done = `ls $mpileup_outdir|grep '-'`;
+        my @already_done = `ls $mpileup_outdir|grep '.'`;
            @already_done = grep{chomp;-s "$mpileup_outdir/$_";}@already_done;
         my %already_done = map{my($k,$v) = $_ =~ /([^\.]+)\.([^\.]+)/;$k=>$v}@already_done;
         open(my $NBAMs,">$bamlist.new") or die "can not write data into the file $bamlist.new: $!\n";
