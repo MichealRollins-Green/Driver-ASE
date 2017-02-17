@@ -1,7 +1,10 @@
+#!/usr/bin/perl
+
 package TCGA_Lib::TCGA_ASE_Analysis;
 
 use warnings;
 use strict;
+use Parsing_Routines;
 use FileHandle;
 use File::Copy qw(copy);
 use MCE::Map;
@@ -10,7 +13,6 @@ use Cwd;
 use Math::CDF qw(:all);
 use FindBin qw($Bin);
 use lib "$Bin/";
-use Parsing_Routines;
 no strict "refs";
 
 require Exporter;
@@ -53,6 +55,7 @@ sub compile_ase_no_tum_norm
     my $self = $infile and $infile = shift if ref $infile;
     my $cds_dir = shift;
     my $mpileups_path = shift;
+    my $ase_counts = shift;
     
     $cds_dir =~ s/\/$//;
     open(my $CANTN,$infile) or die "Can't open $infile: $!.\n";
@@ -65,7 +68,7 @@ sub compile_ase_no_tum_norm
         my $cd = $a[1];
         # have both tumor and normal pileups
         print STDERR "working on $cd\n";
-        pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","ase_counts/$mpileup")
+        pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","$ase_counts/$mpileup")
     }@TN;
 }
 
@@ -174,15 +177,15 @@ sub change_beds_gl_ase
 {
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $RNA_Path = shift;
-    my $ase = shift;
+    my $RNA_Path_cds_sorted = shift;
+    my $ase_cds_sorted_ase = shift;
 
     mce_map_f
     {
 	my $TCGA = [split("\t",$_)]->[0];
         chomp($TCGA);
         print "Now working on $TCGA\n";
-        Change_CDChr_Info_For_GeneASE("$TCGA","$RNA_Path/cds_sorted","$RNA_Path/$ase/cds_sorted_ase/$TCGA");
+        Change_CDChr_Info_For_GeneASE("$TCGA","$RNA_Path_cds_sorted","$ase_cds_sorted_ase/$TCGA");
     }$infile;
 }
 
@@ -194,8 +197,8 @@ sub Change_CDChr_Info_For_GeneASE
     
     $cd_dir =~ s/\/$//;
     
-    my $FH = FileHandle->new("$cd_dir/$cd") or die "no cd_dir/$cd: $!\n";
-    my $OU = FileHandle->new(">$outdir") or die "Can't $outdir: $!\n";
+    my $FH = FileHandle->new("$cd_dir/$cd") or die "no $cd_dir/$cd: $!\n";
+    my $OU = FileHandle->new(">$outdir") or die "Can't open $outdir: $!\n";
     while(my $l = <$FH>)
     {
         chomp($l);
@@ -215,11 +218,13 @@ sub compile_gene_ase_faster
     
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $cds_dir = shift;
+    my $cds_ase_dir = shift;
     my $ref_bed = shift;
-    my $RNA_ase_Path = shift;
+    my $ase_path = shift;
+    my $ase_counts = shift;
+    my $gene_level = shift;
     
-    $cds_dir =~ s/\/$//;
+    $cds_ase_dir =~ s/\/$//;
     
     open(my $gene,"$infile") or die "Can't open $infile: $!\n";
 
@@ -237,7 +242,7 @@ sub compile_gene_ase_faster
       #when use the above sub, be caution about pbinom from the perl Math::CDF.
       #For the following bsub, R pbinom.R was used instead of perl pbinom.
       
-      compile_gene_ase("$rr","$ref_bed","$cds_dir","$lines","$RNA_ase_Path");
+      compile_gene_ase("$rr","$ref_bed","$cds_ase_dir","$lines","$ase_path","$ase_counts","$gene_level");
       
     }@gene_level;
     close($gene);
@@ -248,22 +253,22 @@ sub compile_gene_ase
 {
     my $rd_id = shift;#random file id;
     my $bed_ref = shift;
-    my $dir = shift;
+    my $cds_ase_dir = shift;
     my $l = shift;
-    my $RNA_ase_Path = shift;
+    my $ase_path = shift;
+    my $ase_counts = shift;
+    my $gene_level = shift;
     
     my @es = split(":",$l);
-    mkdir "$RNA_ase_Path/temp";
+    my $temp = "temp";
+
+    mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
    
-    #rejoins because the split above separates at the colon between the ase_counts files and cds_ase_sorted files
-    #which means that it will alsp split the ase sorted files as they have a colon in them for UUID and TCGA ID.
-    $es[0] = join(":",$es[0],$es[1]);
-   
-    convert2mm("$RNA_ase_Path/ase_counts/$es[0]","$RNA_ase_Path/temp/mm.$rd_id.bed");
+    convert2mm("$ase_path/$ase_counts/$es[0]","$ase_path/$temp/mm.$rd_id.bed");
     #Overlap ase_count bed with cds_bed;
     #Be caution about the bed format between the two files, especially for chr label!
-    TallyOverDefBed("$RNA_ase_Path/temp/mm.$rd_id.bed","$dir/$es[2]","$RNA_ase_Path/temp/tallied.$rd_id.bed","$RNA_ase_Path/temp");
-    AlleleCount2bed("$RNA_ase_Path/temp/tallied.$rd_id.bed","$bed_ref","$RNA_ase_Path/gene_level/$es[0]","$RNA_ase_Path/temp");   
+    TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_ase_dir/$es[1]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
+    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$es[0]","$ase_path/$temp");   
 }
 
 sub convert2mm
@@ -312,7 +317,7 @@ sub TallyOverDefBed
     my $snp = shift;#snp.bed
     my $def = shift;#def.bed, such as refseq.ucsc.ensembl.mrna.hg9.nr.bed
     my $out = shift;#output filename
-    my $RNA_ase_Path = shift;#ase path
+    my $ase_path = shift;#ase path
     
     my $sr = 0;
     my $minC = 0;
@@ -346,8 +351,8 @@ sub TallyOverDefBed
         my $MFH = "M".rand();
         my $FFH = "F".rand();
        
-        open($PFH,">$RNA_ase_Path/plus.$rr.bed") or die "cant write data into plus.$rr.bed: $!";;
-        open($MFH,">$RNA_ase_Path/minus.$rr.bed") or die "cant write data into minus.$rr.bed: $!";
+        open($PFH,">$ase_path/plus.$rr.bed") or die "cant write data into plus.$rr.bed: $!";;
+        open($MFH,">$ase_path/minus.$rr.bed") or die "cant write data into minus.$rr.bed: $!";
         open($FFH,$snp) or die "$snp not here: $!\n";
         while(my $r = <$FFH>)
         {
@@ -369,10 +374,10 @@ sub TallyOverDefBed
     
     if($sr == 1)
     {
-        `overlapSelect $def $RNA_ase_Path/plus.$rr.bed -mergeOutput $RNA_ase_Path/tmp.$rr.plus.out`;
-        `overlapSelect $def $RNA_ase_Path/minus.$rr.bed -mergeOutput $RNA_ase_Path/tmp.$rr.minus.out`;
+        `overlapSelect $def $ase_path/plus.$rr.bed -mergeOutput $ase_path/tmp.$rr.plus.out`;
+        `overlapSelect $def $ase_path/minus.$rr.bed -mergeOutput $ase_path/tmp.$rr.minus.out`;
         my $F_FH = "F_FH".rand();
-        open($F_FH,"$RNA_ase_Path/tmp.$rr.plus.out") or die "no tmp.plus.out: $!\n";
+        open($F_FH,"$ase_path/tmp.$rr.plus.out") or die "no tmp.plus.out: $!\n";
         
         while(my $r = <$F_FH>)
         {    
@@ -457,10 +462,10 @@ sub TallyOverDefBed
        	    }
         } #while plus
         close $F_FH;
-        `rm $RNA_ase_Path/tmp.$rr.plus.out`;
+        `rm $ase_path/tmp.$rr.plus.out`;
            
         my $FH = "FH".rand();
-        open($FH,"$RNA_ase_Path/tmp.$rr.minus.out") or die "no tmp.minus.out: $!\n";
+        open($FH,"$ase_path/tmp.$rr.minus.out") or die "no tmp.minus.out: $!\n";
            
         while(my $r = <$FH>)
         {    
@@ -544,14 +549,14 @@ sub TallyOverDefBed
        	    }
         }
        	close $FH;
-       	unlink("$RNA_ase_Path/tmp.$rr.minus.out");
+       	unlink("$ase_path/tmp.$rr.minus.out");
     }
     else
     {
         # no -strand
-       	`overlapSelect $def $snp -mergeOutput $RNA_ase_Path/tmp.$rr.all.out`;
+       	`overlapSelect $def $snp -mergeOutput $ase_path/tmp.$rr.all.out`;
         my $FH_= "FH_".rand();
-        open($FH_,"$RNA_ase_Path/tmp.$rr.all.out") or die "no tmp.$rr.all.out: $!\n";
+        open($FH_,"$ase_path/tmp.$rr.all.out") or die "no tmp.$rr.all.out: $!\n";
            
         while(my $r = <$FH_>)
         {    
@@ -637,7 +642,7 @@ sub TallyOverDefBed
        	    
         }
         close $FH_;
-       	unlink("$RNA_ase_Path/tmp.$rr.all.out");
+       	unlink("$ase_path/tmp.$rr.all.out");
     }
 }
 
@@ -646,7 +651,7 @@ sub AlleleCount2bed
     my $talliedBed = shift;
     my $RefBed = shift;
     my $gene_ase_out = shift;
-    my $RNA_ase_Path = shift;
+    my $ase_path = shift;
     
     my $newRefBed = $RefBed;
     my $rn = rand();
@@ -687,7 +692,7 @@ sub AlleleCount2bed
     my $snp_ids = 'y';#'y'
     my $print_cd = 'y';#'y'
     
-    `overlapSelect $RefBed $talliedBed $sr $strand -mergeOutput $RNA_ase_Path/temp.$rr.bed`;
+    `overlapSelect $RefBed $talliedBed $sr $strand -mergeOutput $ase_path/temp.$rr.bed`;
 
     #Contents of temp.$rr.bed;
     #Array_Num: Headers         RowEelments
@@ -714,11 +719,11 @@ sub AlleleCount2bed
     #conteins of cloumns 1-4: chr1    200295519       200296221        T|C|100|182|100|182|100|182
     $ff += 4;
     #The following SORT step is necessary for correct calculation of parameters, such as ppp,logr, and so on;
-    `sort -k $ff,$ff $RNA_ase_Path/temp.$rr.bed > $RNA_ase_Path/sorted.$rr.temp.bed`;
-    `mv $RNA_ase_Path/sorted.$rr.temp.bed $RNA_ase_Path/temp.$rr.bed`;
+    `sort -k $ff,$ff $ase_path/temp.$rr.bed > $ase_path/sorted.$rr.temp.bed`;
+    `mv $ase_path/sorted.$rr.temp.bed $ase_path/temp.$rr.bed`;
     
     my $BEDFH = "BEDFH".rand();
-    open($BEDFH,"$RNA_ase_Path/temp.$rr.bed") or die "Cannot open $RNA_ase_Path/temp.$rr.bed: $!\n";
+    open($BEDFH,"$ase_path/temp.$rr.bed") or die "Cannot open $ase_path/temp.$rr.bed: $!\n";
     my $OUTFH = "OUTFH".rand();
     open($OUTFH,">$out") or die "Cannot open $out for writing: $!\n";
     
@@ -829,7 +834,7 @@ sub AlleleCount2bed
             
             if($highest_b eq 'y')
             {
-		print $OUTFH "\t", highest_b($snps_out,"$RNA_ase_Path");
+		print $OUTFH "\t", highest_b($snps_out,"$ase_path");
 	    }
             
             if($snp_ids eq 'y')
@@ -924,7 +929,7 @@ sub AlleleCount2bed
 
     if($highest_b eq 'y')
     {
-	print $OUTFH "\t", highest_b($snps_out,"$RNA_ase_Path");
+	print $OUTFH "\t", highest_b($snps_out,"$ase_path");
     }
 
     if($snp_ids eq 'y')
@@ -948,7 +953,7 @@ sub AlleleCount2bed
    
     close($OUTFH);
     close($BEDFH);
-    `rm $RNA_ase_Path/temp.$rr.bed`;
+    `rm $ase_path/temp.$rr.bed`;
     system("rm $RefBed");
 }
 
@@ -1240,7 +1245,8 @@ sub mk_files
 {
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $RNA_ase_path = shift;
+    my $ase_path = shift;
+    my $gene_level = shift;
     
     open(MKFI,"$infile") or die "Can't open $infile: $!\n";
     open(N,">normal_ff") or die "no normal out\n";
@@ -1251,10 +1257,10 @@ sub mk_files
         chomp($r);
         my @a = split("\t",$r);
         
-        print T "$RNA_ase_path/gene_level/".$a[0], "\t", $a[2], "\n";
+        print T "$ase_path/$gene_level/".$a[0], "\t", $a[2], "\n";
         unless($a[1] eq 'NaN')
         {
-            print N "$RNA_ase_path/gene_level/".$a[1], "\t", $a[2], "\n";
+            print N "$ase_path/$gene_level/".$a[1], "\t", $a[2], "\n";
         }
     }
     close(MKFI);
@@ -1267,13 +1273,14 @@ sub run_problem_cnvs
     my $bad_cnv_dir = shift;
     my $self = $bad_cnv_dir and $bad_cnv_dir = shift if ref $bad_cnv_dir;
     my $infile = shift;
-    my $RNA_ase_Path = shift;
-    my $ase_matrix = shift;
+    my $ase_path = shift;
+    my $matrix = shift;
+    my $problem_cnvs = shift;
     
     open(RPCI,"$infile") or die "Can't open $infile: $!";
     
-    mkdir "$RNA_ase_Path/problem_cnvs";
-    system("rm -f $RNA_ase_Path/problem_cnvs/*");
+    mkdir "$ase_path/$problem_cnvs" unless(-d "$ase_path/$problem_cnvs");
+    system("rm -f $ase_path/$problem_cnvs/*");
     while(my $r = <RPCI>)
     {
         chomp($r);
@@ -1283,8 +1290,8 @@ sub run_problem_cnvs
         
         my $bed = substr($a[2],0,12);
         
-        `overlapSelect $bad_cnv_dir/$bed.bed $RNA_ase_Path/$ase_matrix/rowlabels.bed $RNA_ase_Path/cnv_t`;
-        pull_problems("$RNA_ase_Path/cnv_t","$RNA_ase_Path/problem_cnvs/$a[0]");
+        `overlapSelect $bad_cnv_dir/$bed.bed $ase_path/$matrix/rowlabels.bed $ase_path/cnv_t`;
+        pull_problems("$ase_path/cnv_t","$ase_path/$problem_cnvs/$a[0]");
     }
     close(RPCI);
 }
@@ -1294,13 +1301,14 @@ sub run_problem_snps
     my $bad_snp_dir = shift;
     my $self = $bad_snp_dir and $bad_snp_dir = shift if ref $bad_snp_dir;
     my $infile = shift;
-    my $RNA_ase_Path = shift;
-    my $ase_matrix = shift;
+    my $ase_path = shift;
+    my $matrix = shift;
+    my $problem_snps = shift;
     
     $bad_snp_dir =~ s/\/$//;
     
-    mkdir "$RNA_ase_Path/problem_snps" unless(-d "$RNA_ase_Path/problem_snps");
-    system("rm -f $RNA_ase_Path/problem_snps/*");
+    mkdir "$ase_path/$problem_snps" unless(-d "$ase_path/$problem_snps");
+    system("rm -f $ase_path/$problem_snps/*");
     
     open(PPSI,"$infile") or die "Can't open $infile: $!\n";
     
@@ -1313,8 +1321,8 @@ sub run_problem_snps
 	
 	my $bed = substr($a[2],0,12);
 	
-	`overlapSelect $bad_snp_dir/$bed.bed $RNA_ase_Path/$ase_matrix/rowlabels.bed $RNA_ase_Path/snp_t`;
-	pull_problems("$RNA_ase_Path/snp_t","$RNA_ase_Path/problem_snps/$a[0]");
+	`overlapSelect $bad_snp_dir/$bed.bed $ase_path/$matrix/rowlabels.bed $ase_path/snp_t`;
+	pull_problems("$ase_path/snp_t","$ase_path/$problem_snps/$a[0]");
     }
     close(PPSI);
 }
