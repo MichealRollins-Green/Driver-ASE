@@ -105,7 +105,7 @@ $parsing->vlookup("$genotype\_2",2,"$cnv\_T",3,2,"y","$cnv\_1");
 $parsing->vlookup("$cnv\_1",2,"$cnv\_N",3,2,"y","$cnv\_2");
 
 
-$parsing->pull_column("$cnv\_2","5,6,9,3,8,10,1","lookup_TN");
+$parsing->pull_column("$cnv\_2","4,6,9,3,8,10,1","lookup_TN");
 
 `grep NaN -v lookup_TN |sort -k 3,3 > $disease_abbr\_lookup_TN`;
 
