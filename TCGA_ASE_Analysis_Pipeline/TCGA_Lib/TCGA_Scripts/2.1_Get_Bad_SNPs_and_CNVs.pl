@@ -90,7 +90,7 @@ if (!(-d "$copy_dir"))
 chdir "$RNA_Path";
 
 `mkdir -p $bad_snps` unless(-d "$bad_snps");
-`rm -f $RNA_Path/$bad_snps/*`;
+`rm -rf $RNA_Path/$bad_snps/*`;
 
 #make tumor normal tables for birdseed and copy number
 #mk_tn_tables(directory where Genotype data was downloaded,raw file name(same as directory name but will be used for files))
@@ -121,8 +121,8 @@ $Bad_SNP_CNV->run_snps("$geno_dir,$copy_dir","$RNA_Path/$disease_abbr\_lookup_TN
 #get_cd_bed will try to lookup these bed snps with affy6.cd.txt
 #The results will be saved into the directory bad_snps_bed
 print "Now running get_cd_bed.\n";
-mkdir "$bad_snps_bed";
-`rm -f $bad_snps_bed/*`;
+mkdir "$bad_snps_bed" unless(-d "$bad_snps_bed");
+`rm -rf $bad_snps_bed/*`;
 #get_cd_bed(path to snp6.cd.txt,path to the RNA_Seq_Analysis directory,user defined directory from command line or default directory)
 $Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/snp6.cd.txt","$bad_snps_bed","$bad_snps");
 
@@ -155,8 +155,8 @@ $Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/snp6.cd.txt","$bad_snps_bed","$bad
 #bad_cnv.bed files will be saved into the dir bad_cnvs
 #If there are errors in this process then it most likely means that some CNVs were not download properly.
 print "Now running run_cnv.\n";
-mkdir "$RNA_Path/$bad_cnvs";
-`rm -f $RNA_Path/$bad_cnvs/*`;
+mkdir "$bad_cnvs" unless(-d "$bad_cnvs");
+`rm -rf $RNA_Path/$bad_cnvs/*`;
 #run_cnv(TN file generated after the vlookups and pull_column,directory where Copy number estimate data was downloaded,directory where Genotype data was downloaded,cnv.hg19.bed file,bad_cnvs directory)
 $Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$copy_dir","$geno_dir","$RNA_Path/$affy_dir/cnv.hg19.bed","$RNA_Path/$bad_cnvs");
 
