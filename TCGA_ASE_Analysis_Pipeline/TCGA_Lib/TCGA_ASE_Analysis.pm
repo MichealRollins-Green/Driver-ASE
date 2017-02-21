@@ -260,9 +260,14 @@ sub compile_gene_ase
     my $gene_level = shift;
     
     my @es = split(":",$l);
+
     my $temp = "temp";
 
     mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
+   
+    #rejoins because the split above separates at the colon between the ase_counts files and cds_ase_sorted files
+    #which means that it will alsp split the ase sorted files as they have a colon in them for UUID and TCGA ID.
+    #$es[0] = join(".",$es[0],$es[1]);
    
     convert2mm("$ase_path/$ase_counts/$es[0]","$ase_path/$temp/mm.$rd_id.bed");
     #Overlap ase_count bed with cds_bed;
@@ -1140,14 +1145,14 @@ sub pull_TN
     chomp($r);
     my @old = split("\t",$r);
     my @a;
-    
     my $bad_snp = 0;
     my $bad_cnv = 0;
-    if(-e $bad_cnv_dir."/".substr($old[1],0,12).".bed")
+    
+    if(-e $bad_cnv_dir."/".$old[1])
     {
         $bad_cnv = 1;
     }
-    if(-e $bad_snp_bed_dir."/".substr($old[1],0,12).".bed")
+    if(-e $bad_snp_bed_dir."/".$old[1])
     {
         $bad_snp = 1;
     }
@@ -1163,7 +1168,6 @@ sub pull_TN
             {
                 $old[3] = '0' . $old[3];
             }
-            
         }
         
         if (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
@@ -1180,9 +1184,10 @@ sub pull_TN
                 print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
             }
         }
+        undef @old;
         @old = @a;
         
-        if(-e $bad_cnv_dir."/".substr($old[1],0,12).".bed")
+       if(-e $bad_cnv_dir."/".$old[1])
         {
             $bad_cnv = 1;
         }
@@ -1190,7 +1195,7 @@ sub pull_TN
         {
             $bad_cnv = 0;
         }
-        if(-e $bad_snp_bed_dir."/".substr($old[1],0,12).".bed")
+        if(-e $bad_snp_bed_dir."/".$old[1])
         {
             $bad_snp = 1;
         }
@@ -1288,9 +1293,9 @@ sub run_problem_cnvs
         
         print STDERR "working on $a[0]\n";
         
-        my $bed = substr($a[2],0,12);
+        my $bed = "$a[2].bed";
         
-        `overlapSelect $bad_cnv_dir/$bed.bed $ase_path/$matrix/rowlabels.bed $ase_path/cnv_t`;
+        `overlapSelect $bad_cnv_dir/$bed $ase_path/$matrix/rowlabels.bed $ase_path/cnv_t`;
         pull_problems("$ase_path/cnv_t","$ase_path/$problem_cnvs/$a[0]");
     }
     close(RPCI);
@@ -1319,9 +1324,9 @@ sub run_problem_snps
 	
 	print STDERR "working on $a[0]\n";
 	
-	my $bed = substr($a[2],0,12);
+	my $bed = "$a[2].bed";
 	
-	`overlapSelect $bad_snp_dir/$bed.bed $ase_path/$matrix/rowlabels.bed $ase_path/snp_t`;
+	`overlapSelect $bad_snp_dir/$bed $ase_path/$matrix/rowlabels.bed $ase_path/snp_t`;
 	pull_problems("$ase_path/snp_t","$ase_path/$problem_snps/$a[0]");
     }
     close(PPSI);
