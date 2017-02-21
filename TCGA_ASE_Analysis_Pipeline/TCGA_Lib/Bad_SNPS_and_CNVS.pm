@@ -257,7 +257,7 @@ sub get_cd_bed
     opendir(DD,"$bad_snps") or die "no $bad_snps: $!\n";
     my @dd = readdir(DD);
     closedir(DD);
-    @dd = grep{!/^\./}@dd;#gets rid off . and ..
+    @dd = grep{!/^\./ && -f "$bad_snps/$_"}@dd;#gets rid off . and ..
     mce_map
     {
       print STDERR "working on $_\n";
@@ -267,7 +267,7 @@ sub get_cd_bed
        $parsing->vlookup("$bad_snps/$_.uniq",1,"$affy_cd",4,"1,2,3","y","$bad_snps/$tmp.1.txt");
        `grep NaN -v $bad_snps/$tmp.1.txt > $bad_snps/$tmp.2.txt`;
        $parsing->pull_column("$bad_snps/$tmp.2.txt","2,3,4","$bad_snps/$tmp.3.txt");
-       `sort -k 1,1 -k 2,2n $bad_snps/$tmp.3.txt > $bad_snps_bed/$_.bed`;
+       `sort -k 1,1 -k 2,2n $bad_snps/$tmp.3.txt > $bad_snps_bed/$_`;
        `rm $bad_snps/$tmp.*.txt`;
     }@dd;
 }
@@ -283,6 +283,7 @@ sub run_cnv
     
 my $temp_dir = "temp";
     `mkdir $temp_dir` unless(-d "$temp_dir");
+    `rm -rf $temp_dir`;
 
     open(my $CIN,"$infile") or die "Can't open $infile: $!\n";
     my @CNVS = <$CIN>;
@@ -304,7 +305,7 @@ my $temp_dir = "temp";
             `sort -k 4,4 -k 5,5n $temp_dir/t.$rr.2.txt > $temp_dir/t.$rr.3.txt`;
             smooth("$temp_dir/t.$rr.3.txt","$temp_dir/t.$rr.4.txt");
             delin_cnv("$temp_dir/t.$rr.4.txt","$temp_dir/t.$rr.5.txt",0.5);
-            `grep NaN -v $temp_dir/t.$rr.5.txt > $RNA_Path_cnvs/$a[0].bed`;
+            `grep NaN -v $temp_dir/t.$rr.5.txt > $RNA_Path_cnvs/$a[0]`;
             `rm $temp_dir/t.$rr $temp_dir/t.$rr.*.txt`;
         }
     }@CNVS;
