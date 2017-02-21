@@ -73,7 +73,7 @@ if(!(-d "$RNA_Path/$affy_dir"))
 chdir "$RNA_Path";
 
 `mkdir -p "$bases_dir"` unless(-d "$bases_dir");
-`rm -f $bases_dir/*`;
+`rm -rf $bases_dir/*`;
 
 if (!(-d "$SNP6_Raw_Files_Dir"))
 {
@@ -88,12 +88,12 @@ my @birdseed = $parsing->get_only_files_in_dir("$SNP6_Raw_Files_Dir");
 mce_map
 {
     chomp ($_);
-    #Prepare_Genos(Genotype files,directory where Genotype files were downloaded,snp6.cd.txt file created from 1.0,$bases_dir,sample type(e.g. 0(normal), 1(tumor) or 2(normal/tumor))
+   #Prepare_Genos(Genotype files,directory where Genotype files were downloaded,snp6.cd.txt file created from 1.0,user or default output directory from command line,sample type(e.g. 0(normal), 1(tumor) or 2(normal/tumor))
     $impute_plink->Prepare_Genos("$_","$SNP6_Raw_Files_Dir","$RNA_Path/$affy_dir/snp6.cd.txt","$bases_dir",2);
 }@birdseed;
 
 #remove the .t files in the $bases_dir
-my @t_files = `ls $bases_dir`;
+my @t_files = `ls "$bases_dir"`;
 chdir "$bases_dir";
 for(my $i = 0;$i < scalar(@t_files);$i++)
 {
@@ -106,96 +106,96 @@ for(my $i = 0;$i < scalar(@t_files);$i++)
 
 chdir "$RNA_Path";
 
-my @files = $parsing->get_only_files_in_dir("$bases_dir");
-   @files=grep{!/^\.$/}@files;
-my $selected_file = $files[-1];
-#pull_column(file to pull column from,column(s) to pull, output file)
-$parsing->pull_column("$bases_dir/$selected_file","1","$disease_abbr\_t");
+ my @files = $parsing->get_only_files_in_dir("$bases_dir");
+    @files=grep{!/^\./ && -f "$bases_dir/$_"}@files;
+ my $selected_file = $files[-1];
+ #pull_column(file to pull column from,column(s) to pull, output file)
+ $parsing->pull_column("$bases_dir/$selected_file","1","$disease_abbr\_t");
 
-mkdir "$map_dir" unless(-d "$RNA_Path/$map_dir");
-`rm -f $RNA_Path/$map_dir/*`;
+ mkdir "$map_dir" unless(-d "$RNA_Path/$map_dir");
+ `rm -rf $RNA_Path/$map_dir/*`;
 
-$parsing->vlookup("$disease_abbr\_t",1,"$RNA_Path/$affy_dir/snp6.cd.txt",4,"1,3","y","map_for_sort");
+ $parsing->vlookup("$disease_abbr\_t",1,"$RNA_Path/$affy_dir/snp6.cd.txt",4,"1,3","y","map_for_sort");
 
-`sort -k 2,2 -k 3,3n map_for_sort > map_for_pull_column`;
-$parsing->pull_column("map_for_pull_column","2,3,1","mk_map_file");
-#mk_map(file used to make maps, path to RNA_Seq_Analysis directory)
-$impute_plink->mk_map("mk_map_file","$RNA_Path/$map_dir");
+ `sort -k 2,2 -k 3,3n map_for_sort > map_for_pull_column`;
+ $parsing->pull_column("map_for_pull_column","2,3,1","mk_map_file");
+ #mk_map(file used to make maps, path to RNA_Seq_Analysis directory)
+ $impute_plink->mk_map("mk_map_file","$RNA_Path/$map_dir");
 
-my @maps = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
-@maps = grep{!/^\.$/ and /^[0-9x]+.map$/i}@maps;
-open(CHR,">chrs") or die("Can't open filehandle: $!");
-for(my $i=0;$i<scalar(@maps);$i++)
+ my @maps = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
+ @maps = grep{!/^\./ and /^[0-9x]+.map$/i}@maps;
+ open(CHR,">chrs") or die("Can't open filehandle: $!");
+ for(my $i=0;$i<scalar(@maps);$i++)
 {
-    print CHR $maps[$i], "\n";
-}
-close(CHR);
+     print CHR $maps[$i], "\n";
+ }
+ close(CHR);
 
 mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
-`rm -f $RNA_Path/$ped_dir/*`;
+`rm -rf $RNA_Path/$ped_dir/*`;
 
-#mk_ped_list_4_plink(file with chr.map,$bases_dir,outfile for peds,path to RNA_Seq_Analysis directory)
-$impute_plink->mk_ped_list_4_plink("chrs","$bases_dir","ped_list","$RNA_Path");
+#mk_ped_list_4_plink(file with chr.map,user or default output directory from command line,outfile for peds,path to RNA_Seq_Analysis directory)
+ $impute_plink->mk_ped_list_4_plink("chrs","$bases_dir","ped_list","$RNA_Path");
 
-mce_map_f
-{
-    chomp($_);
-    my @lines = split("\t",$_);
-    #only keep normal samples for plink
-    my $tn = [split("-",$lines[1])]->[-1];
-    $tn =~ s/\D+//;
-    #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,$bases_dir,$map_dir)
-    $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir") if $tn > 9;
-}"$RNA_Path/ped_list";
+  mce_map_f
+  {
+      chomp($_);
+      my @lines = split("\t",$_);
+      #only keep normal samples for plink
+      my $tn = [split("-",$lines[1])]->[-1];
+      $tn =~ s/\D+//;
+      #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,user or default output directory from command line)
+      $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir") if $tn > 9;
+  }"$RNA_Path/ped_list";
 
-my @maps_bim = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
-@maps_bim = grep {/bim/}@maps_bim;
-open(BIMS,">$RNA_Path/$map_dir/Small_Bims.txt") or die("Can't open file for output: $!");
-for(my $i=0;$i<scalar(@maps_bim);$i++)
-{
-    $maps_bim[$i] =~ s/.bim//;
-    print BIMS "$maps_bim[$i]\n";
-}
-close(BIMS);
+  my @maps_bim = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
+  @maps_bim = grep {/bim/}@maps_bim;
+  open(BIMS,">$RNA_Path/$map_dir/Small_Bims.txt") or die("Can't open file for output: $!");
+  for(my $i=0;$i<scalar(@maps_bim);$i++)
+  {
+      $maps_bim[$i] =~ s/\.bim//;
+      print BIMS "$maps_bim[$i]\n";
+  }
+  close(BIMS);
 
-chdir "$RNA_Path/$map_dir";
-#Merge all bims in dir maps with plink
-`plink --merge-list Small_Bims.txt --out $disease_abbr\_TN_TCGA_All`;
+ chdir "$RNA_Path/$map_dir";
+ #Merge all bims in dir maps with plink
+ `plink --merge-list Small_Bims.txt --out $disease_abbr\_TN_TCGA_All`;
 
 chdir "$RNA_Path";
 `mv $RNA_Path/$map_dir/$disease_abbr\_TN_TCGA_All.* $RNA_Path`;
 
 #To save space
-`rm -r $bases_dir` unless(!(-d "$bases_dir"));
+`rm -rf $bases_dir` unless(!(-d "$bases_dir"));
 my @del_files = `ls $RNA_Path/$map_dir`;
 
-for(my $i = 0;$i < scalar(@del_files);$i++)
-{
-    if ($del_files[$i] =~ /.bim$/)
-    {
-        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
-    }
-    elsif($del_files[$i] =~ /.bed$/)
-    {
-        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
-    }
-    elsif($del_files[$i] =~ /.fam$/)
-    {
-      `rm -f $RNA_Path/$map_dir/$del_files[$i]`; 
-    }
-    elsif($del_files[$i] =~ /.log$/)
-    {
-        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
-    }
-    elsif($del_files[$i] =~ /.ped$/)
-    {
-        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
-    }
-    elsif($del_files[$i] =~ /.pro$/)
-    {
-        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
-    }
-}
+ for(my $i = 0;$i < scalar(@del_files);$i++)
+ {
+     if ($del_files[$i] =~ /.bim$/)
+     {
+         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
+     }
+     elsif($del_files[$i] =~ /.bed$/)
+     {
+         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
+     }
+     elsif($del_files[$i] =~ /.fam$/)
+     {
+       `rm -f $RNA_Path/$map_dir/$del_files[$i]`; 
+     }
+     elsif($del_files[$i] =~ /.log$/)
+     {
+         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
+     }
+     elsif($del_files[$i] =~ /.ped$/)
+     {
+         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
+     }
+     elsif($del_files[$i] =~ /.pro$/)
+     {
+         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
+     }
+ }
 
 #Split Bed into peds and move them into the dir peds
 my @chrs=(1..23);
