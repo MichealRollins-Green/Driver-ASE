@@ -948,16 +948,15 @@ sub Merge_All_Chrs_4_Single_TCGA_Bed
     my $snplist_dir = shift;
     my $out_dir = shift;
     
-    #Get rid of first two lines in phased sample file;
     my @fam_list = `cat $sample_file`;
     @fam_list = grep {/TCGA-*-*-*/}@fam_list;
   
     for (my $i = 0;$i < scalar(@fam_list);$i++)
     {
-        chomp($fam_list[$i]);
-        my @tcga_id = split("\t| ",$fam_list[$i]);
-        my $id = $tcga_id[1];
-        Append_Beds("$id","$snplist_dir","$out_dir");       
+            chomp($fam_list[$i]);
+            my @tcga_id = split("\t| ",$fam_list[$i]);
+            my $id = $tcga_id[1];
+            Append_Beds("$id","$snplist_dir","$out_dir");       
     }
 }
 
