@@ -90,7 +90,7 @@ if (!(-d "$copy_dir"))
 chdir "$RNA_Path";
 
 `mkdir -p $bad_snps` unless(-d "$bad_snps");
-`rm -rf $RNA_Path/$bad_snps/*`;
+`rm -rf $bad_snps/*`;
 
 #make tumor normal tables for birdseed and copy number
 #mk_tn_tables(directory where Genotype data was downloaded,raw file name(same as directory name but will be used for files))
@@ -108,8 +108,6 @@ $parsing->vlookup("$cnv\_1",2,"$cnv\_N",3,2,"y","$cnv\_2");
 $parsing->pull_column("$cnv\_2","4,6,9,3,8,10,1","lookup_TN");
 
 `grep NaN -v lookup_TN |sort -k 3,3 > $disease_abbr\_lookup_TN`;
-
-
 
 #run_snps will link genotype from tumor and normal samples
 #It will call the suproutine flag_snps to find out bad snps
@@ -156,7 +154,7 @@ $Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/snp6.cd.txt","$bad_snps_bed","$bad
 #If there are errors in this process then it most likely means that some CNVs were not download properly.
 print "Now running run_cnv.\n";
 mkdir "$bad_cnvs" unless(-d "$bad_cnvs");
-`rm -rf $RNA_Path/$bad_cnvs/*`;
+`rm -rf $bad_cnvs/*`;
 #run_cnv(TN file generated after the vlookups and pull_column,directory where Copy number estimate data was downloaded,directory where Genotype data was downloaded,cnv.hg19.bed file,bad_cnvs directory)
 $Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$copy_dir","$geno_dir","$RNA_Path/$affy_dir/cnv.hg19.bed","$RNA_Path/$bad_cnvs");
 
