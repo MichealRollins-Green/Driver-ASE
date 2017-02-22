@@ -38,6 +38,7 @@ my $genotype = "Genotypes";
 my $cnv = "Copy number estimate";
 my $bad_snps_bed = "$RNA_Path/bad_snps_bed";
 my $bad_cnvs = "bad_cnvs";
+my $temp_dir = "temp";
 
 if(!defined $disease_abbr)
 {
@@ -155,8 +156,10 @@ $Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/snp6.cd.txt","$bad_snps_bed","$bad
 print "Now running run_cnv.\n";
 mkdir "$bad_cnvs" unless(-d "$bad_cnvs");
 `rm -rf $bad_cnvs/*`;
+`mkdir $temp_dir` unless(-d "$temp_dir");
+`rm -rf $temp_dir/*`;
 #run_cnv(TN file generated after the vlookups and pull_column,directory where Copy number estimate data was downloaded,directory where Genotype data was downloaded,cnv.hg19.bed file,bad_cnvs directory)
-$Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$copy_dir","$geno_dir","$RNA_Path/$affy_dir/cnv.hg19.bed","$RNA_Path/$bad_cnvs");
+$Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$copy_dir","$geno_dir","$RNA_Path/$affy_dir/cnv.hg19.bed","$RNA_Path/$bad_cnvs","$temp_dir");
 
 print "All jobs have finished for $disease_abbr.\n";
 
