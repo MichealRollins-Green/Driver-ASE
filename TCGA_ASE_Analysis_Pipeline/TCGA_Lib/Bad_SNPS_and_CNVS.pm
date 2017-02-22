@@ -280,10 +280,7 @@ sub run_cnv
     my $bird = shift;#directory where SNP-Array data for birdiseed is
     my $cnv_bed = shift;#./affy6/cnv.hg19.bed
     my $RNA_Path_cnvs = shift;
-    
-my $temp_dir = "temp";
-    `mkdir $temp_dir` unless(-d "$temp_dir");
-    `rm -rf $temp_dir`;
+    my $temp_dir = shift;
 
     open(my $CIN,"$infile") or die "Can't open $infile: $!\n";
     my @CNVS = <$CIN>;
