@@ -1262,10 +1262,10 @@ sub mk_files
         chomp($r);
         my @a = split("\t",$r);
         
-        print T "$ase_path/$gene_level/".$a[0], "\t", $a[2], "\n";
+        print T "$ase_path/$gene_level/".$a[0], "\t", substr($a[2],0,12), "\n";
         unless($a[1] eq 'NaN')
         {
-            print N "$ase_path/$gene_level/".$a[1], "\t", $a[2], "\n";
+            print N "$ase_path/$gene_level/".$a[1], "\t", substr($a[2],0,12), "\n";
         }
     }
     close(MKFI);
