@@ -257,8 +257,9 @@ sub ref_parse
         my $curl_cmd = "curl -# --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'ref_tmp/$refID.$UUID\' ";
         `$curl_cmd`;
     }@table;
-    opendir REF, "ref_tmp" or die;
-    my @ref_txts = grep{!/^\.$/ && -f "ref_tmp/$_"} readdir(REF);
+   opendir REF, "ref_tmp" or die;
+    my @ref_txts = grep{!/^\./ && -f "ref_tmp/$_"} readdir(REF);
+    #@ref_txts = grep{!/^\./}@ref_txts;
     closedir(REF);
     
     foreach my $txt(@ref_txts)
@@ -276,13 +277,12 @@ sub ref_parse
         close JSON;
         $/ = "\n";
     }
-    
+    `rm -r ref_tmp`;
     foreach my $key(keys %refs)
     {
         print RP "$key\t$refs{$key}\n";
     }
     close(RP);
-    `rm -r ref_tmp`;
 }
 
 sub index_ids
@@ -394,7 +394,7 @@ sub Dwld_WGSBam_and_do_mpileup
     
     if($action eq "all" or $action eq "download")
     {
-        if (-e "../$tables/already_done_WGS.txt")
+        if (-f ("$tables/already_done_WGS.txt"))
         {
             #Checks if there a NaN in the bamlist file and removes them as it will interfere with the code below.
             open(BAMI,"$bamlist") or die "Can't open $bamlist: $!\n";
@@ -414,16 +414,47 @@ sub Dwld_WGSBam_and_do_mpileup
             close(BAMO);
             
             #Matches the tumor bams in the bam list
-            $parsing->vlookup("$bamlist.parse",1,"../$tables/already_done_WGS.txt",1,1,"y","wgs_tum.txt");
+            $parsing->vlookup("$bamlist.parse",1,"$tables/already_done_WGS.txt",1,1,"y","wgs_tum.txt");
             #greps all that didn't match
             `cat wgs_tum.txt|grep NaN > wgs_NaN.txt`;
             #Gets all columns except for the NaN column
             $parsing->pull_column("wgs_NaN.txt","1,2,3,4,5,6,7","wgs_get_norm.txt");
             #Matches the normal bams
-            $parsing->vlookup("wgs_get_norm.txt",1,"../$tables/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
+            $parsing->vlookup("wgs_get_norm.txt",1,"$tables/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
             #Gets the bams that did not meet any of the above criterea
             `cat wgs_norm.txt|grep NaN > $bamlist.new`;
-            `rm wgs_*`;
+            `rm wgs_*.txt`;
+        }
+        elsif(-f("$key_dir/already_done_WGS.txt"))
+        {
+            #Checks if there a NaN in the bamlist file and removes them as it will interfere with the code below.
+            open(BAMI,"$bamlist") or die "Can't open $bamlist: $!\n";
+            open(BAMO,">$bamlist.parse") or die "Can't open $bamlist: $!\n";
+            
+            while (my $r = <BAMI>)
+            {
+                chomp($r);
+                
+                 if ($r =~ /NaN/g)
+                {
+                    $r =~ s/NaN//;
+                }
+                print BAMO $r,"\n";   
+            }
+            close(BAMI);
+            close(BAMO);
+            
+            #Matches the tumor bams in the bam list
+            $parsing->vlookup("$bamlist.parse",1,"$key_dir/already_done_WGS.txt",1,1,"y","wgs_tum.txt");
+            #greps all that didn't match
+            `cat wgs_tum.txt|grep NaN > wgs_NaN.txt`;
+            #Gets all columns except for the NaN column
+            $parsing->pull_column("wgs_NaN.txt","1,2,3,4,5,6,7","wgs_get_norm.txt");
+            #Matches the normal bams
+            $parsing->vlookup("wgs_get_norm.txt",1,"$key_dir/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
+            #Gets the bams that did not meet any of the above criterea
+            `cat wgs_norm.txt|grep NaN > $bamlist.new`;
+            `rm wgs_*.txt`;
         }
         else
         {
@@ -441,7 +472,7 @@ sub Dwld_WGSBam_and_do_mpileup
         
         #only split 1 pair into each file;
         `split -l 2 $bamlist.new`;
-        chdir "../";
+        chdir $key_dir;
         #Get all split files in the $newdir;
         opendir(CURR, "$newdir") or die "Can not open current dir: $!";
            @fs = readdir(CURR);
@@ -548,7 +579,7 @@ sub Dwld_WGSBam_and_do_mpileup
     {
         my @bam_pairs = mk_files_for_wgs("$bamlist","$wgs_output_dir");
                 
-        launch_wgs_mpileup_and_VarScan("$ref_fullpath","$mpileup_outdir",\@bam_pairs,$wgs_output_dir,$VarScan_Path,$disease_abbr,$alt_ref);
+        launch_wgs_mpileup_and_VarScan("$ref_fullpath","$mpileup_outdir",\@bam_pairs,$wgs_output_dir,$VarScan_Path,$disease_abbr,$alt_ref,"$tables");
     }
 }
 
@@ -611,7 +642,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             my @es = split("\t",$b);
             if(defined $already_done{$es[0]})
             {
-                print STDERR "The TCGA ID $es[0].$es[1] has pileup results in the $mpileup_outdir and will not be submitted for pileup again\n";
+                print STDERR "The TCGA ID $es[0].$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
             }
             else
             {
@@ -835,7 +866,7 @@ sub dwnld_wgs_or_rna
         #if a bam exists and there is no index file, curl will continue downloading the bam otherwise it will download the bam as new
         if (-f "$output_dir/$a[0]/$a[0].bam" and (!(-f "$output_dir/$a[0]/$a[0].bam.bai")))
         {
-            $cmd = "curl -C --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$output_dir/$a[0]/$a[0].bam\' ";
+            $cmd = "curl -C - --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$output_dir/$a[0]/$a[0].bam\' ";
         }
         else
         {
@@ -854,6 +885,7 @@ sub dwnld_wgs_or_rna
         my($c1,$c2) = split(";",$cmd);
         my $bam = [split(" ",$cmd)]->[-1];
         print STDERR "working on $bam!\n";
+        
     	if (-f "$bam")
         {
             print STDERR "Going to run:\n $c2\n";
@@ -866,6 +898,12 @@ sub dwnld_wgs_or_rna
             print STDERR "Going to run:\n $c2\n";
             `$c2`;
     	}
+        
+        unless(-f "$bam.bai")
+        {
+            print STDERR "There is no index file for this bam. Going to run:\n $c1\n$c2\n";
+            `$c1`;`$c2`;
+        }
         print STDERR "$_ is done.\n";
     }@cmds;
    
@@ -960,7 +998,7 @@ sub download_files_from_gdc
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         if (-f "$output_dir/$a[0].$a[1]")
         {
-            $cmd = "curl -C  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
+            $cmd = "curl -C - --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
         }
         else
         {
@@ -1008,12 +1046,15 @@ sub mk_files_for_wgs
             next;
         }      
         
-        my $T_bam="$wgs_bam_dir/$tum/$tum.bam";
-        my $N_bam="$wgs_bam_dir/$norm/$norm.bam";
-        
-        if(-f "$T_bam" and -f "$N_bam")
+        if (-e("$wgs_bam_dir/$tum/$tum.bam.bai") and -e("$wgs_bam_dir/$norm/$norm.bam.bai"))
         {
-            push @rst, "$N_bam\t$T_bam\t$a[1]\n";
+            my $T_bam="$wgs_bam_dir/$tum/$tum.bam";
+            my $N_bam="$wgs_bam_dir/$norm/$norm.bam";
+        
+            if(-f "$T_bam" and -f "$N_bam")
+            {
+                        push @rst, "$N_bam\t$T_bam\t$a[1]\n";
+            }
         }
     }
     close FFW;
@@ -1032,9 +1073,9 @@ sub launch_wgs_mpileup_and_VarScan
     my $alt_ref = shift;
     my $tables = shift;
     
-    if (-e "../$tables/already_done_WGS.txt")
+    if (-e "$tables/already_done_WGS.txt")
     {
-        open(DON,">>../$tables/already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
+        open(DON,">>$tables/already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
     }
     else
     {
