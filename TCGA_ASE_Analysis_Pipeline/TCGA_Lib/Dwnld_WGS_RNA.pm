@@ -255,7 +255,7 @@ sub ref_parse
         chomp($_);
         my($refID,$UUID) = ($_ =~ /(\S*)\t(\S*)/);
         my $aria_cmd = "aria2c -s 16 -x 16 --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'ref_tmp/$refID.$UUID\' ";
-        `$curl_cmd`;
+        `$aria_cmd`;
     }@table;
    opendir REF, "ref_tmp" or die;
     my @ref_txts = grep{!/^\./ && -f "ref_tmp/$_"} readdir(REF);
