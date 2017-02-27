@@ -25,7 +25,7 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. WGS RNA-Seq
     'choice|c=s' => \my $choice,#either all, download or mpileups
-    'number|n=i' => \my $number,#the number of bams to download
+    'number|n=i' => \my $number,#RNA-Seq(Number of bams), WGS(Number of pairs) to download
     'key|k=s'=> \my $key,
     'var_path|v=s' => \my $VarScan_Path,
     'help|h' => \my $help
