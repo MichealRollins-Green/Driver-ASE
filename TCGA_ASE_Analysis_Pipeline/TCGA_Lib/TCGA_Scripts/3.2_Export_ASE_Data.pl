@@ -130,8 +130,6 @@ foreach my $uuid(@ase)
 }
 close(ASE);
 
-
-
 $parsing->vlookup("$ase/All_ASEs.txt",3,"$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_RNA-Seq.txt",1,"6,3","y","$ase/ASEs4lookup_pull_column.txt");
 
 $parsing->pull_column("$ase/ASEs4lookup_pull_column.txt","1,2,4,5","$ase/ASEs4lookup_sort.txt");

@@ -6,7 +6,7 @@ use Parsing_Routines;
 use WGS_Analysis;
 use Cwd "realpath";
 use Getopt::Long;
-use MCE::Map max_workers => 2;
+use MCE::Map;
 use strict;
 
 my $time = localtime;
@@ -230,12 +230,12 @@ mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless(-d "$Analysispath/$dise
 $parsing->strip_head("$WGS_Path/$annotate_vars/out","$WGS_Path/$annotate_vars/out_pull");
 $parsing->pull_column("$WGS_Path/$annotate_vars/out_pull","2,1","$WGS_Path/$annotate_vars/var2gene.coding.tab");
 
-$parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt","1,7","$WGS_Path/$annotate_vars/look.tab");
+$parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt","1,2","$WGS_Path/$annotate_vars/look.tab");
 
 #two files: mut_ase_look.txt and coding_genes.tab are pre-created
 `cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars`;
 `cp $database_path/coding_genes.tab $WGS_Path/$annotate_vars`;
-`tar zcvf somatic_calls.tar.gz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
+`tar -zcvf somatic_calls.tar.gz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
 `mv $WGS_Path/$annotate_vars/somatic_calls.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
 chdir "$WGS_Path";
