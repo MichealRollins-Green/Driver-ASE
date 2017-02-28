@@ -394,7 +394,7 @@ sub Dwld_WGSBam_and_do_mpileup
     
     if($action eq "all" or $action eq "download")
     {
-        if (-f ("$tables/already_done_WGS.txt"))
+        if (-e ("$tables/already_done_WGS.txt"))
         {
             #Checks if there a NaN in the bamlist file and removes them as it will interfere with the code below.
             open(BAMI,"$bamlist") or die "Can't open $bamlist: $!\n";
@@ -404,7 +404,7 @@ sub Dwld_WGSBam_and_do_mpileup
             {
                 chomp($r);
                 
-                 if ($r =~ /NaN/g)
+                if ($r =~ /NaN/g)
                 {
                     $r =~ s/NaN//;
                 }
@@ -421,11 +421,11 @@ sub Dwld_WGSBam_and_do_mpileup
             $parsing->pull_column("wgs_NaN.txt","1,2,3,4,5,6,7","wgs_get_norm.txt");
             #Matches the normal bams
             $parsing->vlookup("wgs_get_norm.txt",1,"$tables/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
-            #Gets the bams that did not meet any of the above criterea
+            #Gets the bams that did not meet any of the above criteria
             `cat wgs_norm.txt|grep NaN > $bamlist.new`;
             `rm wgs_*.txt`;
         }
-        elsif(-f("$key_dir/already_done_WGS.txt"))
+        elsif(-e("$key_dir/already_done_WGS.txt"))
         {
             #Checks if there a NaN in the bamlist file and removes them as it will interfere with the code below.
             open(BAMI,"$bamlist") or die "Can't open $bamlist: $!\n";
@@ -454,7 +454,7 @@ sub Dwld_WGSBam_and_do_mpileup
             $parsing->vlookup("wgs_get_norm.txt",1,"$key_dir/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
             #Gets the bams that did not meet any of the above criterea
             `cat wgs_norm.txt|grep NaN > $bamlist.new`;
-            `rm wgs_*.txt`;
+            `rm wgs_.txt*`;
         }
         else
         {
@@ -471,7 +471,7 @@ sub Dwld_WGSBam_and_do_mpileup
         chdir "$newdir" or die "Can not change into the dir $newdir: $!\n";
         
         #only split 1 pair into each file;
-        `split -l 2 $bamlist.new`;
+        `split -l $pairs $bamlist.new`;
         chdir $key_dir;
         #Get all split files in the $newdir;
         opendir(CURR, "$newdir") or die "Can not open current dir: $!";
@@ -480,61 +480,11 @@ sub Dwld_WGSBam_and_do_mpileup
         closedir(CURR);
         
         #Going to do downloading and do mpileups for these bams;
-        my %PIDs;
+        #my %PIDs;
         my $tag = 0;#record how many pairs submitted!
         
         foreach my $f(sort @fs)
         {
-            #if there are more pairs than that of specified,
-            #just wait it to finish;
-            if ($tag > $pairs)
-            {
-                my $running_pids = $parsing->Get_PIDs();
-                chomp($running_pids);
-                my @rpids = split(" ",$running_pids);
-                my @wgs_pids = keys %PIDs;
-                my @wgs_left = Array_Intersect(\@rpids,\@wgs_pids);
-                #wait here;
-                while (@wgs_left >= $pairs)
-                {
-                    my $t = 3000;
-                    print STDERR "Going to sleep for $t seconds\n";
-                    sleep($t);
-                    $running_pids = $parsing->Get_PIDs();
-                    chomp($running_pids);
-                    @rpids = split(" ",$running_pids);
-                    @wgs_left = Array_Intersect(\@rpids,\@wgs_pids);
-                }
-            }
-            my $PID_tmp;
-            if ($action eq "all")
-            {
-                #Remove bams if their corresponding pid has gone;
-                #Get running PIDs again;
-                $PID_tmp = $parsing->Get_PIDs();
-                chomp($PID_tmp);
-                foreach my $p (keys %PIDs)
-                {
-                    unless ($PID_tmp=~/\b$p\b/)
-                    {
-                        #delete these bams
-                        open my $L,"$PIDs{$p}" or die "Can not open the bamlist: $!";
-                        #delete hash key $p and its value;
-                        delete $PIDs{$p};
-                        chomp(my @fs = <$L>);
-                        map
-                        {
-                            my $f = $_;
-                            $f =~ s/^([^\t]+).*/$1/;
-                            print STDERR "PID $p has gone!\n",
-                            "Going to delete bam file: $wgs_output_dir/$f/$f.* \n";
-                            `rm -f $wgs_output_dir/$f/$f.*`;
-                        }@fs;
-                        close $L;   
-                    }
-                }
-            }
-            
             print "Now start to download bams in the file $f!\n";
             #dwnld_wgs_or_rna(bamlist,key directory,bam output directory)
             dwnld_wgs_or_rna("$key_dir/$newdir/$f","$key_dir","$wgs_output_dir");
@@ -548,31 +498,6 @@ sub Dwld_WGSBam_and_do_mpileup
                 
                 launch_wgs_mpileup_and_VarScan("$ref_fullpath","$mpileup_outdir",\@bam_pairs,$wgs_output_dir,$VarScan_Path,$disease_abbr,$alt_ref,"$tables");
             }
-            
-            my $npid = $parsing->Get_PIDs($excluded_pids);
-            chomp($npid);#Need to remove newline!;
-            if ($npid eq "")
-            {
-                print STDERR "No PID exists for the submitted job, maybe this computer can not submit the job!\n";
-                exit;
-            }
-            
-            $PIDs{$npid} = "$key_dir/$newdir/$f" if $npid =~ /^\d+$/;
-            
-            #Check the above submitted PID again;
-            #In case of gdc.key expired
-            #the above PID will be gone very quickly;
-            #First get all PIDs again;
-            print STDERR "Going to sleep 60s and check the submitted job $npid again\n" and sleep(60);
-            my $TMP_PIDs = $parsing->Get_PIDs();
-            chomp($TMP_PIDs);
-            unless ($TMP_PIDs =~ /\b$npid\b/)
-            {
-                print STDERR "The gdc.key may be expired, as the PID is gone\n","Please check these bams included in the file: $newdir/$f\n";
-                exit;                   
-            }
-            #record how many bam pairs have been submitted; 
-            $tag++;
         }
     }
     elsif($action eq "mpileups")
@@ -866,7 +791,7 @@ sub dwnld_wgs_or_rna
         #if a bam exists and there is no index file, curl will continue downloading the bam otherwise it will download the bam as new
         if (-f "$output_dir/$a[0]/$a[0].bam" and (!(-f "$output_dir/$a[0]/$a[0].bam.bai")))
         {
-            $cmd = "aria2c -s 16 -x 16 -c --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+           $cmd = "aria2c -s 16 -x 16 -c --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
         }
         else
         {
@@ -1050,10 +975,10 @@ sub mk_files_for_wgs
         {
             my $T_bam="$wgs_bam_dir/$tum/$tum.bam";
             my $N_bam="$wgs_bam_dir/$norm/$norm.bam";
-	    
+            
             if(-f "$T_bam" and -f "$N_bam")
             {
-		push @rst, "$N_bam\t$T_bam\t$a[1]\n";
+                push @rst, "$N_bam\t$T_bam\t$a[1]\n";
             }
         }
     }
@@ -1180,6 +1105,8 @@ sub launch_wgs_mpileup_and_VarScan
         }
     }
     close(DON);
+ 
+    Delete_Files_Recursively("$wgs_output_dir","\.bam");
 }
 
 ######################launch_wgs_mpileup_and_VarScan sub#######################################
