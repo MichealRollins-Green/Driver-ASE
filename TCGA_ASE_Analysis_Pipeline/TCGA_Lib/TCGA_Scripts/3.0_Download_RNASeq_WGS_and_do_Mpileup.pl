@@ -125,6 +125,10 @@ if($Exp_Strategy eq "RNA-Seq")
 {
     $number = 45 unless defined $number;
 }
+elsif($Exp_Strategy eq "WGS")
+{
+            $number = 2 unless defined $number;
+}
 
 my $OUT_DIR;
 #defaults to a directory if no output directory was specified in the command line.
@@ -260,7 +264,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split,"table directory")
         mkdir "$rna_wgs_dir/wgs_mpileups" unless(-d "$rna_wgs_dir/wgs_mpileups");
         $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables");
-        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables");
+        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables") if(!(-e "$Analysispath/$disease_abbr/$tables/already_done_WGS.txt"));
     }
     elsif($Exp_Strategy eq "RNA-Seq")
     {
@@ -310,7 +314,7 @@ else
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
         mkdir "$rna_wgs_dir/wgs_mpileups" unless(-d "$rna_wgs_dir/wgs_mpileups");
         $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/wgs_mpileups",$choice,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables");
-        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables");
+        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables") if(!(-e "$Analysispath/$disease_abbr/$tables/already_done_WGS.txt"));
     }
     elsif($Exp_Strategy eq "RNA-Seq")
     {
