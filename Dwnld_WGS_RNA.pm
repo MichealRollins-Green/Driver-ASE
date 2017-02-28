@@ -479,9 +479,7 @@ sub Dwld_WGSBam_and_do_mpileup
            @fs = grep{/^x[a-z]{2}$/}@fs;
         closedir(CURR);
         
-        #Going to do downloading and do mpileups for these bams;
-        #my %PIDs;
-        my $tag = 0;#record how many pairs submitted!
+        #Going to do downloading and do mpileups for these bams.
         
         foreach my $f(sort @fs)
         {
