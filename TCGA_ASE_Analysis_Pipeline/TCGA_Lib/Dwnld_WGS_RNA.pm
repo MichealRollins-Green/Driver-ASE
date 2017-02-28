@@ -663,7 +663,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
         closedir(CURR);
         chdir "$key_dir/$newdir";
         `split -l $line_num2split $bamlist`;
-        chdir "../";
+        chdir "$key_dir";
         opendir(CURR, "$key_dir/$newdir") or die "Can not open directory $key_dir/$newdir: $!";
            @fs = readdir(CURR);
            @fs = grep{/^x[a-z]{2}$/}@fs;
