@@ -104,10 +104,10 @@ $wgs_analysis->mk_files_for_wgs("$WGS_Path/$somatic","$WGS_Path/ff");
 
 $parsing->matricize("$WGS_Path/ff","$WGS_Path/ff",1,6,"$WGS_Path");
 
-`tar -zcvf mutations.tar.gz matrix.tab rowlabels.txt collabels.txt`;
+`tar -zcvf $disease_abbr\_mutations.tar.gz matrix.tab rowlabels.txt collabels.txt`;
 
 mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless(-d "$finished_WGS");
-`mv $WGS_Path/mutations.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
+`mv $WGS_Path/$disease_abbr\_mutations.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
 #var_ID_to_bed(rowlabels.txt file created from matricize,output file)
 $wgs_analysis->var_ID_to_bed("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/vars.bed");
@@ -220,9 +220,9 @@ $parsing->vlookup("$WGS_Path/$annotate_vars/t2",1,"$WGS_Path/$annotate_vars/t1",
 
 $parsing->pull_column("$WGS_Path/$annotate_vars/syn_pull","2,3,4","$WGS_Path/$annotate_vars/syn.tab");
 
-`tar zcvf annotations.tar.gz matrix.tab rowlabels.txt collabels.txt syn.tab`;
+`tar zcvf $disease_abbr\_annotations.tar.gz matrix.tab rowlabels.txt collabels.txt syn.tab`;
 mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless(-d "$Analysispath/$disease_abbr/$finished_WGS");
-`mv $WGS_Path/$annotate_vars/annotations.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
+`mv $WGS_Path/$annotate_vars/$disease_abbr\_annotations.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
 `overlapSelect $database_path/ccds.hg19.bed $WGS_Path/$annotate_vars/vars.bed $WGS_Path/$annotate_vars/o.bed`;
 `overlapSelect $WGS_Path/$annotate_vars/o.bed $database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed -idOutput $WGS_Path/$annotate_vars/out`;
@@ -235,8 +235,8 @@ $parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_d
 #two files: mut_ase_look.txt and coding_genes.tab are pre-created
 `cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars`;
 `cp $database_path/coding_genes.tab $WGS_Path/$annotate_vars`;
-`tar -zcvf somatic_calls.tar.gz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
-`mv $WGS_Path/$annotate_vars/somatic_calls.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
+`tar -zcvf $disease_abbr\_somatic_calls.tar.gz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
+`mv $WGS_Path/$annotate_vars/$disease_abbr\_somatic_calls.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
 chdir "$WGS_Path";
 my @del_files = $parsing->get_only_files_in_dir("$WGS_Path");
