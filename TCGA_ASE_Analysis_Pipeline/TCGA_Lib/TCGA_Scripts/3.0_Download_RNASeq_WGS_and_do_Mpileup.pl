@@ -127,7 +127,15 @@ if($Exp_Strategy eq "RNA-Seq")
 }
 elsif($Exp_Strategy eq "WGS")
 {
-            $number = 2 unless defined $number;
+            if(!defined $number)
+            {
+                        $number = 2;
+            }
+            elsif(0 != $number % 2)
+            {
+                        print STDERR "$Exp_Strategy are downloaded in pairs, enter an even number for the -n option";
+                        exit;
+            }
 }
 
 my $OUT_DIR;
