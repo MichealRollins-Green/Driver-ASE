@@ -1005,7 +1005,6 @@ sub launch_wgs_mpileup_and_VarScan
         open(DON,">>already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
     }
     
-    my @done_bams;
     my $tumor;
     my $normal;
     foreach my $tn_bam(@$bam_fullpaths_ref)
@@ -1031,6 +1030,12 @@ sub launch_wgs_mpileup_and_VarScan
             print STDERR "tumor_bam: $tumor_bam\n";
             print STDERR "normal_bam: $normal_bam\n";
             exit;#stop all mpileups and need to check GDC, which may be under maintanence;
+        }
+	
+	if (!(-e "$tumor_bam.bai") or !(-e "$normal_bam.bai"))
+        {
+            print  STDERR "either $tumor_bam or $normal_bam is not indexed.";
+            next;
         }
         
         #Important!
@@ -1086,20 +1091,7 @@ sub launch_wgs_mpileup_and_VarScan
         $tumor =~ s/.bam//;
         $normal =~ s/.bam//;
         
-        push @done_bams, $tumor,"\t",$normal,"\n";
-        
-        my $prev = " ";
-        foreach my $bams(@done_bams)
-        {
-            if ($bams ne $prev)
-            {
-                print DON $bams;
-                $prev = $bams;
-            }
-            else
-            {
-                next;
-            }
+        print DON $tumor,"\t",$normal,"\n";
         }
     }
     close(DON);
