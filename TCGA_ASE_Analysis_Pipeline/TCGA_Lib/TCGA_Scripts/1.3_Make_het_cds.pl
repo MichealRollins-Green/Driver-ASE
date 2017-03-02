@@ -126,7 +126,6 @@ print "Now doing plink on Merged_list.txt\n";
 
 chdir "$RNA_Path";
 `mv $imputation/$disease_abbr\_TN_TCGA_Imputation.* $RNA_Path`;
-`rm -r $imputation`;
 
 mkdir "$RNA_Path/$cds_plink" unless(-d "$RNA_Path/$cds_plink");
 `rm -f $RNA_Path/$cds_plink/*`;
