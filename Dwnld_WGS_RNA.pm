@@ -454,7 +454,7 @@ sub Dwld_WGSBam_and_do_mpileup
             $parsing->vlookup("wgs_get_norm.txt",1,"$key_dir/already_done_WGS.txt",2,2,"y","wgs_norm.txt");
             #Gets the bams that did not meet any of the above criterea
             `cat wgs_norm.txt|grep NaN > $bamlist.new`;
-            `rm wgs_.*txt`;
+            `rm wgs_*.txt`;
         }
         else
         {
