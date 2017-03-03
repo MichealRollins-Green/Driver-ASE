@@ -809,23 +809,15 @@ sub dwnld_wgs_or_rna
         my $bam = [split(" ",$cmd)]->[-1];
         print STDERR "working on $bam!\n";
         
-    	if (-f "$bam")
+       unless(-f "$bam.bai")
         {
-            print STDERR "Going to run:\n $c2\n";
-            `$c2`;
-    	}
+            print STDERR "Going to run:\n $c1\n$c2\n";
+            `$c1`;`$c2`;
+        }
         else
         {
-            print STDERR "Going to run:\n $c1\n";
-            `$c1`;
             print STDERR "Going to run:\n $c2\n";
             `$c2`;
-    	}
-        
-        unless(-f "$bam.bai")
-        {
-            print STDERR "There is no index file for this bam. Going to run:\n $c1\n$c2\n";
-            `$c1`;`$c2`;
         }
         print STDERR "$_ is done.\n";
     }@cmds;
