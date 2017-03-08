@@ -922,19 +922,18 @@ sub launch_wgs_mpileup_and_VarScan
     my $alt_ref = shift;
     my $tables = shift;
     
-    if (-e "$tables/already_done_WGS.txt")
-    {
-        open(DON,">>$tables/already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
-    }
-    else
-    {
-        open(DON,">>already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
-    }
-    
     my $tumor;
     my $normal;
     foreach my $tn_bam(@$bam_fullpaths_ref)
     {
+    	if (-e "$tables/already_done_WGS.txt")
+    	{
+        	open(DON,">>$tables/already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
+    	}
+    	else
+    	{
+        	open(DON,">>already_done_WGS.txt") or die "Can't open file already_done_WGS.txt: $!\n";
+    	}
         chomp($tn_bam);
         next if $tn_bam =~ /^\s*$/;
         my @a = split("\t",$tn_bam);
@@ -1019,8 +1018,8 @@ sub launch_wgs_mpileup_and_VarScan
         
         print DON $tumor,"\t",$normal,"\n";
         }
+	close(DON);
     }
-    close(DON);
  
     Delete_Files_Recursively("$wgs_output_dir","\.bam");
 }
