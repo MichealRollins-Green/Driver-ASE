@@ -1017,7 +1017,7 @@ sub launch_wgs_mpileup_and_VarScan
         $normal =~ s/.bam//;
         
         print DON $tumor,"\t",$normal,"\n";
-        }
+        
 	close(DON);
     }
  
