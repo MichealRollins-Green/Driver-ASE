@@ -1056,7 +1056,7 @@ sub Bam_Ref_Checker
                 {
                    print STDERR "Your Bam is aligned to a ref with chrom labeled in number\n",
                                 "Please use the corresponding ref!\n";
-                   print $tag,"\n";                        
+                   print STDERR $tag,"\n";                        
                 }
                 last;    
             }
