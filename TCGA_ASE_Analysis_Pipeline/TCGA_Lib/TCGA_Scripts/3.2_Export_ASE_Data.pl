@@ -137,7 +137,7 @@ $parsing->pull_column("$ase/ASEs4lookup_pull_column.txt","1,2,4,5","$ase/ASEs4lo
 
 #pull_TN acts as a SAS lag function or retain function
 #pull_TN(ase bad cnv file, bad_cnvs directory,bad_snps_bed directory,output file)
-$ase_analysis->pull_TN("$ase/ASEs4lookup_with_bad_CNVs.txt","$RNA_Path/$bad_cnvs","$RNA_Path/$bad_snps_bed","$RNA_Path/have_cnv_snps.txt");
+$ase_analysis->pull_TN("$ase/ASEs4lookup_with_bad_CNVs.txt","$RNA_Path/$bad_cnvs","$RNA_Path/$bad_snps_bed","$RNA_Path/have_cnv_snps.txt",$disease_abbr);
 
 #functionality of have_cnv_snp is to keep IDs having both bad_cnv and bad_snps
 #have_cnv_snp(output file created in pull_TN,output file)
