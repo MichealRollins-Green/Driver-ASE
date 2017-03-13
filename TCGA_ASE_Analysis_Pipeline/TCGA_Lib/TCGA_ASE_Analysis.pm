@@ -7,7 +7,7 @@ use strict;
 use Parsing_Routines;
 use FileHandle;
 use File::Copy qw(copy);
-use MCE::Map;
+use MCE::Map max_workers=>6;
 use Cwd 'realpath';
 use Cwd;
 use Math::CDF qw(:all);
@@ -1137,6 +1137,7 @@ sub pull_TN
     my $bad_cnv_dir = shift;
     my $bad_snp_bed_dir = shift;
     my $outfile = shift;
+    my $disease_abbr = shift;
     
     open(PTNI,"$infile") or die "Can't open $infile: $!\n";
     open(PTNO,">$outfile") or die "Can't open $outfile: $!\n";
@@ -1169,25 +1170,46 @@ sub pull_TN
                 $old[3] = '0' . $old[3];
             }
         }
-        
-        if (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
+	
+	if ($disease_abbr eq "SKCM")
+	{
+	    if (($old[2] eq $a[2]) & ($old[3] eq '06') & ($a[3] eq '10') | ($a[3] eq '11')) # have matched N
+	    {
+		unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '01'))
+		{
+		    print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+		}
+	    }
+	    elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
+	    {
+		unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+		{
+		    print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+		}
+	    }
+	    else
+	    {
+		print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+	    }
+	}
+	elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
         {
-            unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+            unless (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
             {
                 print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
             }
         }
         else
         {
-            unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+            unless (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
             {
                 print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
             }
         }
-        undef @old;
+	
         @old = @a;
         
-       if(-e $bad_cnv_dir."/".$old[1])
+       if (-e $bad_cnv_dir."/".$old[1])
         {
             $bad_cnv = 1;
         }
@@ -1195,7 +1217,7 @@ sub pull_TN
         {
             $bad_cnv = 0;
         }
-        if(-e $bad_snp_bed_dir."/".$old[1])
+        if (-e $bad_snp_bed_dir."/".$old[1])
         {
             $bad_snp = 1;
         }
@@ -1205,14 +1227,23 @@ sub pull_TN
         }
     }
     
-    if(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+    if (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06') & ($disease_abbr ne "SKCM"))
     {
 	EXIT_IF:
 	{
 	    last EXIT_IF;
 	}
     }
-    if(($old[2] eq $a[2]) & ($old[3] eq '01') & (($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
+    
+    if (($old[3] eq '06') & ($disease_abbr eq "SKCM") & (($a[3] eq '10') | ($a[3] eq '11')))
+    {
+	print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+    }
+    elsif (($old[3] eq '01') & ($disease_abbr eq "SKCM") & (($a[3] eq '10') | ($a[3] eq '11')))
+    {
+	print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+    }
+    elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & (($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
     {
         print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
     }
