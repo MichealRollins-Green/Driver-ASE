@@ -52,9 +52,9 @@ sub usage
     
     if($script eq "0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e experimental strategy(Genotyping array)] [--key|-k fullpath2gdckey] [--array_type|-a array data type(e.g. Genotypes)] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--key|-k path to gdc key] [--help|-h]\n";
         
-        print"Any names with spaces must be wraped in DOUBLE QUOTES or back slash.\n";
+        print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
         
         print 'experimental strategies used:
         Copy number estimate
@@ -62,15 +62,19 @@ sub usage
     }
     elsif($script eq "3.0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--key|-k fullpath2gdckey] [--choice|-c all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--var_path|-v path to the VarScan jar] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--key|-k peht to gdc key] [--choice|-c all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--var_path|-v path to the VarScan jar file (Enter if -e is WGS)] [--help|-h]\n";
     }
     elsif($script eq "3.0_table")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr(e.g. PRAD] [--exp_strat|-e Experimental Strategy(e.g. WGS/RNA-Seq)] [--key|-k path to gdc key] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--key|-k path to gdc key] [--help|-h]\n";
+    }
+    elsif($script eq "4.0")
+    {
+	print "usage: program [--disease_abbr|-d (e.g. PRAD)] [--readcutoff|-r read cutoff (e.g. 20)] [--tfreq|-t tumor alt frequency (e.g. 0.1)] [--nfreq|-n normal alt frequency (e.g. 0.1)]"
     }
     else
     {
-        print "usage: script [--disease_abbr|-d disease_abbr(e.g. PRAD] [--help|-h]\n";
+        print "usage: script [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--help|-h]\n";
     }
     
     print '
