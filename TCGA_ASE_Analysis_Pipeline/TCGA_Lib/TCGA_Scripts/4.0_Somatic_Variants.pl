@@ -20,12 +20,15 @@ my $parsing = TCGA_Lib::Parsing_Routines->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'readcutoff|r=i' => \my $read_cutoff,#e.g. 20
+    'tfreq|t=i' => \my $tumor_freq,#e.g. 0.1
+    'nfreq|n=i' => \my $normal_freq,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage;
 
 if($help)
 {
-    $parsing->usage;
+    $parsing->usage("4.0");
 }
 
 my $Analysispath = realpath("../../Analysis");
@@ -39,7 +42,22 @@ my $somatic = "somatic_variants";
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
-    $parsing->usage;
+    $parsing->usage("4.0");
+}
+
+if (!defined $read_cutoff)
+{
+    $read_cutoff = 20;
+}
+
+if (!defined $tumor_freq)
+{
+    $tumor_freq = 0.1;
+}
+
+if (!defined $normal_freq)
+{
+    $normal_freq = 0.1;
 }
 
 #Checks if there is not Analysis directory.
@@ -140,7 +158,7 @@ mkdir "$WGS_Path/$somatic";
 `rm -f $WGS_Path/$somatic/*`;
 
 #Varscan_filter(full path to wgs mpileups directory,full path to somatic_variants directory,readcutoff,VarType(e.g. Somatic),normal_alt_frq,tumor_alt_frq)
-$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups","$WGS_Path/$somatic",20,"Somatic",0.1,0.1);
+$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
 
 print "Compressing somatic_variants\n";
 `tar -zcvf $disease_abbr\_$somatic.tar.gz $somatic`;
