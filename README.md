@@ -211,6 +211,11 @@ source ~/.bash_profile
 This pipeline also uses many different files which are all in the same directory.
 The directory with the files can be downloaded from the link below.
 
+#After Download
+
+####1. Copy it to a directory and extract it.
+####2. Enter the directory and copy the TCGA_ASE_Analysis_Pipeline dirctory to a new location.
+
 ####Database directory download link
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
@@ -222,16 +227,11 @@ https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to https://gdc-portal.nci.nih.gov/ 
 
 ####1. Go to login. 
-####2. Click on your logging name to open the drop down and click download token. 
+####2. Click on your account name in the top right to open the drop down and click download token. 
 ####3. Rename the downloaded token to gdc.key
 ####4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
-#After Download
-
-####1. Copy it to a directory and extract it.
-####2. Enter the directory and copy the TCGA_ASE_Analysis_Pipeline dirctory to a new location.
-
-This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the script directory to your path if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
+This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the path to the sctipts if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
 
 #Scripts
 
@@ -249,7 +249,7 @@ Below are the scripts that are included in this pipeline:
 
 1.3_Make_het_cds.pl – Keeps het SNPS and makes cds sorted files.
 
-2.0_Lookups_for_normal.pl – Performs lookups on the cds sorted files and gets the normal samples out of them.
+2.0_Prep_For_Bad_SNPs_CNVs.pl – Performs lookups on the cds sorted files and gets the normal samples out of them.
 
 2.1_Get_Bad_SNPs_and_CNVs.pl – Gets the bad SNPs and CNVs of the cancer type.
 
