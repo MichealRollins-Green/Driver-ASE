@@ -7,7 +7,7 @@ use strict;
 use Parsing_Routines;
 use FileHandle;
 use File::Copy qw(copy);
-use MCE::Map max_workers=>6;
+use MCE::Map;
 use Cwd 'realpath';
 use Cwd;
 use Math::CDF qw(:all);
