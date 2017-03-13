@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-use MCE;
 use FindBin qw($Bin);
 use lib "$Bin/..";
 use Imputation_Plink;
