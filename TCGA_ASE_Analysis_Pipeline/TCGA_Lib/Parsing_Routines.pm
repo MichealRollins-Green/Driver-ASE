@@ -56,7 +56,7 @@ sub usage
         
         print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
         
-        print 'experimental strategies used:
+        print 'Experimental Strategies used:
         Copy number estimate
         Genotypes', "\n";
     }
