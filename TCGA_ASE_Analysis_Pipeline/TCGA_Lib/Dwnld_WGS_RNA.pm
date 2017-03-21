@@ -55,7 +55,6 @@ sub gdc_parser
     my $exp_strat = shift;#Experimental Strategy
     my $data_type;
     my @diseases = split(" ",$disease_abbr);
-    my %dis_info_hash;
     
     foreach my $disease_abbr(@diseases)
     {
