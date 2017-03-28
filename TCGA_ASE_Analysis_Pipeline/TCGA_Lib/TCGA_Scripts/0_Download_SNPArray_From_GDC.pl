@@ -143,7 +143,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.t
 	chomp($r);
 	my @a = split("\t",$r);
 	my $TCGA = $a[1];
-	$TCGA =~ s/-[0-9]+[a-zA-Z]//;
+	$TCGA =~ s/-[0-9]+[a-zA-Z]$//;
 	print IDO "$r\t$TCGA\n";
     }
     close(IDI);
