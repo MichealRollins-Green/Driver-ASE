@@ -25,11 +25,11 @@ GetOptions(
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. Genotyping array
     'array_type|a=s' =>\my $array_type,#e.g Genotypes
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage("0");
+) or die "Incorrect options!\n",$parsing->usage("0_table");
 
 if($help)
 {
-    $parsing->usage("0");
+    $parsing->usage("0_table");
 }
 
 my $TCGA_Pipeline_Dir = realpath("../../");
@@ -41,7 +41,7 @@ my $tables = "$disease_abbr\_tables";
 if(!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
     print "disease type, array type and/or experimental strategy was not entered!\n";
-    $parsing->usage("0");
+    $parsing->usage("0_table");
 }
 
 if ($Exp_Strategy eq "Genotyping array")
@@ -49,13 +49,13 @@ if ($Exp_Strategy eq "Genotyping array")
     if("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
     {
         print STDERR "data type must be Genotypes or Copy number estimate as those are the types that are used in this pipeline.\n";
-        $parsing->usage("0");
+        $parsing->usage("0_table");
     }
 }
 else
 {
     print "The experimental strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
-    $parsing->usage("0");
+    $parsing->usage("0_table");
 }
 
 my @disease;
