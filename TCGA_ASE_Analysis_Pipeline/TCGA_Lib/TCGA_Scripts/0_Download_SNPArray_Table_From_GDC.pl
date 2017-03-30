@@ -24,7 +24,6 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV 
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. Genotyping array
     'array_type|a=s' =>\my $array_type,#e.g Genotypes
-    'key|k=s'=> \my $key,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("0");
 
@@ -59,13 +58,6 @@ else
     $parsing->usage("0");
 }
 
-if(!defined $key or (!(-f $key)))
-{
-    print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
-    print $key,"\n";
-    $parsing->usage("0");
-}
-
 my @disease;
 if($disease_abbr =~ /,/)
 {
@@ -92,10 +84,6 @@ chdir $Table_Dir or die "Can't change to directory $Table_Dir: $!\n";
 foreach my $disease_abbr(@disease)
 {
     `mkdir $Analysispath/$disease_abbr` unless(-d "$Analysispath/$disease_abbr");
-    
-    #Check gdc key and mv it to db first!
-    #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
-    $parsing->copyfile2newfullpath("$key","$Table_Dir/gdc.key");
     
     if(!(-f "$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.txt"))
     {
