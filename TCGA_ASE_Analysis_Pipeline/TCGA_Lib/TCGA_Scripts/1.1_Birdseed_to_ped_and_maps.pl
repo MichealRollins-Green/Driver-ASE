@@ -143,7 +143,7 @@ mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
       my @lines = split("\t",$_);
       #only keep normal samples for plink
       my $tn = [split("-",$lines[1])]->[-1];
-      $tn =~ s/\D+//;
+      $tn =~ s/[a-zA-Z]$//;
       #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,user or default output directory from command line)
       $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir") if $tn > 9;
   }"$RNA_Path/ped_list";
