@@ -169,7 +169,7 @@ sub mk_tn_tables
         my @tcga_array = split("-",$TCGA);
         my $id = join("-",@tcga_array[0..2]);
         my $tumor_type = $tcga_array[-1];
-        $tumor_type =~ s/\D+//;
+        $tumor_type =~ s/[a-zA-Z]$//;
         if ($tumor_type > 9)
         {
             print HCN $TCGA, "\t", $r, "\t", $id, "\t", $tumor_type, "\n"; 
