@@ -75,7 +75,11 @@ sub mv_bcode
     {
         chomp($r);
         my @a = split("\t",$r);
-        print MVBO $r, "\t", substr($a[0],0,12), "\t", substr($a[0],13,2), "\n";
+        my $TCGA_ID = $a[0];#get TCGA ID
+        my $sample =~ [split("-",$TCGA_ID)]->[-1];#get sample type
+        $TCGA =~ s/-[0-9]+[a-zA-Z]$//;
+        $sample =~ s/[a-zA-Z]$//;
+        print MVBO $r, "\t", $TCGA_ID, "\t", $sample, "\n";
     }
     close(MVB);
     close(MVBO);
@@ -95,12 +99,11 @@ sub pull_normal
         chomp($r);
         my $tcga = [split("\\.",$r)]->[-1];#Get TCGA ID
         my $tumor_type = [split("-",$tcga)]->[-1];#Get tumor/normal sample type
-        chop($tumor_type);
-        my $tid = $tcga;
-        $tid = substr($tid,0,12);
+        $tumor_type =~ s/[a-zA-Z]$//;
+        $tcga =~ s/-[0-9]+[a-zA-Z]$//;
         if($tumor_type > 9)
         {
-            print PNO $r, "\t", $tid, "\t", $tumor_type, "\n";
+            print PNO $r, "\t", $tcga, "\t", $tumor_type, "\n";
         }
     }
     close(PN);
@@ -166,17 +169,17 @@ sub mk_tn_tables
     {
         chomp($r);
         my ($UUID,$TCGA) = split("\\.",$r);
-        my @tcga_array = split("-",$TCGA);
-        my $id = join("-",@tcga_array[0..2]);
-        my $tumor_type = $tcga_array[-1];
+        my $tcga_id = $TCGA;
+        $tcga_id =~ s/-[0-9]+[a-zA-Z]$//;
+        my $tumor_type = [split("-",$TCGA)]->[-1];
         $tumor_type =~ s/[a-zA-Z]$//;
         if ($tumor_type > 9)
         {
-            print HCN $TCGA, "\t", $r, "\t", $id, "\t", $tumor_type, "\n"; 
+            print HCN $TCGA, "\t", $r, "\t", $tcga_id, "\t", $tumor_type, "\n"; 
         }
         elsif($tumor_type <= 9)
         {
-            print HCT $TCGA, "\t", $r, "\t", $id, "\t", $tumor_type, "\n";   
+            print HCT $TCGA, "\t", $r, "\t", $tcga_id, "\t", $tumor_type, "\n";   
         }
         else
         {
