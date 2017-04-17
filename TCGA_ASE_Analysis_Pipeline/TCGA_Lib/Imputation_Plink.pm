@@ -267,7 +267,7 @@ sub Prepare_Genos
     
     my $pid = $a[1];
     my $tag = [split("-",$pid)]->[-1];
-    $tag =~ s/\D+//g;
+    $tag =~ s/[a-zA-Z]$//g;
     my $tmp_f1;
     my $tmp_f2;
     my $tmp_num1 = $parsing->rand_num;
