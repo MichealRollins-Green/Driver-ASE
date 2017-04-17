@@ -141,8 +141,9 @@ foreach my $disease_abbr(@disease)
 	{
 	    chomp($r);
 	    my @a = split("\t",$r);
-	    my $TCGA = substr($a[1],0,12);
-	    my $sample = [split("-",$a[1])]->[-1];
+	    my $TCGA = $a[1];
+	    my $sample = [split("-",$TCGA)]->[-1];
+	    $TCGA =~ s/-\d\d\D+//
 	    $sample =~ s/\D+//;
             $sample =~s/^0//;
 	    print IDO "$a[0]\t$a[1]\t$sample\t$a[2]\t$TCGA\n";
