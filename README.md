@@ -103,19 +103,19 @@ mkdir bin
 
 ####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
-####If you don't have root permissions to install the software, contact you system admin to have the software installed.
+####If you don't have root permissions to install the software, contact your system admin to have the software installed. 
 
 ####samtools
 
-download link - https://sourceforge.net/projects/samtools/files/latest/download?source=files
+download link - http://www.htslib.org/download/
 
 Place the compressed archive in the bin directory and decompress it
 
 ####Installing samtools
 
-tar -jxvf samtools-1.3.1.tar.bz2(version number may be different)
+tar -jxvf samtools-1.3.1.tar.bz2(your version number may be different)
 
-Change the name of the directory to samtools
+Change the name of the directory to samtools.
 
 remove or backup the archive
 
