@@ -15,8 +15,8 @@ print "Script started on $time.\n";
 #Changes to the directory of the script executing;
 chdir $Bin;
 
-my $parsing = TCGA_Lib::Parsing_Routines->new;
-my $Bad_SNP_CNV = TCGA_Lib::Bad_SNPS_and_CNVS->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
+my $Bad_SNP_CNV = Driver-ASE-Lib::Bad_SNPS_and_CNVS->new;
 my $TCGA_Pipeline_Dir = realpath("../../");
 
 GetOptions(

@@ -14,8 +14,8 @@ print "Script started on $time.\n";
 #Changes to the directory of the script executing;
 chdir $Bin;
 
-my $imput_plink = TCGA_Lib::Imputation_Plink->new;
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $imput_plink = Driver-ASE-Lib::Imputation_Plink->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV

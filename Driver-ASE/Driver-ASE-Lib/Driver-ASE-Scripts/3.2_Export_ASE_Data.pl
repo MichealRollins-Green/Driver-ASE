@@ -16,8 +16,8 @@ print "Script started on $time.\n";
 #Changes to the directory of the script executing;
 chdir $Bin;
 
-my $ase_analysis = TCGA_Lib::TCGA_ASE_Analysis->new;
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $ase_analysis = Driver-ASE-Lib::TCGA_ASE_Analysis->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV

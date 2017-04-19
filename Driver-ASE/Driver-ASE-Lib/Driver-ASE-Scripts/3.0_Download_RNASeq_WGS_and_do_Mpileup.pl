@@ -17,8 +17,8 @@ print "Script started on $time.\n";
 #Changes to the directory of the script executing;
 chdir $Bin;
 #Creates objects of the modules that are going to be used in this script.
-my $parsing = TCGA_Lib::Parsing_Routines->new;
-my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
+my $dwnld = Driver-ASE-Lib::Dwnld_WGS_RNA->new;
 
 #the different oprions for this script. The out_dir and ase_dir are optional.
 GetOptions(
