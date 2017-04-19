@@ -24,6 +24,7 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. Genotyping array
     'array_type|a=s' =>\my $array_type,#e.g Genotypes
+    'command|c=s' => \my $dwld_cmd, #curl or aria2c (if aria or aria2 is entered, it changes them to aria2c as that is the command)
     'key|k=s' => \my $key,
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("0");
@@ -71,6 +72,22 @@ if(!(-d "$TCGA_Pipeline_Dir/Database"))
 {
     print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
+}
+
+#Defaults to curl if no download command was specified
+if (!defined $dwld_cmd)
+{
+    $dwld_cmd = "curl";
+}
+elsif($dwld_cmd ne "curl" or $dwld_cmd ne "aria2c" or $dwld_cmd ne "aria" or $dwld_cmd ne "aria2")
+{
+    print "$dwld_cmd should be either curl or aria2c.\n";
+    exit;
+}
+
+if ($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+{
+    $dwld_cmd = "aria2c";
 }
 
 `mkdir -p "$Analysispath/$disease_abbr/$SNP"` unless(-d "$Analysispath/$disease_abbr/$SNP");        
@@ -154,7 +171,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.t
     
     #downloads files from gdc
     #download_files_from_gdc(download file,gdc key file directory,output directory,data type(e.g. Genotypes))
-    $dwnld->download_files_from_gdc("$disease_abbr.$array_type.id2uuid.txt","$SNP_dir","$OUT_DIR","$array_type"); 
+    $dwnld->download_files_from_gdc("$disease_abbr.$array_type.id2uuid.txt","$SNP_dir","$OUT_DIR","$array_type",$dwld_cmd); 
     
     `mkdir $Analysispath/$disease_abbr/$tables` unless(-d "$Analysispath/$disease_abbr/$tables");
     
@@ -163,7 +180,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.t
 else
     {
         print "It seems that a table already exists in $Analysispath/$disease_abbr/$tables: $disease_abbr.$array_type.id2uuid.txt\n";
-        $dwnld->download_files_from_gdc("$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.txt","$SNP_dir","$OUT_DIR","$array_type"); 
+        $dwnld->download_files_from_gdc("$Analysispath/$disease_abbr/$tables/$disease_abbr.$array_type.id2uuid.txt","$SNP_dir","$OUT_DIR","$array_type",$dwld_cmd); 
     }
 #get_only_files_in_dir(directory to get files from)
 my @del_files = $parsing->get_only_files_in_dir("$SNP_dir");

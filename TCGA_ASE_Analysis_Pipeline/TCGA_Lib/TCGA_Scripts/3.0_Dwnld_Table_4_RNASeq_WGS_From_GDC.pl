@@ -23,6 +23,7 @@ my $dwnld = TCGA_Lib::Dwnld_WGS_RNA->new;
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV or OV,PRAD
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. WGS RNA-Seq
+    'command|c=s' => \my $dwnld_cmd,#curl or aria2c (if aria or aria2 is entered, it changes them to aria2c as that is the command)
     'key|k=s'=>\my $key,#path to the gdc.key.
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.0_table");
@@ -64,6 +65,22 @@ if(!(-d "$TCGA_Pipeline_Dir/Database"))
 {
     print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
+}
+
+#Defaults to curl if no download command was specified
+if (!defined $dwld_cmd)
+{
+    $dwld_cmd = "curl";
+}
+elsif($dwld_cmd ne "curl" or $dwld_cmd ne "aria2c" or $dwld_cmd ne "aria" or $dwld_cmd ne "aria2")
+{
+    print "$dwld_cmd should be either curl or aria2c.\n";
+    exit;
+}
+
+if ($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+{
+    $dwld_cmd = "aria2c";
 }
 
 my @disease;
@@ -159,7 +176,7 @@ foreach my $disease_abbr(@disease)
         $dwnld->parse_meta_id("$disease_abbr.edit.metadata.txt","$disease_abbr.UUID.txt","meta_ids.txt");
         
         #ref_parse(output file from parse_meta_id,key directory,output file)
-        $dwnld->ref_parse("meta_ids.txt","$Table_Dir","reference.txt");
+        $dwnld->ref_parse("meta_ids.txt","$Table_Dir","reference.txt",$dwld_cmd);
         
         #index_ids(.result.txt,output file)
         $dwnld->index_ids("$disease_abbr.result.txt","Payload.txt");
