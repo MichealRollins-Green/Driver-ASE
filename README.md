@@ -1,4 +1,4 @@
-# TAAP (TCGA ASE Analysis Pipeline)
+# Driver-ASE
 
 A pipeline that correlates somatic mutation in tumor/normal WGS paired samples with gene-level allele-specific expression in an effort to systematically uncover cis-regulatory variants involved in tumorigenesis.
 
@@ -210,13 +210,13 @@ The directory with the files can be downloaded from the link below.
 #After Pipeline is Downloaded
 
 ####1. Copy it to a directory and extract it.
-####2. Enter the directory and copy the TCGA_ASE_Analysis_Pipeline dirctory to a new location.
+####2. Enter the directory and copy the Driver-ASE to a new location.
 
 ####Database directory download link
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
-####Once downloaded place the directory in the TCGA_ASE_Analysis_Pipeline directory and decompress it.
+####Once downloaded place the directory in the Driver-ASE directory and decompress it.
 
 ####GDC Key Required
 
