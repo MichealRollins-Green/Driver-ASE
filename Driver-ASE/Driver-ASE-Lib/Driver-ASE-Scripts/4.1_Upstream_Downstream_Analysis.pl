@@ -28,8 +28,8 @@ if($help)
     $parsing->usage;
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
-my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $Driver_ASE_Dir = realpath("../../");
+my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
 my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
 my $somatic = "somatic_variants";

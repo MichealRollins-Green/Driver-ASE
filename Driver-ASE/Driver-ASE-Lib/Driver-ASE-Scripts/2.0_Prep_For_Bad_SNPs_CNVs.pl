@@ -17,7 +17,7 @@ chdir $Bin;
 
 my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 my $Bad_SNP_CNV = Driver-ASE-Lib::Bad_SNPS_and_CNVS->new;
-my $TCGA_Pipeline_Dir = realpath("../../");
+my $Driver_ASE_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -35,7 +35,7 @@ if(!defined $disease_abbr)
     $parsing->usage;
 }
 
-my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $database_path = "$Driver_ASE_Dir/Database";
 
 #Checks if there is no Database directory
 if(!(-d "$database_path"))

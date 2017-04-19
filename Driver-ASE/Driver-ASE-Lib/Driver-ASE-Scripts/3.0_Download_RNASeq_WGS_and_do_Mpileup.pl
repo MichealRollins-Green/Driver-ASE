@@ -38,10 +38,10 @@ if($help)
     $parsing->usage("3.0");
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
-my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $Driver_ASE_Dir = realpath("../../");
+my $database_path = "$Driver_ASE_Dir/Database";
 #Directory where all analysis data will be going in.
-mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $rna_dwnlds = "rna_dwnlds";

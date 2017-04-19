@@ -34,8 +34,8 @@ if ($help)
     $parsing->usage("0");
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
-mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
+my $Driver_ASE_Dir = realpath("../../");
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
 my $SNP = "SNP6";
 my $tables = "$disease_abbr\_tables";
@@ -68,9 +68,9 @@ if (!defined $key or (!(-f $key)))
 }
 
 #Check if the Database directory does not exist
-if(!(-d "$TCGA_Pipeline_Dir/Database"))
+if(!(-d "$Driver_ASE_Dir/Database"))
 {
-    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$Driver_ASE_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 

@@ -27,9 +27,9 @@ if ($help)
     $parsing->usage;
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
+my $Driver_ASE_Dir = realpath("../../");
 my $Analysispath = realpath("../../Analysis");
-my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $database_path = "$Driver_ASE_Dir/Database";
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $affy_dir = "affy6";
 

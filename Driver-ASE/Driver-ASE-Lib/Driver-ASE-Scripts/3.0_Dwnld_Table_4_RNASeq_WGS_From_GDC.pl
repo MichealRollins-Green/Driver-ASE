@@ -34,9 +34,9 @@ if($help)
     $parsing->usage("3.0_table");
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
+my $Driver_ASE_Dir = realpath("../../");
 #Directory where all analysis data will be going in.
-mkdir "$TCGA_Pipeline_Dir/Analysis" unless(-d "$TCGA_Pipeline_Dir/Analysis");
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
 my $Table_Dir = "tables";
 my $tables = "$disease_abbr\_tables";
@@ -61,9 +61,9 @@ if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
 }
 
 #Checks if there is not Database directory
-if(!(-d "$TCGA_Pipeline_Dir/Database"))
+if(!(-d "$Driver_ASE_Dir/Database"))
 {
-    print STDERR "$TCGA_Pipeline_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    print STDERR "$Driver_ASE_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
 

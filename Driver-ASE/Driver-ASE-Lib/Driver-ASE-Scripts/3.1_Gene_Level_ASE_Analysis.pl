@@ -2,7 +2,7 @@
 
 use FindBin qw($Bin);
 use lib "$Bin/..";
-use TCGA_ASE_Analysis;
+use Gene_Level_ASE_Analysis;
 use Parsing_Routines;
 use Cwd 'realpath';
 use Cwd;
@@ -16,7 +16,7 @@ print "Script started on $time.\n";
 #Changes to the directory of the script executing;
 chdir $Bin;
 
-my $ase_analysis = Driver-ASE-Lib::TCGA_ASE_Analysis->new;
+my $ase_analysis = Driver-ASE-Lib::Gene_Level_ASE_Analysis->new;
 my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 GetOptions(
@@ -29,8 +29,8 @@ if($help)
     $parsing->usage;
 }
 
-my $TCGA_Pipeline_Dir = realpath("../../");
-my $database_path = "$TCGA_Pipeline_Dir/Database";
+my $Driver_ASE_Dir = realpath("../../");
+my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $ase = "$RNA_Path/ase";
