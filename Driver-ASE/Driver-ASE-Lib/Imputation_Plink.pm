@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-package TCGA_Lib::Imputation_Plink;
+package Driver-ASE-Lib::Imputation_Plink;
 
 use FindBin qw($Bin);
 use strict;
@@ -15,7 +15,7 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw();
 
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 ###############################################################################
 # Imputation_Plink.pm version 1

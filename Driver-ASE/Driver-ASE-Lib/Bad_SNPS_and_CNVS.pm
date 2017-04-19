@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-package TCGA_Lib::Bad_SNPS_and_CNVS;
+package Driver-ASE-Lib::Bad_SNPS_and_CNVS;
 
 use FindBin qw($Bin);
 use strict;
@@ -12,7 +12,7 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw();
 
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 ###############################################################################
 # Bad_SNPS_and_CNVS.pm version 1

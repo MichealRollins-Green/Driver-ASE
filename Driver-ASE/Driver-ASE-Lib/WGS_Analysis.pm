@@ -1,4 +1,4 @@
-package TCGA_Lib::WGS_Analysis;
+package Driver-ASE-Lib::WGS_Analysis;
 
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw();
 
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 ###############################################################################
 # WGS_Analysis.pm version 1

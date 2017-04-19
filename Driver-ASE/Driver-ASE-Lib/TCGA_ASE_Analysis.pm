@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package TCGA_Lib::TCGA_ASE_Analysis;
+package Driver-ASE-Lib::TCGA_ASE_Analysis;
 
 use warnings;
 use strict;
@@ -19,7 +19,7 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw();
 
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 ###############################################################################
 # TCGA_ASE_Analysis.pm version 1

@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-package TCGA_Lib::Dwnld_WGS_RNA;
+package Driver-ASE-Lib::Dwnld_WGS_RNA;
 
 use strict;
 use warnings;
@@ -18,7 +18,7 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw();
 
-my $parsing = TCGA_Lib::Parsing_Routines->new;
+my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 ###############################################################################
 # Dwnld_WGS_RNA.pm version 1
