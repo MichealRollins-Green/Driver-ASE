@@ -253,7 +253,7 @@ Below are the scripts that are included in this pipeline:
 
 3.0_Dwnld_Table_4_RNASeq_WGS_From_GDC.pl - Downloads the RNA-Seq or WGS table of specified cancer types from GDC. Only run this script if the table file is missing from the tables directory of the cancer type.
 
-3.1_ASE_Analysis.pl – Performs gene level ASE Analysis on the samples that had mpileups done on them.
+3.1_Gene_Level_ASE_Analysis.pl – Performs gene level ASE Analysis on the samples that had mpileups done on them.
 
 3.2_Export_ASE_Data.pl – Performs the final touches by compressing what will be needed for further analysis and moving them into a specific directory.
 
@@ -273,6 +273,6 @@ Imputation_Plink.pm - 1.0_Prep_TCGA_for_Imputation_and_Plink.pl, 1.1_Birdseed_to
 
 Bad_SNPS_and_CNVS.pm - 2.0_Lookups_for_normal.pl, 2.1_Get_Bad_SNPs_and_CNVs.pl
 
-TCGA_ASE_Analysis.pm - 3.1_ASE_Analysis_for_other_Bams.pl, 3.2_Export_ASE_data.pl
+Gene_Level_ASE_Analysis.pm - 3.1_ASE_Analysis_for_other_Bams.pl, 3.2_Export_ASE_data.pl
 
 WGS_Analysis.pm - 4.0_Somatic_Variants.pl, 4.1_Upstream_Downstream_Analysis.pl
