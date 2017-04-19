@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-package Driver-ASE-Lib::TCGA_ASE_Analysis;
+package Driver-ASE-Lib::Gene_Level_ASE_Analysis;
 
 use warnings;
 use strict;
@@ -22,11 +22,11 @@ our @EXPORT_OK = qw();
 my $parsing = Driver-ASE-Lib::Parsing_Routines->new;
 
 ###############################################################################
-# TCGA_ASE_Analysis.pm version 1
+# Gene_Level_ASE_Analysis.pm version 1
 # Written by Tomas Babak, Zhongshan Cheng, Michael Vermeulen and Micheal Rollins-Green
 #  in the Department of Biology at Queen's University.
 #
-# TCGA ASE Analysis
+# Gene_Level_ASE_Analysis
 #
 # Module interface
 #
