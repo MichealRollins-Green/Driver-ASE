@@ -52,7 +52,7 @@ sub usage
     
     if($script eq "0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--key|-k path to gdc key] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--command|-c curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
         
         print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
         
@@ -72,11 +72,11 @@ sub usage
     }
     elsif($script eq "3.0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--key|-k peht to gdc key] [--choice|-c all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--var_path|-v path to the VarScan jar file (Enter if -e is WGS)] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--option|-o all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--command|-c curl or aria2c] [--var_path|-v path to the VarScan jar file (Enter if -e is WGS)] [--key|-k peht to gdc key] [--help|-h]\n";
     }
     elsif($script eq "3.0_table")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--key|-k path to gdc key] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--command|-c curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
     }
     elsif($script eq "4.0")
     {

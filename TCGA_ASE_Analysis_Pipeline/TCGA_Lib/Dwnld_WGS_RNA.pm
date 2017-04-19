@@ -55,6 +55,7 @@ sub gdc_parser
     my $exp_strat = shift;#Experimental Strategy
     my $data_type;
     my @diseases = split(" ",$disease_abbr);
+    my %dis_info_hash;
     
     foreach my $disease_abbr(@diseases)
     {
@@ -242,6 +243,7 @@ sub ref_parse
     my $self = $meta_ID and $meta_ID = shift if ref $meta_ID;
     my $gdc_key_path = shift;
     my $reference = shift;
+    my $dwld_cmd = shift;
     my $token = ImportAlldataIntoVar("$gdc_key_path/gdc.key");
     
     open(my $fh,$meta_ID) or die "couldn't find file $meta_ID: $!\n";
@@ -249,16 +251,26 @@ sub ref_parse
     close($fh);
     open(RP,">$reference")or die "Can't open file $reference for output: $!\n";
     mkdir "ref_tmp";
+
+    
    mce_map
    {
         chomp($_);
         my($refID,$UUID) = ($_ =~ /(\S*)\t(\S*)/);
-        my $aria_cmd = "aria2c -s 16 -x 16 --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'ref_tmp/$refID.$UUID\' ";
-        `$aria_cmd`;
+        my $cmd;
+        if ($dwld_cmd eq "curl")
+        {
+            $cmd = "$dwld_cmd -# --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'ref_tmp/$refID.$UUID\' ";
+        }
+        else
+        {
+            #aria2c is the download command if curl was not specified as the command in the command line when running script
+            $cmd = "$dwld_cmd -s 16 -x 16 --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'ref_tmp/$refID.$UUID\' ";
+        }
+        `$cmd`;
     }@table;
    opendir REF, "ref_tmp" or die;
     my @ref_txts = grep{!/^\./ && -f "ref_tmp/$_"} readdir(REF);
-    #@ref_txts = grep{!/^\./}@ref_txts;
     closedir(REF);
     
     foreach my $txt(@ref_txts)
@@ -386,6 +398,7 @@ sub Dwld_WGSBam_and_do_mpileup
     my $disease_abbr = shift;
     my $alt_ref = shift;
     my $tables = shift;
+    my $dwld_cmd = shift;
     
     $mpileup_outdir =~ s/\/$//;
     
@@ -484,10 +497,7 @@ sub Dwld_WGSBam_and_do_mpileup
         {
             print "Now start to download bams in the file $f!\n";
             #dwnld_wgs_or_rna(bamlist,key directory,bam output directory)
-            dwnld_wgs_or_rna("$key_dir/$newdir/$f","$key_dir","$wgs_output_dir");
-            
-            my $excluded_pids = $parsing->Get_PIDs();
-            chomp($excluded_pids);
+            dwnld_wgs_or_rna("$key_dir/$newdir/$f","$key_dir","$wgs_output_dir",$dwld_cmd);
            
            if($action eq "all")
             {
@@ -516,6 +526,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
     my $cds_sorted_path = shift;
     my $action = shift;
     my $line_num2split = shift;
+    my $dwld_cmd = shift;
     
     $bamlist =~ s/\/$//;
     print STDERR "bamlist $bamlist does not exist!\n" and exit unless(-e "$bamlist"); 
@@ -595,7 +606,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
         {
             print "Download starting for bams in the file $f!\n";
             #dwnld_wgs_or_rna(bamlist,ker directory,bam output directory)
-            dwnld_wgs_or_rna("$key_dir/$newdir/$f","$key_dir","$bam_output_dir");
+            dwnld_wgs_or_rna("$key_dir/$newdir/$f","$key_dir","$bam_output_dir",$dwld_cmd);
             if($action eq "all")
             {
                 launch_RNA_Seq_pileup("$key_dir/$newdir/$f","$cds_sorted_path","$mpileup_outdir","$bam_output_dir");
@@ -770,6 +781,7 @@ sub dwnld_wgs_or_rna
     my $self = $infile and $infile = shift if ref $infile;
     my $key_dir=shift;
     my $output_dir = shift;
+    my $dwld_cmd = shift;
     
     open(DW,$infile) or die "Can't open file for input: $!\n";
     
@@ -785,14 +797,30 @@ sub dwnld_wgs_or_rna
         my @a = split("\t",$r);
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         mkdir "$output_dir/$a[0]" unless(-d "$output_dir/$a[0]");
-        #if a bam exists and there is no index file, curl will continue downloading the bam otherwise it will download the bam as new
+        #if a bam exists and there is no index file, curl or aria2c will continue downloading the bam otherwise it will download the bam as new
         if (-f "$output_dir/$a[0]/$a[0].bam" and (!(-f "$output_dir/$a[0]/$a[0].bam.bai")))
         {
-           $cmd = "aria2c -s 16 -x 16 -c --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            if ($dwld_cmd eq "curl")
+            {
+                $cmd = "$dwld_cmd -C - --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$output_dir/$a[0]/$a[0].bam\' ";
+            }
+            else
+            {
+                #aria2c is the download command if curl was not specified as the command in the command line when running script
+                $cmd = "$dwld_cmd -s 16 -x 16 -c --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            }
         }
         else
         {
-            $cmd = "aria2c -s 16 -x 16 --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            if ($dwld_cmd eq "curl")
+            {
+                $cmd = "curl --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$output_dir/$a[0]/$a[0].bam\' ";
+            }
+            else
+            {
+                #aria2c is the download command if curl was not specified as the command in the command line when running script
+                $cmd = "$dwld_cmd -s 16 -x 16 --dir $output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            }
         }
         
         unless(-f "$output_dir/$a[0]/$a[0].bam.bai")
@@ -808,7 +836,7 @@ sub dwnld_wgs_or_rna
         my $bam = [split(" ",$cmd)]->[-1];
         print STDERR "working on $bam!\n";
         
-       unless(-f "$bam.bai")
+    	   unless(-f "$bam.bai")
         {
             print STDERR "Going to run:\n $c1\n$c2\n";
             `$c1`;`$c2`;
@@ -818,6 +846,7 @@ sub dwnld_wgs_or_rna
             print STDERR "Going to run:\n $c2\n";
             `$c2`;
         }
+       
         print STDERR "$_ is done.\n";
     }@cmds;
 }
@@ -829,6 +858,7 @@ sub download_files_from_gdc
     my $key_dir = shift;
     my $output_dir = shift;
     my $data_type = shift;
+    my $dwld_cmd = shift;
     
     open(DW,"$infile") or die "Can't open file for input: $!\n";
     
@@ -845,11 +875,27 @@ sub download_files_from_gdc
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         if (-f "$output_dir/$a[0].$a[1]")
         {
-            $cmd = "aria2c -s 16 -x 16 -c --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            if ($dwnld_cmd eq "curl")
+            {
+                $cmd = "$dwnld_cmd -C - --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
+            }
+            else
+            {
+                #aria2c is the download command if curl was not specified as the command in the command line when running script
+                $cmd = "$dwnld_cmd -s 16 -x 16 -c --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            }
         }
         else
         {
-            $cmd = "aria2c -s 16 -x 16 --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            if ($dwnld_cmd eq "curl")
+            {
+                $cmd = "$dwnld_cmd  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
+            }
+            else
+            {
+                #aria2c is the download command if curl was not specified as the command in the command line when running script
+                $cmd = "$dwnld_cmd -s 16 -x 16 --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+            }
         }
         
         print STDERR "The following code is submitted: \n$cmd\n\n";
@@ -925,16 +971,14 @@ sub launch_wgs_mpileup_and_VarScan
     my $infile;
     foreach my $tn_bam(@$bam_fullpaths_ref)
     {
-    
     	if (-e "$tables/already_done_WGS.txt")
     	{
-        	$infile = "$tables/already_done_WGS.txt";
+		$infile = "$tables/already_done_WGS.txt";
     	}
     	else
     	{
         	$infile = "already_done_WGS.txt";
     	}
-	
         chomp($tn_bam);
         next if $tn_bam =~ /^\s*$/;
         my @a = split("\t",$tn_bam);
@@ -1019,8 +1063,8 @@ sub launch_wgs_mpileup_and_VarScan
 	
 	open(DON,">>$infile") or die "Can't open file already_done_WGS.txt: $!\n";
         
-    	print DON $tumor,"\t",$normal,"\n";
-	
+        print DON $tumor,"\t",$normal,"\n";
+        
 	close(DON);
     }
     Delete_Files_Recursively("$wgs_output_dir","\.bam");
