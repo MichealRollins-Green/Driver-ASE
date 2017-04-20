@@ -207,11 +207,21 @@ PATH=$PATH:$HOME/Driver-ASE-bin:$HOME/Driver-ASE-bin/samtools/:$HOME/Driver-ASE-
 
 source ~/.bash_profile
 
+# Download Package
+
+##### To get the pipeline this way, git needs to be installed. The package will be donwnloaded to the current directory the user is in when they run the command.
+
+git clone https://github.com/MichealRollins-Green/Driver-ASE.git
+
 
 # After Pipeline is Downloaded
 
+##### If the package was downloaded through github and not through git in the command line interface, follow the two steps below.
+
 #### 1. Copy it to a directory and extract it.
 #### 2. Enter the directory and copy the Driver-ASE directory to a new location.
+
+Move the Driver-ASE directory anywhere on the system.
 
 This pipeline also uses many different files which are all in the same directory called Database.
 The directory with the files can be downloaded from the link below.
