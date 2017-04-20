@@ -34,6 +34,8 @@ gcc-c++ - sudo yum install gcc-c++.x86_64
 
 ncurses-devel - sudo yum install ncurses-devel.x86_64
 
+java - yum search java | grep 'java-' (install the latest version that is listed)
+
 Make sure you have these perl modules installed before you run these scripts.
 
 #### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
@@ -189,7 +191,6 @@ download link - https://sourceforge.net/projects/varscan/files/
 
 place the downloaded software in the Driver-ASE-bin directory.
 
-
 You will need to add the software to your path in order for the pipeline to be able to run them. VarScan is the ony exception to this as you will need to put the full path to it in order for it to run.
 
 cd ~ 
@@ -207,7 +208,7 @@ PATH=$PATH:$HOME/Driver-ASE-bin:$HOME/Driver-ASE-bin/samtools/:$HOME/Driver-ASE-
 source ~/.bash_profile
 
 
-#After Pipeline is Downloaded
+# After Pipeline is Downloaded
 
 #### 1. Copy it to a directory and extract it.
 #### 2. Enter the directory and copy the Driver-ASE directory to a new location.
