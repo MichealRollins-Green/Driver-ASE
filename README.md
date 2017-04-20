@@ -38,7 +38,7 @@ java - yum search java | grep 'java-' (install the latest version that is listed
 
 Make sure you have these perl modules installed before you run these scripts.
 
-#### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
+##### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
 
 If you are using cpan and it is not installed, install it and run it.
 
@@ -76,11 +76,11 @@ strict -  perl -e 'use strict'
 
 warnings -  perl -e 'use warnings;'
 
-#### aria2 is optional for this pipeline but the pipeline does support it.
+##### aria2 is optional for this pipeline but the pipeline does support it.
 
 aria2 - https://aria2.github.io/
 
-#### The commands to install aria2 are as follows:
+##### The commands to install aria2 are as follows:
 
 ./configure --with-openssl
 
@@ -88,12 +88,12 @@ sudo make
 
 sudo make install
 
-#### This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
+##### This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
 
 sudo yum install curl
 
-### You will need to install the software below as well.
-#### Create a directory in your home called Driver-ASE-bin and install the software below to it.
+#### You will need to install the software below as well.
+##### Create a directory in your home called Driver-ASE-bin and install the software below to it.
 
 cd ~
 
@@ -101,7 +101,7 @@ mkdir Driver-ASE-bin
 
 #### NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
-#### If you don't have root permissions to install the software, contact your system admin to have the software installed. 
+##### If you don't have root permissions to install the software, contact your system admin to have the software installed. 
 
 #### samtools
 
