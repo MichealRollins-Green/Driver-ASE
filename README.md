@@ -18,7 +18,7 @@ Make sure that the firewall allows for incoming and outgoing of traffic for HTTP
 
 #### Packages
 
-This pipeline also requires some packages to be installed as the other software it uses within it needs them.
+##### This pipeline also requires some packages to be installed as the other software it uses within it needs them.
 
 openssl - sudo yum install openssl
 
