@@ -91,11 +91,11 @@ sudo make install
 sudo yum install curl
 
 ###You will need to install the software below as well
-####Create a bin directory in your home directory and install the software below to it
+####Create a directory in your home called Driver-ASE-bin and install the software below to it
 
 cd ~
 
-mkdir bin
+mkdir Driver-ASE-bin
 
 ####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
@@ -105,7 +105,7 @@ mkdir bin
 
 download link - http://www.htslib.org/download/
 
-Place the compressed archive in the bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it
 
 ####Installing samtools
 
@@ -128,7 +128,7 @@ sudo make install
 
 download link - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
 
-Place the compressed archive in the bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it
 
 ####Installing shapeit
 
@@ -138,14 +138,14 @@ remove or backup the archive
 
 mkdir shapeit
 
-mv bin example LICENCE shapeit
+mv Driver-ASE-bin example LICENCE shapeit
 
 
 ####impute2(the static verison was used for this pipeline) 
 
 download link - https://mathgen.stats.ox.ac.uk/impute/impute_v2.html#download
 
-Place the compressed archive in the bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it
 
 ####Installing impute2
 
@@ -160,7 +160,7 @@ remove or backup the archive
 
 download link - https://www.cog-genomics.org/plink2
 
-Place the compressed archive in the bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it
 
 ####Installing plink
 
@@ -175,9 +175,9 @@ mv plink1 plink
 
 ####overlapSelect 
 
-download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/overlapSelect
+download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/
 
-place the downloaded software in the bin directory and chand the permissions so that it can be executed.
+Find overlapSelect and download it. After it downloads, place it in the Driver-ASE-bin directory and change the permissions so that it can be executed by anyone.
 
 chmod a+x overlapSelect
 
@@ -185,7 +185,7 @@ chmod a+x overlapSelect
 
 download link - https://sourceforge.net/projects/varscan/files/
 
-place the downloaded software in the bin directory
+place the downloaded software in the Driver-ASE-bin directory
 
 
 You will need to add the software to your path in order for the pipeline to be able to run them. VarScan is the ony exception to this as you will need to put the full path to it in order for it to run.
@@ -196,7 +196,7 @@ vi .bash_profile
 
 ####press i to insert into the file
 
-PATH=$PATH:$HOME/bin:$HOME/bin/samtools/:$HOME/bin/shapeit/bin/:$HOME/bin/impute2/:/usr/bin/:$HOME/bin/plink
+PATH=$PATH:$HOME/Driver-ASE-bin:$HOME/Driver-ASE-bin/samtools/:$HOME/Driver-ASE-bin/shapeit/Driver-ASE-bin/:$HOME/Driver-ASE-bin/impute2/:/usr/bin/:$HOME/Driver-ASE-bin/plink
 
 ####press the Esc key
 
