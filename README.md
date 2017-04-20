@@ -74,11 +74,11 @@ strict -  perl -e 'use strict'
 
 warnings -  perl -e 'use warnings;'
 
-####aria2 is optional for this pipeline but 
+####aria2 is optional for this pipeline but the pipeline does support it.
 
 aria2 - https://aria2.github.io/
 
-####The commands to install aria2 are as follows
+####The commands to install aria2 are as follows:
 
 ./configure --with-openssl
 
@@ -90,8 +90,8 @@ sudo make install
 
 sudo yum install curl
 
-###You will need to install the software below as well
-####Create a directory in your home called Driver-ASE-bin and install the software below to it
+###You will need to install the software below as well.
+####Create a directory in your home called Driver-ASE-bin and install the software below to it.
 
 cd ~
 
@@ -105,7 +105,7 @@ mkdir Driver-ASE-bin
 
 download link - http://www.htslib.org/download/
 
-Place the compressed archive in the Driver-ASE-bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 ####Installing samtools
 
@@ -113,7 +113,7 @@ tar -jxvf samtools-1.3.1.tar.bz2(your version number may be different)
 
 Change the name of the directory to samtools.
 
-remove or backup the archive
+remove or backup the archive.
 
 cd samtools
 
@@ -128,13 +128,13 @@ sudo make install
 
 download link - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
 
-Place the compressed archive in the Driver-ASE-bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 ####Installing shapeit
 
 tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz
 
-remove or backup the archive
+remove or backup the archive.
 
 mkdir shapeit
 
@@ -145,22 +145,24 @@ mv Driver-ASE-bin example LICENCE shapeit
 
 download link - https://mathgen.stats.ox.ac.uk/impute/impute_v2.html#download
 
-Place the compressed archive in the Driver-ASE-bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 ####Installing impute2
 
 tar -zxvf impute_v2.3.2_x86_64_static.tgz 
 
-rename the directory impute2
+rename the directory impute2.
 
-remove or backup the archive
+mv impute_* impute2
+
+remove or backup the archive.
 
 
 ####plink1.9 or later (Developement) 
 
 download link - https://www.cog-genomics.org/plink2
 
-Place the compressed archive in the Driver-ASE-bin directory and decompress it
+Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 ####Installing plink
 
@@ -185,7 +187,7 @@ chmod a+x overlapSelect
 
 download link - https://sourceforge.net/projects/varscan/files/
 
-place the downloaded software in the Driver-ASE-bin directory
+place the downloaded software in the Driver-ASE-bin directory.
 
 
 You will need to add the software to your path in order for the pipeline to be able to run them. VarScan is the ony exception to this as you will need to put the full path to it in order for it to run.
@@ -198,19 +200,20 @@ vi .bash_profile
 
 PATH=$PATH:$HOME/Driver-ASE-bin:$HOME/Driver-ASE-bin/samtools/:$HOME/Driver-ASE-bin/shapeit/Driver-ASE-bin/:$HOME/Driver-ASE-bin/impute2/:/usr/bin/:$HOME/Driver-ASE-bin/plink
 
-####press the Esc key
+####press the Esc key.
 
 :wq
 
 source ~/.bash_profile
 
-This pipeline also uses many different files which are all in the same directory.
-The directory with the files can be downloaded from the link below.
 
 #After Pipeline is Downloaded
 
 ####1. Copy it to a directory and extract it.
-####2. Enter the directory and copy the Driver-ASE to a new location.
+####2. Enter the directory and copy the Driver-ASE directory to a new location.
+
+This pipeline also uses many different files which are all in the same directory called Database.
+The directory with the files can be downloaded from the link below.
 
 ####Database directory download link
 
@@ -218,13 +221,13 @@ https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
 ####Once downloaded place the directory in the Driver-ASE directory and decompress it.
 
-####GDC Key Required
+####GDC Key Required.
 
-You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to https://gdc-portal.nci.nih.gov/ 
+You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to: https://gdc-portal.nci.nih.gov/ 
 
 ####1. Go to login. 
 ####2. Click on your account name in the top right to open the drop down and click download token. 
-####3. Rename the downloaded token to gdc.key
+####3. Rename the downloaded token to gdc.key.
 ####4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the path to the sctipts if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
