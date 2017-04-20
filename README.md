@@ -2,21 +2,21 @@
 
 A pipeline that correlates somatic mutation in tumor/normal WGS paired samples with gene-level allele-specific expression in an effort to systematically uncover cis-regulatory variants involved in tumorigenesis.
 
-#Introduction
+# Introduction
 
 It is well known that some DNA mutations can induce uncontrolled cell division and ultimately lead to cancer. Advances in sequencing over the last five years have enabled researchers to scan all of the DNA within a tumor to identify these mutations, and indeed we are finding thousands, leaving us with the daunting task of distinguishing the potentially few causal changes from the vast majority of “passengers”. Researchers are focusing on protein-coding regions where functional effects can be readily predicted. Unfortunately, this approach misses the expansive oncogenic effects caused by changes in gene regulation (turning genes up/down), which are much more difficult to identify. We have pioneered a new bioinformatic approach to probe high-throughput RNA sequencing (RNA-Seq) data, generated from the molecules that carry out gene expression, to identify the truly causal regulatory mutations. We applied our method to all suitable breast cancer samples in The Cancer Genome Atlas (TCGA) and mapped over a hundred genes whose regulation is perturbed by regulatory mutations in breast tumors.
 
 The pipeline performs ASE analysis with using RNA-Seq, affymetrix genotyping array, whole genome sequence, copy number variant, and methylation data from TCGA. It is divided into 5 parts that have 2 or more Perl scripts for each part. They are used to download, run imputation, perform ASE analysis as well as perform WGS analysis. These scripts are easy to use and provide options and usages. To speed up the analysis, the perl module MCE (Multiple Core Engine) was implemented into the pipeline. Additionally, this pipeline uses other software to process data, including samtools, impute2, shapeit, plink, overlapSelect and VarScan with links found below for each software. 
 
-#Install
+# Install
 
 This pipeline was coded on a Centos 7 x86_64 system and some of the software listed below are for an x86_64 linux distribution and some of the software may not be compatible with i686 or other versions. The commands below may also be different based on what distribution is being used.
 
-####Firewall and Other
+#### Firewall and Other
 
 Make sure that the firewall allows for incoming and outgoing of traffic for HTTPS/HTTP and FTP. Also make sure that MySQL and WGET are installed.
 
-####Packages
+#### Packages
 
 This pipeline also requires some packages to be installed as the other software it uses within it needs them.
 
@@ -36,7 +36,7 @@ ncurses-devel - sudo yum install ncurses-devel.x86_64
 
 Make sure you have these perl modules installed before you run these scripts.
 
-####In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
+#### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
 
 If you are using cpan and it is not installed, install it and run it.
 
@@ -74,11 +74,11 @@ strict -  perl -e 'use strict'
 
 warnings -  perl -e 'use warnings;'
 
-####aria2 is optional for this pipeline but the pipeline does support it.
+#### aria2 is optional for this pipeline but the pipeline does support it.
 
 aria2 - https://aria2.github.io/
 
-####The commands to install aria2 are as follows:
+#### The commands to install aria2 are as follows:
 
 ./configure --with-openssl
 
@@ -86,28 +86,28 @@ sudo make
 
 sudo make install
 
-####This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
+#### This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
 
 sudo yum install curl
 
-###You will need to install the software below as well.
-####Create a directory in your home called Driver-ASE-bin and install the software below to it.
+### You will need to install the software below as well.
+#### Create a directory in your home called Driver-ASE-bin and install the software below to it.
 
 cd ~
 
 mkdir Driver-ASE-bin
 
-####NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
+#### NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
-####If you don't have root permissions to install the software, contact your system admin to have the software installed. 
+#### If you don't have root permissions to install the software, contact your system admin to have the software installed. 
 
-####samtools
+#### samtools
 
 download link - http://www.htslib.org/download/
 
 Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
-####Installing samtools
+#### Installing samtools
 
 tar -jxvf samtools-1.3.1.tar.bz2(your version number may be different)
 
@@ -124,13 +124,13 @@ make
 sudo make install
 
 
-####shapeit(v2.12 static was used for this pipeline) 
+#### shapeit(v2.12 static was used for this pipeline) 
 
 download link - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
 
 Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
-####Installing shapeit
+#### Installing shapeit
 
 tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz
 
@@ -141,13 +141,13 @@ mkdir shapeit
 mv Driver-ASE-bin example LICENCE shapeit
 
 
-####impute2(the static verison was used for this pipeline) 
+#### impute2(the static verison was used for this pipeline) 
 
 download link - https://mathgen.stats.ox.ac.uk/impute/impute_v2.html#download
 
 Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
-####Installing impute2
+#### Installing impute2
 
 tar -zxvf impute_v2.3.2_x86_64_static.tgz 
 
@@ -158,13 +158,13 @@ mv impute_* impute2
 remove or backup the archive.
 
 
-####plink1.9 or later (Developement) 
+#### plink1.9 or later (Developement) 
 
 download link - https://www.cog-genomics.org/plink2
 
 Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
-####Installing plink
+#### Installing plink
 
 unzip plink_linux_x86_64.zip
 
@@ -175,7 +175,7 @@ mv plink prettify LICENSE toy.map toy.ped plink1
 mv plink1 plink
 
 
-####overlapSelect 
+#### overlapSelect 
 
 download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/
 
@@ -183,7 +183,7 @@ Find overlapSelect and download it. After it downloads, place it in the Driver-A
 
 chmod a+x overlapSelect
 
-####VarScan(need java installed in order to run it) 
+#### VarScan(need java installed in order to run it) 
 
 download link - https://sourceforge.net/projects/varscan/files/
 
@@ -196,11 +196,11 @@ cd ~
 
 vi .bash_profile
 
-####press i to insert into the file
+#### press i to insert into the file
 
 PATH=$PATH:$HOME/Driver-ASE-bin:$HOME/Driver-ASE-bin/samtools/:$HOME/Driver-ASE-bin/shapeit/Driver-ASE-bin/:$HOME/Driver-ASE-bin/impute2/:/usr/bin/:$HOME/Driver-ASE-bin/plink
 
-####press the Esc key.
+#### press the Esc key.
 
 :wq
 
@@ -209,30 +209,30 @@ source ~/.bash_profile
 
 #After Pipeline is Downloaded
 
-####1. Copy it to a directory and extract it.
-####2. Enter the directory and copy the Driver-ASE directory to a new location.
+#### 1. Copy it to a directory and extract it.
+#### 2. Enter the directory and copy the Driver-ASE directory to a new location.
 
 This pipeline also uses many different files which are all in the same directory called Database.
 The directory with the files can be downloaded from the link below.
 
-####Database directory download link
+#### Database directory download link
 
 https://mega.nz/#!bZN3hSob!B5ybrcH_4frJfFv24sMns2XEzHPO5aQsqyrUq1MpnKc
 
-####Once downloaded place the directory in the Driver-ASE directory and decompress it.
+#### Once downloaded place the directory in the Driver-ASE directory and decompress it.
 
-####GDC Key Required.
+#### GDC Key Required.
 
 You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to: https://gdc-portal.nci.nih.gov/ 
 
-####1. Go to login. 
-####2. Click on your account name in the top right to open the drop down and click download token. 
-####3. Rename the downloaded token to gdc.key.
-####4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
+#### 1. Go to login. 
+#### 2. Click on your account name in the top right to open the drop down and click download token. 
+#### 3. Rename the downloaded token to gdc.key.
+#### 4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the path to the sctipts if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
 
-#Scripts
+# Scripts
 
 Below are the scripts that are included in this pipeline:
 
@@ -264,7 +264,7 @@ Below are the scripts that are included in this pipeline:
 
 4.1_Upstream_Downstream_Analysis.pl – Performs upstream and downstream analysis and gets the data ready to be analyzed.
 
-#Modules
+# Modules
 
 Modules that are incorporated in the scripts are listed below:
 
