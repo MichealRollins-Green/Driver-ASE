@@ -99,11 +99,6 @@ sudo make install
 sudo yum install curl
 
 #### You will need to install the software below as well.
-##### Create a directory in your home called Driver-ASE-bin and install the software below to it.
-
-cd ~
-
-mkdir Driver-ASE-bin
 
 #### NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
@@ -112,8 +107,6 @@ mkdir Driver-ASE-bin
 #### samtools
 
 download link - http://www.htslib.org/download/
-
-Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 #### Installing samtools
 
@@ -137,8 +130,6 @@ which samtools
 #### shapeit(GLIBC v2.12 if using Centos or other distrobutions that don't support GLIBC version 2.20)
 
 download link - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
-
-Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 #### Installing shapeit
 
