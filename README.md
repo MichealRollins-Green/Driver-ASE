@@ -126,7 +126,7 @@ make
 sudo make install
 
 
-#### shapeit(v2.12 static was used for this pipeline) 
+#### shapeit(GLIBC v2.12 if using Centos or other distrobutions that don't support GLIBC version 2.20)
 
 download link - https://mathgen.stats.ox.ac.uk/genetics_software/shapeit/shapeit.html
 
