@@ -18,7 +18,7 @@ Make sure that the firewall allows for incoming and outgoing of traffic for HTTP
 
 #### Packages
 
-##### This pipeline also requires some packages to be installed as the other software it uses within it needs them.
+##### This pipeline also requires some packages to be installed as the other software it uses within it needs them. Some of these packages may be installed already.
 
 openssl - sudo yum install openssl
 
@@ -35,6 +35,12 @@ gcc-c++ - sudo yum install gcc-c++.x86_64
 ncurses-devel - sudo yum install ncurses-devel.x86_64
 
 java - yum search java | grep 'java-' (install the latest version that is listed)
+
+bzip2-devel - yum install bzip2-devel
+
+xz-devel - yum install xz-devel
+
+libcurl-devel - yum install libcurl-devel
 
 Make sure you have these perl modules installed before you run these scripts.
 
@@ -113,17 +119,19 @@ Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 tar -jxvf samtools-1.3.1.tar.bz2(your version number may be different)
 
-Change the name of the directory to samtools.
-
 remove or backup the archive.
 
-cd samtools
+cd into the extracted archive and run the commands below.
 
 ./configure
 
 make
 
 sudo make install
+
+find where samtools was installed.
+
+which samtools
 
 
 #### shapeit(GLIBC v2.12 if using Centos or other distrobutions that don't support GLIBC version 2.20)
@@ -136,26 +144,41 @@ Place the compressed archive in the Driver-ASE-bin directory and decompress it.
 
 tar -zxvf shapeit.v2.r837.GLIBCv2.12.Linux.static.tgz
 
+Locate the bin directory that was extracted and cd into it.
+
+Check if shapeit is executable.
+
+ls -l shapeit
+
+If shapeit is not executable, change the permissions.
+
+chmod a+x shapeit
+
+place the shapeit executable in the same location as samtools (might be /usr/bin or /usr/local/bin/).
+
 remove or backup the archive.
-
-mkdir shapeit
-
-mv Driver-ASE-bin example LICENCE shapeit
-
 
 #### impute2(the static verison was used for this pipeline) 
 
 download link - https://mathgen.stats.ox.ac.uk/impute/impute_v2.html#download
 
-Place the compressed archive in the Driver-ASE-bin directory and decompress it.
-
 #### Installing impute2
 
-tar -zxvf impute_v2.3.2_x86_64_static.tgz 
+tar -zxvf impute_v2.3.2_x86_64_static.tgz
+
+cd into the extracted archive.
+
+Check if impute2 is executable.
+
+ls -l impute2
+
+Change it if it is not.
+
+chmod a+x impute2
+
+move impute2 to the same directory as samtools (might be /usr/bin or /usr/local/bin/).
 
 rename the directory impute2.
-
-mv impute_* impute2
 
 remove or backup the archive.
 
@@ -164,48 +187,42 @@ remove or backup the archive.
 
 download link - https://www.cog-genomics.org/plink2
 
-Place the compressed archive in the Driver-ASE-bin directory and decompress it.
-
 #### Installing plink
 
 unzip plink_linux_x86_64.zip
 
-mkdir plink1(temporary name)
+Check if executable.
 
-mv plink prettify LICENSE toy.map toy.ped plink1
+ls -l plink prettify
 
-mv plink1 plink
+change if not.
+
+chmod a+x plink prettify
+
+remove or backup the archive.
+
+Place plink and prettify in the same directory as samtools (might be /usr/bin or /usr/local/bin/).
 
 
 #### overlapSelect 
 
 download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/
 
-Find overlapSelect and download it. After it downloads, place it in the Driver-ASE-bin directory and change the permissions so that it can be executed by anyone.
+Find overlapSelect and download it. After it downloads, change the permissions on it to be executable
 
 chmod a+x overlapSelect
 
+move it to the same directory as samtools (might be /usr/bin or /usr/local/bin/).
+
 #### VarScan(need java installed in order to run it) 
 
-download link - https://sourceforge.net/projects/varscan/files/
+download link - https://github.com/dkoboldt/varscan
 
-place the downloaded software in the Driver-ASE-bin directory.
+place the downloaded software in the same directory as samtools (might be /usr/bin or /usr/local/bin/).
 
-You will need to add the software to your path in order for the pipeline to be able to run them. VarScan is the ony exception to this as you will need to put the full path to it in order for it to run.
+When running VarScan, the path to it will need to specified.
 
-cd ~ 
-
-vi .bash_profile
-
-#### press i to insert into the file
-
-PATH=$PATH:$HOME/Driver-ASE-bin:$HOME/Driver-ASE-bin/samtools/:$HOME/Driver-ASE-bin/shapeit/Driver-ASE-bin/:$HOME/Driver-ASE-bin/impute2/:/usr/bin/:$HOME/Driver-ASE-bin/plink
-
-#### press the Esc key.
-
-:wq
-
-source ~/.bash_profile
+Try running samtools or any other software, if it shows the usage or nothing, then it can be used. If it gives any kind of error, you will need to add the directory path they were installed in to your path or they were not properly installed and don't have the proper permissions.
 
 # Download Package
 
