@@ -20,67 +20,73 @@ Make sure that the firewall allows for incoming and outgoing of traffic for HTTP
 
 ##### This pipeline also requires some packages to be installed as the other software it uses within it needs them. Some of these packages may be installed already.
 
-openssl - sudo yum install openssl
+openssl - sudo yum -y install openssl
 
-openssl-devel - sudo yum install openssl-devel
+openssl-devel - sudo yum -y install openssl-devel
 
-EPEL repository - sudo yum install epel-release
+EPEL repository - sudo yum -y install epel-release
 
-yaml - sudo yum install yaml-cpp.x86_64 yaml-cpp-devel.x86_64
+yaml - sudo yum -y install yaml-cpp.x86_64 yaml-cpp-devel.x86_64
 
-gcc - sudo yum install gcc
+gcc - sudo yum -y install gcc
 
-gcc-c++ - sudo yum install gcc-c++.x86_64
+gcc-c++ - sudo yum -y install gcc-c++.x86_64
 
-ncurses-devel - sudo yum install ncurses-devel.x86_64
+ncurses-devel - sudo yum -y install ncurses-devel.x86_64
 
-java - yum search java | grep 'java-' (install the latest version that is listed)
+java - yum -y install java
 
-bzip2-devel - yum install bzip2-devel
+bzip2-devel - yum -y install bzip2-devel
 
-xz-devel - yum install xz-devel
+xz-devel - yum -y install xz-devel
 
-libcurl-devel - yum install libcurl-devel
+libcurl-devel - yum -y install libcurl-devel
+
+perl-core - yum -y install perl-core
+
+firewalld - yum -y install firewalld
+
+mariadb-server - yum -y install mariadb-server
+
+cpan - yum -y install cpan
+
+curl -L http://cpanmin.us | perl - App::cpanminus
+
+Developement Tools - yum -y groupinstall "Development Tools"
 
 Make sure you have these perl modules installed before you run these scripts.
 
 ##### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
 
-If you are using cpan and it is not installed, install it and run it.
+Some of the module below may already be installed.
 
-Before installing these modules, it is a good idea to check if they are not already installed:
+cpanm YAML
 
-If the module is installed, then nothing will happen but if it is not, it will display an error saying that it could not be found.
+cpanm FindBin
 
-also install YAML as some of the other modules rely on it to install
+cpanm File::Copy
 
-cpan YAML
+cpanm File::Basename
 
-FindBin - perl -e 'use FindBin;'
+cpanm FileHandle
 
-File::Copy - perl -e 'use File::Copy;'
+cpanm MCE
 
-File::Basename - perl -e 'use File::Basename;'
+cpanm Cwd
 
-FileHandle - perl -e 'use FileHandle;'
+cpanm Math::CDF
 
-MCE - perl -e 'use MCE;'
+cpanm Getopt::Long
 
-Cwd - perl -e 'use Cwd;'
+cpanm LWP::Simple
 
-Math::CDF - perl -e 'use Math::CDF;'
+cpanm autodie
 
-Getopt::Long - perl -e 'use Getopt::Long;'
+cpanm lib
 
-LWP::Simple - perl -e 'use LWP::Simple;'
+cpanm strict
 
-autodie - perl -e 'use autodie;'
-
-lib -  perl -e 'use lib;'
-
-strict -  perl -e 'use strict'
-
-warnings -  perl -e 'use warnings;'
+cpanm warnings
 
 ##### aria2 is optional for this pipeline but the pipeline does support it.
 
@@ -96,7 +102,7 @@ sudo make install
 
 ##### This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
 
-sudo yum install curl
+sudo yum -y install curl
 
 #### You will need to install the software below as well.
 
