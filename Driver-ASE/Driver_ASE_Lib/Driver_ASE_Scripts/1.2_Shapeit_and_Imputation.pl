@@ -85,7 +85,7 @@ chdir "$RNA_Path";
 
 `mkdir -p $imputation` unless(-d "$imputation");
 `rm -f $imputation/*`;
-`mkdir -p $logs` unless(-d "$logs";
+`mkdir -p $logs` unless(-d "$logs");
 
 #submit_shapeit(path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono,path to the RNA_Seq_Analysis directory,phased directory,maps directory,peds directory,logs directory)
 my @shapeit_cmds = $impute_plink->submit_shapeit("$OneKG_Ref_Path","$RNA_Path","$imputation","$map_dir","$ped_dir","$logs");
