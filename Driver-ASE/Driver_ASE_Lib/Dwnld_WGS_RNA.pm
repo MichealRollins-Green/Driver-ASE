@@ -873,26 +873,26 @@ sub download_files_from_gdc
         print STDERR "working on $a[0] for TCGA sample $a[1]!\n";
         if (-f "$output_dir/$a[0].$a[1]")
         {
-            if ($dwnld_cmd eq "curl")
+            if ($dwld_cmd eq "curl")
             {
-                $cmd = "$dwnld_cmd -C - --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
+                $cmd = "$dwld_cmd -C - --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
             }
             else
             {
                 #aria2c is the download command if curl was not specified as the command in the command line when running script
-                $cmd = "$dwnld_cmd -s 16 -x 16 -c --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+                $cmd = "$dwld_cmd -s 16 -x 16 -c --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
             }
         }
         else
         {
-            if ($dwnld_cmd eq "curl")
+            if ($dwld_cmd eq "curl")
             {
-                $cmd = "$dwnld_cmd  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
+                $cmd = "$dwld_cmd  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$output_dir/$a[0].$a[1]\' ";
             }
             else
             {
                 #aria2c is the download command if curl was not specified as the command in the command line when running script
-                $cmd = "$dwnld_cmd -s 16 -x 16 --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+                $cmd = "$dwld_cmd -s 16 -x 16 --dir \'$output_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
             }
         }
         
