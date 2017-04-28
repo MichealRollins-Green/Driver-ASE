@@ -146,7 +146,7 @@ if (!defined $dwnld_cmd)
     $dwnld_cmd = "curl";
     print "No download command specified, defaulting to $dwnld_cmd\n";
 }
-elsif ($dwld eq "curl" or $dwnld_cmd eq "aria2c")
+elsif ($dwnld_cmd eq "curl" or $dwnld_cmd eq "aria2c")
 {
     print "Using $dwnld_cmd as the download command.\n";
 }
