@@ -47,25 +47,25 @@ if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
 }
 
 #Defaults to curl if no download command was specified
-if (!defined $dwld_cmd)
+if (!defined $dwnld_cmd)
 {
-    $dwld_cmd = "curl";
-    print "No download command specified, defaulting to $dwld_cmd\n";
+    $dwnld_cmd = "curl";
+    print "No download command specified, defaulting to $dwnld_cmd\n";
 }
-elsif ($dwld eq "curl" or $dwld_cmd eq "aria2c")
+elsif ($dwnld_cmd eq "curl" or $dwnld_cmd eq "aria2c")
 {
-    print "Using $dwld_cmd as the download command.\n";
+    print "Using $dwnld_cmd as the download command.\n";
 }
-elsif($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+elsif($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
 {
-    print "Using $dwld_cmd for the download command.\n";
-    $dwld_cmd = "aria2c";
+    print "Using $dwnld_cmd for the download command.\n";
+    $dwnld_cmd = "aria2c";
 }
-elsif($dwld_cmd eq "curl")
+elsif($dwnld_cmd eq "curl")
 {
-    print "$dwld_cmd entered, changing it to ";
-    $dwld_cmd = "aria2c";
-    print "$dwld_cmd.\n";
+    print "$dwnld_cmd entered, changing it to ";
+    $dwnld_cmd = "aria2c";
+    print "$dwnld_cmd.\n";
 }
 else
 {
@@ -169,7 +169,7 @@ foreach my $disease_abbr(@disease)
         $dwnld->parse_meta_id("$disease_abbr.edit.metadata.txt","$disease_abbr.UUID.txt","meta_ids.txt");
         
         #ref_parse(output file from parse_meta_id,directory building table,output file)
-        $dwnld->ref_parse("meta_ids.txt","$Table_Dir","reference.txt",$dwld_cmd);
+        $dwnld->ref_parse("meta_ids.txt","$Table_Dir","reference.txt",$dwnld_cmd);
         
         #index_ids(.result.txt,output file)
         $dwnld->index_ids("$disease_abbr.result.txt","Payload.txt");
