@@ -10,14 +10,13 @@ use Getopt::Long;
 use strict;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
 
 my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 my $Bad_SNP_CNV = Driver_ASE_Lib::Bad_SNPS_and_CNVS->new;
-my $Driver_ASE_Dir = realpath("../../");
 
 GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV
@@ -35,7 +34,12 @@ if(!defined $disease_abbr)
     $parsing->usage;
 }
 
+my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
+my $Analysispath = realpath("../../Analysis");
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $affy_dir = "affy6";
+my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Copy number estimate";
 
 #Checks if there is no Database directory
 if(!(-d "$database_path"))
@@ -43,8 +47,6 @@ if(!(-d "$database_path"))
     print STDERR "$database_path does not exist. It was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
     exit;
 }
-
-my $Analysispath = realpath("../../Analysis");
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -60,8 +62,6 @@ elsif(!(-d "$Analysispath/$disease_abbr"))
     exit;
 }
 
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
-
 if (!(-d $RNA_Path))
 {
     print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
@@ -69,15 +69,12 @@ if (!(-d $RNA_Path))
     exit;
 }
 
-my $affy_dir = "affy6";
 if(!(-d "$RNA_Path/$affy_dir"))
 {
     print "The directory $RNA_Path/$affy_dir does not exist. It was moved, renamed or deleted.\n";
     print "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
     exit; 
 }
-
-my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Copy number estimate";
 
 if(!(-d "$SNP6_Raw_Files_Dir"))
 {
@@ -126,6 +123,6 @@ $Bad_SNP_CNV->dump_non_01_10_11("hv_cd_out","look.have_cd");
 print "All jobs have finished for $disease_abbr.\n";
 
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;

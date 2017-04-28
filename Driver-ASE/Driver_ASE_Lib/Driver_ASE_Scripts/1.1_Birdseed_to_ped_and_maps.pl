@@ -10,7 +10,7 @@ use Getopt::Long;
 use strict;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -28,6 +28,12 @@ if($help)
     $parsing->usage;
 }
 
+if(!defined $disease_abbr)
+{
+    print "disease type was not entered!\n";
+    $parsing->usage;
+}
+
 my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $affy_dir = "affy6";
@@ -35,12 +41,6 @@ my $bases_dir = "$RNA_Path/bases";
 my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
 my $map_dir = "maps";
 my $ped_dir = "peds";
-
-if(!defined $disease_abbr)
-{
-    print "disease type was not entered!\n";
-    $parsing->usage;
-}
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -216,6 +216,6 @@ mce_map
 print "All Jobs have finished for $disease_abbr.\n";
 
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;

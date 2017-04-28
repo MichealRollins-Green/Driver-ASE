@@ -12,7 +12,7 @@ use Cwd 'realpath';
 use File::Basename;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -34,12 +34,6 @@ if ($help)
     $parsing->usage("0");
 }
 
-my $Driver_ASE_Dir = realpath("../../");
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
-my $SNP = "SNP6";
-my $tables = "$disease_abbr\_tables";
-
 if (!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
     print "disease type, experimental strategy and/or array type was not entered!\n";
@@ -60,6 +54,20 @@ else
     $parsing->usage("0");
 }
 
+my $Driver_ASE_Dir = realpath("../../");
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
+my $database_path = "$Driver_ASE_Dir/Database";
+my $Analysispath = realpath("../../Analysis");
+my $SNP = "SNP6";
+my $tables = "$disease_abbr\_tables";
+
+#Check if the Database directory does not exist
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
 if (!defined $key or (!(-f $key)))
 {
     print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
@@ -67,27 +75,31 @@ if (!defined $key or (!(-f $key)))
     $parsing->usage("0");
 }
 
-#Check if the Database directory does not exist
-if(!(-d "$Driver_ASE_Dir/Database"))
-{
-    print STDERR "$Driver_ASE_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
-
 #Defaults to curl if no download command was specified
 if (!defined $dwld_cmd)
 {
     $dwld_cmd = "curl";
+    print "No download command specified, defaulting to $dwld_cmd\n";
 }
-elsif($dwld_cmd ne "curl" or $dwld_cmd ne "aria2c" or $dwld_cmd ne "aria" or $dwld_cmd ne "aria2")
+elsif ($dwld eq "curl" or $dwld_cmd eq "aria2c")
 {
-    print "$dwld_cmd should be either curl or aria2c.\n";
-    exit;
+    print "Using $dwld_cmd as the download command.\n";
 }
-
-if ($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+elsif($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
 {
+    print "Using $dwld_cmd for the download command.\n";
     $dwld_cmd = "aria2c";
+}
+elsif($dwld_cmd eq "curl")
+{
+    print "$dwld_cmd entered, changing it to ";
+    $dwld_cmd = "aria2c";
+    print "$dwld_cmd.\n";
+}
+else
+{
+    print "The download command must be either curl or aria2c.\n";
+    exit;
 }
 
 `mkdir -p "$Analysispath/$disease_abbr/$SNP"` unless(-d "$Analysispath/$disease_abbr/$SNP");        
@@ -193,6 +205,6 @@ for(my $i = 0;$i < scalar(@del_files);$i++)
 print "All jobs have finished for $disease_abbr.\n";
 
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;

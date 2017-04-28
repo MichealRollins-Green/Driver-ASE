@@ -12,7 +12,7 @@ use Cwd 'realpath';
 use File::Basename;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -31,12 +31,6 @@ if($help)
 {
     $parsing->usage("0_table");
 }
-
-my $Driver_ASE_Dir = realpath("../../");
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
-my $Table_Dir = "$Analysispath/tables";
-my $tables = "$disease_abbr\_tables";
 
 if(!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
 {
@@ -57,6 +51,12 @@ else
     print "The experimental strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
     $parsing->usage("0_table");
 }
+
+my $Driver_ASE_Dir = realpath("../../");
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
+my $Analysispath = realpath("../../Analysis");
+my $Table_Dir = "$Analysispath/tables";
+my $tables = "$disease_abbr\_tables";
 
 my @disease;
 if($disease_abbr =~ /,/)
@@ -166,6 +166,6 @@ foreach my $disease_abbr(@disease)
 print "All jobs have finished for $disease_abbr.\n";
   
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;

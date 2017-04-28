@@ -10,7 +10,7 @@ use Getopt::Long;
 use strict;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -28,6 +28,12 @@ if($help)
     $parsing->usage;
 }
 
+if(!defined $disease_abbr)
+{
+    print "disease type was not entered!\n";
+    $parsing->usage;
+}
+
 my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $bad_snps = "$RNA_Path/bad_snps";
@@ -39,12 +45,6 @@ my $cnv = "Copy number estimate";
 my $bad_snps_bed = "$RNA_Path/bad_snps_bed";
 my $bad_cnvs = "bad_cnvs";
 my $temp_dir = "temp";
-
-if(!defined $disease_abbr)
-{
-    print "disease type was not entered!\n";
-    $parsing->usage;
-}
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -164,6 +164,6 @@ $Bad_SNP_CNV->run_cnv("$RNA_Path/$disease_abbr\_lookup_TN","$copy_dir","$geno_di
 print "All jobs have finished for $disease_abbr.\n";
 
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;

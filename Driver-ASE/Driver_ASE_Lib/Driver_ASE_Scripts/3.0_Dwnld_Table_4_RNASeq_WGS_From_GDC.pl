@@ -24,7 +24,6 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV or OV,PRAD
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. WGS RNA-Seq
     'command|c=s' => \my $dwnld_cmd,#curl or aria2c (if aria or aria2 is entered, it changes them to aria2c as that is the command)
-    'key|k=s'=>\my $key,#path to the gdc.key.
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.0_table");
 
@@ -34,23 +33,10 @@ if($help)
     $parsing->usage("3.0_table");
 }
 
-my $Driver_ASE_Dir = realpath("../../");
-#Directory where all analysis data will be going in.
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
-my $Table_Dir = "tables";
-my $tables = "$disease_abbr\_tables";
-
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $disease_abbr || !defined $Exp_Strategy)
 {
     print "disease type and/or experimental strategy was not entered!\n";
-    $parsing->usage("3.0_table");
-}
-#If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.
-if(!defined $key or (!( -f $key)))
-{
-    print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
     $parsing->usage("3.0_table");
 }
 
@@ -60,28 +46,39 @@ if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
     exit;
 }
 
-#Checks if there is not Database directory
-if(!(-d "$Driver_ASE_Dir/Database"))
-{
-    print STDERR "$Driver_ASE_Dir/Database does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
-
 #Defaults to curl if no download command was specified
 if (!defined $dwld_cmd)
 {
     $dwld_cmd = "curl";
+    print "No download command specified, defaulting to $dwld_cmd\n";
 }
-elsif($dwld_cmd ne "curl" or $dwld_cmd ne "aria2c" or $dwld_cmd ne "aria" or $dwld_cmd ne "aria2")
+elsif ($dwld eq "curl" or $dwld_cmd eq "aria2c")
 {
-    print "$dwld_cmd should be either curl or aria2c.\n";
+    print "Using $dwld_cmd as the download command.\n";
+}
+elsif($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+{
+    print "Using $dwld_cmd for the download command.\n";
+    $dwld_cmd = "aria2c";
+}
+elsif($dwld_cmd eq "curl")
+{
+    print "$dwld_cmd entered, changing it to ";
+    $dwld_cmd = "aria2c";
+    print "$dwld_cmd.\n";
+}
+else
+{
+    print "The download command must be either curl or aria2c.\n";
     exit;
 }
 
-if ($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
-{
-    $dwld_cmd = "aria2c";
-}
+my $Driver_ASE_Dir = realpath("../../");
+#Directory where all analysis data will be going in.
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
+my $Analysispath = realpath("../../Analysis");
+my $Table_Dir = "tables";
+my $tables = "$disease_abbr\_tables";
 
 my @disease;
 if($disease_abbr =~ /,/)
@@ -123,10 +120,6 @@ foreach my $disease_abbr(@disease)
     `mkdir "$Analysispath/$disease_abbr"` unless(-d "$Analysispath/$disease_abbr");
  
     chdir "$Table_Dir";
-    
-    #Check gdc key and mv it to db first!
-    #copyfile2newfullpath(path to gdc key,path where gdc key will be copied)
-    $parsing->copyfile2newfullpath("$key","$Table_Dir/gdc.key");
     
     #Checks if a table file does not exist in the tables directory of the cancer type.
     if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
@@ -175,7 +168,7 @@ foreach my $disease_abbr(@disease)
         #parse_meta_id(.edit.metadata.txt,output file from strip_head,output file)
         $dwnld->parse_meta_id("$disease_abbr.edit.metadata.txt","$disease_abbr.UUID.txt","meta_ids.txt");
         
-        #ref_parse(output file from parse_meta_id,key directory,output file)
+        #ref_parse(output file from parse_meta_id,directory building table,output file)
         $dwnld->ref_parse("meta_ids.txt","$Table_Dir","reference.txt",$dwld_cmd);
         
         #index_ids(.result.txt,output file)

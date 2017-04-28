@@ -12,7 +12,7 @@ use Cwd 'realpath';
 use File::Basename;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -38,8 +38,14 @@ if($help)
     $parsing->usage("3.0");
 }
 
+#If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
+if(!defined $disease_abbr || !defined $Exp_Strategy)
+{
+    print "disease type and/or experimental strategy was not entered!\n";
+    $parsing->usage("3.0");
+}
+
 my $Driver_ASE_Dir = realpath("../../");
-my $database_path = "$Driver_ASE_Dir/Database";
 #Directory where all analysis data will be going in.
 mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
 my $Analysispath = realpath("../../Analysis");
@@ -51,12 +57,13 @@ my $tables = "$disease_abbr\_tables";
 my $cds_sorted = "cds_sorted";
 my $rna_mpileups = "rna_mpileups";
 my $wgs_mpileups = "wgs_mpileups";
+my $database_path = "$Driver_ASE_Dir/Database";
 
-#If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
-if(!defined $disease_abbr || !defined $Exp_Strategy)
+#Check if the Database directory does not exist
+if(!(-d "$database_path"))
 {
-    print "disease type and/or experimental strategy was not entered!\n";
-    $parsing->usage("3.0");
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
 }
 
 #If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.
@@ -93,13 +100,6 @@ if($option ne "all" and $option ne "download" and $option ne "mpileups")
 {
     print "The choice must be either all, download or mpileups.\n";
     $parsing->usage("3.0");
-}
-
-#Check if there is no Database directory
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
 }
 
 if ($Exp_Strategy eq "RNA-Seq")
@@ -141,19 +141,30 @@ elsif($Exp_Strategy eq "WGS")
 }
 
 #Defaults to curl if no download command was specified
-if (!defined $dwld_cmd)
+if (!defined $dwnld_cmd)
 {
-    $dwld_cmd = "curl";
+    $dwnld_cmd = "curl";
+    print "No download command specified, defaulting to $dwnld_cmd\n";
 }
-elsif($dwld_cmd ne "curl" or $dwld_cmd ne "aria2c" or $dwld_cmd ne "aria" or $dwld_cmd ne "aria2")
+elsif ($dwld eq "curl" or $dwnld_cmd eq "aria2c")
 {
-    print "$dwld_cmd should be either curl or aria2c.\n";
+    print "Using $dwnld_cmd as the download command.\n";
+}
+elsif($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
+{
+    print "Using $dwnld_cmd for the download command.\n";
+    $dwnld_cmd = "aria2c";
+}
+elsif($dwnld_cmd eq "curl")
+{
+    print "$dwnld_cmd entered, changing it to ";
+    $dwnld_cmd = "aria2c";
+    print "$dwnld_cmd.\n";
+}
+else
+{
+    print "The download command must be either curl or aria2c.\n";
     exit;
-}
-
-if ($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
-{
-    $dwld_cmd = "aria2c";
 }
 
 my $OUT_DIR;
@@ -258,7 +269,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
     $dwnld->parse_meta_id("$disease_abbr.edit.metadata.txt","$disease_abbr.UUID.txt","meta_ids.txt");
     
     #ref_parse(output file from parse_meta_id,key directory,output file)
-    $dwnld->ref_parse("meta_ids.txt","$rna_wgs_dir","reference.txt",$dwld_cmd);
+    $dwnld->ref_parse("meta_ids.txt","$rna_wgs_dir","reference.txt",$dwnld_cmd);
     
     #index_ids(.result.txt,output file)
     $dwnld->index_ids("$disease_abbr.result.txt","Payload.txt");
@@ -289,7 +300,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
         #Downloads WGS BAMs and runs mpileups on them.
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split,"table directory")
         mkdir "$rna_wgs_dir/$wgs_mpileups" unless(-d "$rna_wgs_dir/$wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables",$dwld_cmd);
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables",$dwnld_cmd);
         copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables")
     }
     elsif($Exp_Strategy eq "RNA-Seq")
@@ -320,7 +331,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
 	{
 	    #Downloads RNA BAMs and runs mpileups on them.
 	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwld_cmd);
+        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd);
 	}
         copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
     }
@@ -337,7 +348,7 @@ else
     {
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
         mkdir "$rna_wgs_dir/$wgs_mpileups" unless(-d "$rna_wgs_dir/$wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables",$dwld_cmd);
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables",$dwnld_cmd);
         copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables")
     }
     elsif($Exp_Strategy eq "RNA-Seq")
@@ -360,7 +371,7 @@ else
 	    chdir "$rna_wgs_dir";
 	}
 	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-	    $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwld_cmd); 
+	    $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd); 
     }
 }
 

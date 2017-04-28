@@ -11,7 +11,7 @@ use Getopt::Long;
 use strict;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -29,6 +29,12 @@ if($help)
     $parsing->usage;
 }
 
+if(!defined $disease_abbr)
+{
+    print "disease type was not entered!\n";
+    $parsing->usage;
+}
+
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
@@ -39,12 +45,6 @@ my $logs = "logs";
 my $imputation = "$RNA_Path/phased";
 my $OneKG_Ref_Path = "$database_path/ALL.integrated_phase1_SHAPEIT_16-06-14.nomono";
 my $Impute2out = "$Analysispath/$disease_abbr/phased_imputed_raw_out";
-
-if(!defined $disease_abbr)
-{
-    print "disease type was not entered!\n";
-    $parsing->usage;
-}
 
 #Check if there is no Database directory
 if(!(-d "$database_path"))
@@ -139,6 +139,6 @@ mce_map
 print "All jobs are done for $disease_abbr.\n";
 
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;

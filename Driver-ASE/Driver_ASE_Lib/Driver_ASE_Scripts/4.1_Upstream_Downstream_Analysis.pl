@@ -28,6 +28,12 @@ if($help)
     $parsing->usage;
 }
 
+if(!defined $disease_abbr)
+{
+    print "disease type was not entered!\n";
+    $parsing->usage;
+}
+
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
@@ -37,12 +43,6 @@ my $annotate_vars = "annotate_vars";
 my $finished_WGS = "$disease_abbr\_finished_analysis_WGS";
 my $overlap = "overlap";
 my $reg = "reg";
-
-if(!defined $disease_abbr)
-{
-    print "disease type was not entered!\n";
-    $parsing->usage;
-}
 
 #Check if there is not Database directory
 if(!(-d "$database_path"))

@@ -31,14 +31,6 @@ if($help)
     $parsing->usage("4.0");
 }
 
-my $Analysispath = realpath("../../Analysis");
-my $wgs_dwnlds = "wgs_dwnlds";
-my $wgs_mpileups = "wgs_mpileups";
-my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
-my $ssoe_dir = "wgs_mpileups_ssoe_files";
-my $finished_WGS = "$disease_abbr\_finished_analysis_WGS";
-my $somatic = "somatic_variants";
-
 if(!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
@@ -59,6 +51,14 @@ if (!defined $normal_freq)
 {
     $normal_freq = 0.1;
 }
+
+my $Analysispath = realpath("../../Analysis");
+my $wgs_dwnlds = "wgs_dwnlds";
+my $wgs_mpileups = "wgs_mpileups";
+my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
+my $ssoe_dir = "wgs_mpileups_ssoe_files";
+my $finished_WGS = "$disease_abbr\_finished_analysis_WGS";
+my $somatic = "somatic_variants";
 
 #Checks if there is not Analysis directory.
 if(!(-d "$Analysispath"))

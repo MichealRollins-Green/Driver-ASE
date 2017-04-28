@@ -29,6 +29,12 @@ if($help)
     $parsing->usage;
 }
 
+if(!defined $disease_abbr)
+{
+    print "disease type was not entered!\n";
+    $parsing->usage;
+}
+
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
@@ -38,12 +44,6 @@ my $mpileups_path = "$ase/rna_mpileups";
 my ($cds_sorted_ase,$matrix,$logs,$ase_counts) = ("cds_sorted_ase","matrix","logs","ase_counts");
 my $cds_sorted = "cds_sorted";
 my $gene_level = "gene_level";
-
-if(!defined $disease_abbr)
-{
-    print "disease type was not entered!\n";
-    $parsing->usage;
-}
 
 #Checks if there is no Database directory
 if(!(-d "$database_path"))

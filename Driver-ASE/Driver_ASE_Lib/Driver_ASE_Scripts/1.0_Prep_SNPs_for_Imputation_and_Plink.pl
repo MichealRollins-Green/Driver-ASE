@@ -9,7 +9,7 @@ use Getopt::Long;
 use strict;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -27,17 +27,17 @@ if ($help)
     $parsing->usage;
 }
 
-my $Driver_ASE_Dir = realpath("../../");
-my $Analysispath = realpath("../../Analysis");
-my $database_path = "$Driver_ASE_Dir/Database";
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
-my $affy_dir = "affy6";
-
 if (!defined $disease_abbr)
 {
     print "disease type was not entered!\n";
     $parsing->usage;
 }
+
+my $Driver_ASE_Dir = realpath("../../");
+my $Analysispath = realpath("../../Analysis");
+my $database_path = "$Driver_ASE_Dir/Database";
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $affy_dir = "affy6";
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -93,7 +93,7 @@ else
     print "All jobs have finished for $disease_abbr\n";
     
     $time = localtime;
-    print "Script finished on $time.\n";
+    print "Script finished: $time.\n";
     
     exit;
 }

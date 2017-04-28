@@ -11,7 +11,7 @@ use Getopt::Long;
 use strict;
 
 my $time = localtime;
-print "Script started on $time.\n";
+print "Script started: $time.\n";
 
 #Changes to the directory of the script executing;
 chdir $Bin;
@@ -29,6 +29,12 @@ if($help)
     $parsing->usage;
 }
 
+if(!defined $disease_abbr)
+{
+    print "disease type was not entered!\n";
+    $parsing->usage;
+}
+
 my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $imputation = "$RNA_Path/Impute2Plink";
@@ -38,12 +44,6 @@ my $cds_plink = "cds_plink";
 my $cds_sorted = "cds_sorted";
 my $cds_tmp = "cds_sorted_tmp";
 my $finished_RNA = "$disease_abbr\_finished_analysis_RNA";
-
-if(!defined $disease_abbr)
-{
-    print "disease type was not entered!\n";
-    $parsing->usage;
-}
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
@@ -256,6 +256,6 @@ chdir $RNA_Path;
 print "All Jobs have finished for $disease_abbr.\n";
 
 $time = localtime;
-print "Script finished on $time.\n";
+print "Script finished: $time.\n";
 
 exit;
