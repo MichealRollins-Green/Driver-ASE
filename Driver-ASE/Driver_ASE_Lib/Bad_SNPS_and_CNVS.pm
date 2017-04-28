@@ -77,7 +77,7 @@ sub mv_bcode
         my @a = split("\t",$r);
         my $TCGA_ID = $a[0];#get TCGA ID
         my $sample =~ [split("-",$TCGA_ID)]->[-1];#get sample type
-        $TCGA =~ s/-[0-9]+[a-zA-Z]$//;
+        $TCGA_ID =~ s/-[0-9]+[a-zA-Z]$//;
         $sample =~ s/[a-zA-Z]$//;
         print MVBO $r, "\t", $TCGA_ID, "\t", $sample, "\n";
     }
