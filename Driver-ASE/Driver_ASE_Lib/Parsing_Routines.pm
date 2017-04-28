@@ -76,7 +76,7 @@ sub usage
     }
     elsif($script eq "3.0_table")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--command|-c curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
+        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--command|-c curl or aria2c] [--help|-h]\n";
     }
     elsif($script eq "4.0")
     {
