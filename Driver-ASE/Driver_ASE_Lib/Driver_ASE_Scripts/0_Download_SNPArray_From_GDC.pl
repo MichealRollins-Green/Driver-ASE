@@ -40,6 +40,54 @@ if (!defined $disease_abbr || !defined $Exp_Strategy || !defined $array_type)
     $parsing->usage("0");
 }
 
+my $Driver_ASE_Dir = realpath("../../");
+my $database_path = "$Driver_ASE_Dir/Database";
+my $Analysispath = realpath("../../Analysis");
+my $SNP = "SNP6";
+my $tables = "$disease_abbr\_tables";
+
+#Check if the Database directory does not exist
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
+#Check if the cancer type entered exists with in the file.
+open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
+my @can_types = <$can>;
+my $line_num = 1;
+my $num_of_ctypes = scalar(@can_types);
+my $no_count = 0;
+
+print "Locating $disease_abbr...\n";
+
+foreach my $line (@can_types)
+{
+    chomp($line);
+    if ($disease_abbr eq $line)
+    {
+	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
+	last;
+    }
+    else
+    {
+	print "No $disease_abbr on line $line_num.\n";
+	print "Line $line_num was $line.\n\n";
+	$no_count += 1;
+    }
+    $line_num += 1;
+}
+close ($can);
+
+if ($no_count == $num_of_ctypes)
+{
+    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
+    exit;
+}
+
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
+
 if ("$Exp_Strategy" eq "Genotyping array")
 {
     if("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
@@ -52,20 +100,6 @@ else
 {
     print "The experimental strategy that was entered in was not the right one, it should be Genotyping array for this script.\n";
     $parsing->usage("0");
-}
-
-my $Driver_ASE_Dir = realpath("../../");
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-my $database_path = "$Driver_ASE_Dir/Database";
-my $Analysispath = realpath("../../Analysis");
-my $SNP = "SNP6";
-my $tables = "$disease_abbr\_tables";
-
-#Check if the Database directory does not exist
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
 }
 
 if (!defined $key or (!(-f $key)))

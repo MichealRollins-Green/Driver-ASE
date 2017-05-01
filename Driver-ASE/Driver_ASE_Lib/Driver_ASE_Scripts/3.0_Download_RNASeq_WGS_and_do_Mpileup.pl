@@ -45,10 +45,13 @@ if(!defined $disease_abbr || !defined $Exp_Strategy)
     $parsing->usage("3.0");
 }
 
+if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
+{
+    print STDERR "The the experimental strategy entered must be RNA-Seq or WGS as these are what this pipeline deals with\n";
+    exit;
+}
+
 my $Driver_ASE_Dir = realpath("../../");
-#Directory where all analysis data will be going in.
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $rna_dwnlds = "rna_dwnlds";
 my $wgs_dwnlds = "wgs_dwnlds";
@@ -66,18 +69,45 @@ if(!(-d "$database_path"))
     exit;
 }
 
+#Check if the cancer type entered exists with in the file.
+open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
+my @can_types = <$can>;
+my $line_num = 1;
+my $num_of_ctypes = scalar(@can_types);
+my $no_count = 0;
+
+print "Locating $disease_abbr...\n";
+
+foreach my $line (@can_types)
+{
+    chomp($line);
+    if ($disease_abbr eq $line)
+    {
+	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
+	last;
+    }
+    else
+    {
+	print "No $disease_abbr on line $line_num.\n";
+	print "Line $line_num was $line.\n\n";
+	$no_count += 1;
+    }
+    $line_num += 1;
+}
+close ($can);
+
+if ($no_count == $num_of_ctypes)
+{
+    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
+    exit;
+}
+
 #If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.
 if(!defined $key or (!(-f $key)))
 {
     print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
     print $key,"\n";
     $parsing->usage("3.0");
-}
-
-if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
-{
-    print STDERR "The the experimental strategy entered must be RNA-Seq or WGS as these are what this pipeline deals with\n";
-    exit;
 }
 
 if($Exp_Strategy eq "WGS")
@@ -118,10 +148,6 @@ if ($Exp_Strategy eq "RNA-Seq")
         $option = "download";
     }
 }
-
-#Makes the directory where all of the results will be processed and stored.
-`mkdir -p $Analysispath/$disease_abbr` unless(-d "$Analysispath/$disease_abbr");
-chdir "$Analysispath/$disease_abbr";
 
 if($Exp_Strategy eq "RNA-Seq")
 {
@@ -166,6 +192,14 @@ else
     print "The download command must be either curl or aria2c.\n";
     exit;
 }
+
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
+#Directory where all analysis data will be going in.
+my $Analysispath = realpath("../../Analysis");
+
+#Makes the directory where all of the results will be processed and stored.
+`mkdir -p $Analysispath/$disease_abbr` unless(-d "$Analysispath/$disease_abbr");
+chdir "$Analysispath/$disease_abbr";
 
 my $OUT_DIR;
 #defaults to a directory if no output directory was specified in the command line.

@@ -35,6 +35,8 @@ if(!defined $disease_abbr)
     $parsing->usage;
 }
 
+my $Driver_ASE_Dir = realpath("../../");
+my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
 my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $imputation = "$RNA_Path/Impute2Plink";
@@ -44,6 +46,46 @@ my $cds_plink = "cds_plink";
 my $cds_sorted = "cds_sorted";
 my $cds_tmp = "cds_sorted_tmp";
 my $finished_RNA = "$disease_abbr\_finished_analysis_RNA";
+
+#Check if there is no Database directory
+if(!(-d "$database_path"))
+{
+    print STDERR "$database_path does not exist. It was either moved, renames, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
+    exit;
+}
+
+#Check if the cancer type entered exists with in the file.
+open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
+my @can_types = <$can>;
+my $line_num = 1;
+my $num_of_ctypes = scalar(@can_types);
+my $no_count = 0;
+
+print "Locating $disease_abbr...\n";
+
+foreach my $line (@can_types)
+{
+    chomp($line);
+    if ($disease_abbr eq $line)
+    {
+	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
+	last;
+    }
+    else
+    {
+	print "No $disease_abbr on line $line_num.\n";
+	print "Line $line_num was $line.\n\n";
+	$no_count += 1;
+    }
+    $line_num += 1;
+}
+close ($can);
+
+if ($no_count == $num_of_ctypes)
+{
+    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
+    exit;
+}
 
 #Checks if there is no Analysis directory
 if (!(-d "$Analysispath"))
