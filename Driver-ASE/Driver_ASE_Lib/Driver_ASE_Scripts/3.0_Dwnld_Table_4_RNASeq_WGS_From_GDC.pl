@@ -58,37 +58,50 @@ if(!(-d "$database_path"))
     exit;
 }
 
+my @disease;
+if($disease_abbr =~ /,/)
+{
+    @disease = split(",",$disease_abbr);
+}
+else
+{
+   @disease = $disease_abbr; 
+}
+
 #Check if the cancer type entered exists with in the file.
 open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
 my @can_types = <$can>;
-my $line_num = 1;
 my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
+foreach my $can_type(@disease)
 {
-    chomp($line);
-    if ($disease_abbr eq $line)
+    my $line_num = 1;
+    my $no_count = 0;
+    
+    print "Locating $disease_abbr...\n";
+    
+    foreach my $line (@can_types)
     {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
+	chomp($line);
+	if ($disease_abbr eq $line)
+	{
+	    print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
+	    last;
+	}
+	else
+	{
+	    print "No $disease_abbr on line $line_num.\n";
+	    print "Line $line_num was $line.\n\n";
+	    $no_count += 1;
+	}
+	$line_num += 1;
     }
-    else
+    close ($can);
+    
+    if ($no_count == $num_of_ctypes)
     {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
+	print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
+	exit;
     }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
 }
 
 #Defaults to curl if no download command was specified
@@ -116,16 +129,6 @@ else
 {
     print "The download command must be either curl or aria2c.\n";
     exit;
-}
-
-my @disease;
-if($disease_abbr =~ /,/)
-{
-    @disease = split(",",$disease_abbr);
-}
-else
-{
-   @disease = $disease_abbr; 
 }
 
 #Directory where all analysis data will be going in.
