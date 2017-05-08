@@ -52,10 +52,8 @@ if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
 }
 
 my $Driver_ASE_Dir = realpath("../../");
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
 my $rna_dwnlds = "rna_dwnlds";
 my $wgs_dwnlds = "wgs_dwnlds";
-my $ase = "$RNA_Path/ase";
 my $tables = "$disease_abbr\_tables";
 my $cds_sorted = "cds_sorted";
 my $rna_mpileups = "rna_mpileups";
@@ -132,13 +130,41 @@ if($option ne "all" and $option ne "download" and $option ne "mpileups")
     $parsing->usage("3.0");
 }
 
+#Defaults to curl if no download command was specified
+if (!defined $dwnld_cmd)
+{
+    $dwnld_cmd = "curl";
+    print "No download command specified, defaulting to $dwnld_cmd\n";
+}
+elsif ($dwnld_cmd eq "curl" or $dwnld_cmd eq "aria2c")
+{
+    print "Using $dwnld_cmd as the download command.\n";
+}
+elsif($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
+{
+    print "$dwnld_cmd entered, converting to aria2c.\n";
+    $dwnld_cmd = "aria2c";
+}
+else
+{
+    print "The download command must be either curl or aria2c.\n";
+    exit;
+}
+
+mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
+#Directory where all analysis data will be going in.
+my $Analysispath = realpath("../../Analysis");
+
+my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $ase = "$RNA_Path/ase";
+
 if ($Exp_Strategy eq "RNA-Seq")
 {   
     if(-d $RNA_Path)
     {
-        if (!(-d "$RNA_Path/cds_sorted"))
+        if (!(-d "$RNA_Path/$cds_sorted"))
         {
-            print STDERR "$RNA_Path/cds_sorted does not exist, only downloads can be performed!\n";
+            print STDERR "$RNA_Path/$cds_sorted does not exist, only downloads can be performed!\n";
             exit;
         } 
     }
@@ -155,47 +181,16 @@ if($Exp_Strategy eq "RNA-Seq")
 }
 elsif($Exp_Strategy eq "WGS")
 {
-            if(!defined $number)
-            {
-                        $number = 2;
-            }
-            elsif(0 != $number % 2)
-            {
-                        print STDERR "$Exp_Strategy are downloaded in pairs, enter an even number for the -n option";
-                        exit;
-            }
+    if(!defined $number)
+    {
+        $number = 2;
+    }
+    elsif(0 != $number % 2)
+    {
+        print STDERR "$Exp_Strategy are downloaded in pairs, enter an even number for the -n option";
+        exit;
+    }
 }
-
-#Defaults to curl if no download command was specified
-if (!defined $dwnld_cmd)
-{
-    $dwnld_cmd = "curl";
-    print "No download command specified, defaulting to $dwnld_cmd\n";
-}
-elsif ($dwnld_cmd eq "curl" or $dwnld_cmd eq "aria2c")
-{
-    print "Using $dwnld_cmd as the download command.\n";
-}
-elsif($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
-{
-    print "Using $dwnld_cmd for the download command.\n";
-    $dwnld_cmd = "aria2c";
-}
-elsif($dwnld_cmd eq "curl")
-{
-    print "$dwnld_cmd entered, changing it to ";
-    $dwnld_cmd = "aria2c";
-    print "$dwnld_cmd.\n";
-}
-else
-{
-    print "The download command must be either curl or aria2c.\n";
-    exit;
-}
-
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-#Directory where all analysis data will be going in.
-my $Analysispath = realpath("../../Analysis");
 
 #Makes the directory where all of the results will be processed and stored.
 `mkdir -p $Analysispath/$disease_abbr` unless(-d "$Analysispath/$disease_abbr");
@@ -245,7 +240,7 @@ chdir "$rna_wgs_dir" or die "Can't change to directory $rna_wgs_dir: $!\n";
 unless($OUT_DIR eq "$Analysispath/$disease_abbr/$rna_dwnlds/bams" or $OUT_DIR eq "$Analysispath/$disease_abbr/$wgs_dwnlds/bams")
 {
     $rna_wgs_dir = realpath("../$rna_wgs_dir");
-    $OUT_DIR = realpath("../$OUT_DIR"); 
+    $OUT_DIR = realpath("../$OUT_DIR");
 }
 
 #Checks if a table file does not exist in the tables directory of the cancer type.
@@ -341,7 +336,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
     {
         #filter table and remove bams that may be aligned to HG18, HG19_Broad_variant, GRChr37-lite, NCBI36 or non aligned bams;
         `cat final_downloadtable_$disease_abbr.txt|grep NCBI36 -v|grep -v HG18 |grep -v HG19_Broad_variant |grep -v GRCh37-lite |grep -v NaN > final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-  
+	
 	if ($option ne "download")
 	{
 	     if(!(-d "$RNA_Path/$cds_sorted"))

@@ -119,16 +119,10 @@ elsif ($dwld_cmd eq "curl" or $dwld_cmd eq "aria2c")
 {
     print "Using $dwld_cmd as the download command.\n";
 }
-elsif($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+elsif($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
 {
-    print "Using $dwld_cmd for the download command.\n";
-    $dwld_cmd = "aria2c";
-}
-elsif($dwld_cmd eq "curl")
-{
-    print "$dwld_cmd entered, changing it to ";
-    $dwld_cmd = "aria2c";
-    print "$dwld_cmd.\n";
+    print "$dwnld_cmd entered, converting to aria2c.\n";
+    $dwnld_cmd = "aria2c";
 }
 else
 {
