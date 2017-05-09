@@ -12,10 +12,6 @@ The pipeline performs ASE analysis with using RNA-Seq, affymetrix genotyping arr
 
 This pipeline was coded on a Centos 7 x86_64 system and some of the software listed below are for an x86_64 linux distribution and some of the software may not be compatible with i686 or other versions. The commands below may also be different based on what distribution is being used.
 
-#### Firewall and Other
-
-Make sure that the firewall allows for incoming and outgoing of traffic for HTTPS/HTTP and FTP. Also make sure that MySQL and WGET are installed.
-
 #### Packages
 
 ##### This pipeline also requires some packages to be installed as the other software it uses within it needs them. Some of these packages may be installed already.
@@ -54,14 +50,22 @@ curl -L http://cpanmin.us | perl - App::cpanminus
 
 Developement Tools - yum -y groupinstall "Development Tools"
 
+#### Firewall
+
+Make sure that the firewall allows for incoming and outgoing of traffic for HTTPS/HTTP and FTP.
+
 ###Open these ports to allow communication in an out
+
 systemctl start firewalld
+
 systemctl enable firewalld
 
-firewall-cmd --permanent --add-port=20/tcp
-firewall-cmd --permanent --add-port=21/tcp
+firewall-cmd --permanent --add-port=20-21/tcp
+
 firewall-cmd --permanent --add-port=80/tcp
+
 firewall-cmd --permanent --add-port=443/tcp
+
 firewall-cmd --permanent --add-port=3306/tcp
 
 firewall-cmd --reload
