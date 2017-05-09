@@ -54,6 +54,18 @@ curl -L http://cpanmin.us | perl - App::cpanminus
 
 Developement Tools - yum -y groupinstall "Development Tools"
 
+###Open these ports to allow communication in an out
+systemctl start firewalld
+systemctl enable firewalld
+
+firewall-cmd --permanent --add-port=20/tcp
+firewall-cmd --permanent --add-port=21/tcp
+firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=443/tcp
+firewall-cmd --permanent --add-port=3306/tcp
+
+firewall-cmd --reload
+
 Make sure you have these perl modules installed before you run these scripts.
 
 ##### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
