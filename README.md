@@ -54,7 +54,7 @@ Developement Tools - yum -y groupinstall "Development Tools"
 
 Make sure that the firewall allows for incoming and outgoing of traffic for HTTPS/HTTP and FTP.
 
-### Open these ports to allow communication in an out
+##### Open these ports to allow communication in an out
 
 systemctl start firewalld
 
