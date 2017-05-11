@@ -139,7 +139,7 @@ sub copyfile2newfullpath
     if(-f $gdc_key_fullpath)
     {   
         `cp -f $gdc_key_fullpath \'$newfullpath\'`;
-        print "Now copy the key: $gdc_key_fullpath to the new fullpath $newfullpath $!\n";
+        print "Now copying the key: $gdc_key_fullpath to the new fullpath $newfullpath $!\n";
     }
     else
     {
