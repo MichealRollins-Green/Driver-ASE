@@ -10,6 +10,7 @@ use Getopt::Long;
 use autodie;
 use Cwd 'realpath';
 use File::Basename;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started: $time.\n";
@@ -323,8 +324,26 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
         #No header in the output, thus no need to strip head!
         #pull_matched_tn_GDC(sorted bamlist,output file)
         $dwnld->pull_matched_tn_GDC("final_downloadtable_$disease_abbr\_sorted.txt","final_downloadtable_$disease_abbr\_$Exp_Strategy.txt");
+	$parsing->vlookup("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt",1,"$disease_abbr.result.txt",1,4,"y","final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt");
+        open(SIZE,"final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt") or die "can't open file final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt: $!\n";
+        open(SO,">final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt") or die "Can't open file: $!\n";
+        #convert the size of the WGS bams to gigabytes.
+        while (my $r = <SIZE>)
+        {
+            chomp($r);
+            my @con = split("\t",$r);
+            my $vert = pop @con;
+            $vert = $vert/1000/1000/1000;
+            $vert = eval sprintf('%.2f',$vert);
+            push(@con,$vert);
+            my $size_wgs = join("\t",@con);
+            print SO $size_wgs,"\n";
+        }
+        close(SIZE);
+        close(SO);
+	
         #filter table and remove bams aligning to NCBI36 or HG18;
-        `cat final_downloadtable_$disease_abbr\_$Exp_Strategy.txt|grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
+        `cat final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt | grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
         copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
         #Downloads WGS BAMs and runs mpileups on them.
         #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split,"table directory")

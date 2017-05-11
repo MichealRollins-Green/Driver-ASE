@@ -10,6 +10,7 @@ use Getopt::Long;
 use autodie;
 use Cwd 'realpath';
 use File::Basename;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started: $time.\n";

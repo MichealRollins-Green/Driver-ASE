@@ -10,6 +10,7 @@ use Getopt::Long;
 use autodie;
 use Cwd 'realpath';
 use File::Basename;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started on $time.\n";
@@ -249,7 +250,7 @@ foreach my $disease_abbr(@disease)
             close(SO);
             
             #filter table and remove bams aligning to NCBI36 or HG18;
-            `cat final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt|grep NCBI36 -v | grep -v HG18|grep -v HG18_Broad_variant > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
+            `cat final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt | grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
            copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
         }
         elsif($Exp_Strategy eq "RNA-Seq")
