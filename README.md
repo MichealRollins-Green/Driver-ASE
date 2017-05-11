@@ -70,7 +70,7 @@ firewall-cmd --reload
 
 Make sure you have these perl modules installed before you run these scripts.
 
-##### In order to install these modules, you will need to use cpan or any other utility that installs perl modules.
+##### In order to install these modules, run the commands below.
 
 Some of the module below may already be installed.
 
