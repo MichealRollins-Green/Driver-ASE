@@ -46,8 +46,6 @@ mariadb-server - yum -y install mariadb-server
 
 cpan - yum -y install cpan
 
-curl -L http://cpanmin.us | perl - App::cpanminus
-
 Developement Tools - yum -y groupinstall "Development Tools"
 
 #### Firewall
@@ -76,33 +74,33 @@ Make sure you have these perl modules installed before you run these scripts.
 
 Some of the module below may already be installed.
 
-cpanm YAML
+curl -L http://cpanmin.us | perl - YAML
 
-cpanm FindBin
+curl -L http://cpanmin.us | perl - FindBin
 
-cpanm File::Copy
+curl -L http://cpanmin.us | perl - File::Copy
 
-cpanm File::Basename
+curl -L http://cpanmin.us | perl - File::Basename
 
-cpanm FileHandle
+curl -L http://cpanmin.us | perl - FileHandle
 
-cpanm MCE
+curl -L http://cpanmin.us | perl - MCE
 
-cpanm Cwd
+curl -L http://cpanmin.us | perl - Cwd
 
-cpanm Math::CDF
+curl -L http://cpanmin.us | perl - Math::CDF
 
-cpanm Getopt::Long
+curl -L http://cpanmin.us | perl - Getopt::Long
 
-cpanm LWP::Simple
+curl -L http://cpanmin.us | perl - LWP::Simple
 
-cpanm autodie
+curl -L http://cpanmin.us | perl - autodie
 
-cpanm lib
+curl -L http://cpanmin.us | perl - lib
 
-cpanm strict
+curl -L http://cpanmin.us | perl - strict
 
-cpanm warnings
+curl -L http://cpanmin.us | perl - warnings
 
 ##### aria2 is optional for this pipeline but the pipeline does support it.
 
