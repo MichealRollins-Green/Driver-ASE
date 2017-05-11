@@ -263,7 +263,7 @@ sub ref_parse
         else
         {
             #aria2c is the download command if curl was not specified as the command in the command line when running script
-            $cmd = "$dwld_cmd -s 16 -x 16 --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --o \'ref_tmp/$refID.$UUID\' ";
+            $cmd = "$dwld_cmd -s 16 -x 16 --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' -o \'ref_tmp/$refID.$UUID\' ";
         }
         `$cmd`;
     }@table;
