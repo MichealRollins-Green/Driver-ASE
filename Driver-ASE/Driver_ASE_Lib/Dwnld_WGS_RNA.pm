@@ -286,7 +286,7 @@ sub ref_parse
         close JSON;
         $/ = "\n";
     }
-    `rm -r ref_tmp`;
+    `rm -rf ref_tmp`;
     foreach my $key(keys %refs)
     {
         print RP "$key\t$refs{$key}\n";
