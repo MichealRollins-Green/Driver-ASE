@@ -244,13 +244,13 @@ unless($OUT_DIR eq "$Analysispath/$disease_abbr/$rna_dwnlds/bams" or $OUT_DIR eq
     $OUT_DIR = realpath("../$OUT_DIR");
 }
 
+#Check gdc key and mv it to db first!
+#copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
+$parsing->copyfile2newfullpath("$key","$rna_wgs_dir/gdc.key");
+
 #Checks if a table file does not exist in the tables directory of the cancer type.
 if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
-{
-    #Check gdc key and mv it to db first!
-    #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
-    $parsing->copyfile2newfullpath("$key","$rna_wgs_dir/gdc.key");
-    
+{   
     #parses the gdc website manifest of the specified cancer type and prints to a results file.
     #gdc_parser(cancer type(e.g. OV),type of data(RNA-Seq or WGS))
     $dwnld->gdc_parser($disease_abbr,$Exp_Strategy);
@@ -379,7 +379,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
 	{
 	    #Downloads RNA BAMs and runs mpileups on them.
 	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd);
+        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd);
 	}
         copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
     }
@@ -411,15 +411,15 @@ else
 	    }
 	    
 	    chdir $RNA_Path;
-
+	    
 	    `mkdir $ase` unless(-d "$ase");
 	    
 	    mkdir "$ase/$rna_mpileups" unless(-d "$ase/$rna_mpileups");
 	    
 	    chdir "$rna_wgs_dir";
 	}
-	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-	    $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd); 
+	#Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
+	$dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd); 
     }
 }
 
