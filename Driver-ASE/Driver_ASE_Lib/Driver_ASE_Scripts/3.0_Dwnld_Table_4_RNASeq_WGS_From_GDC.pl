@@ -25,6 +25,7 @@ GetOptions(
     'disease|d=s' => \my $disease_abbr,#e.g. OV or OV,PRAD
     'exp_strat|e=s' => \my $Exp_Strategy,#e.g. WGS RNA-Seq
     'command|c=s' => \my $dwnld_cmd,#curl or aria2c (if aria or aria2 is entered, it changes them to aria2c as that is the command)
+    'key|k=s' => \my $key,#path to gdc key
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.0_table");
 
@@ -105,6 +106,14 @@ foreach my $can_type(@disease)
     }
 }
 
+#If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.
+if(!defined $key or (!(-f $key)))
+{
+    print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
+    print $key,"\n";
+    $parsing->usage("3.0_table");
+}
+
 #Defaults to curl if no download command was specified
 if (!defined $dwnld_cmd)
 {
@@ -160,6 +169,10 @@ foreach my $disease_abbr(@disease)
     `mkdir "$Analysispath/$disease_abbr"` unless(-d "$Analysispath/$disease_abbr");
  
     chdir "$Table_Dir";
+    
+    #Check gdc key and mv it to db first!
+    #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
+    $parsing->copyfile2newfullpath("$key","$Table_Dir/gdc.key");
     
     #Checks if a table file does not exist in the tables directory of the cancer type.
     if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
