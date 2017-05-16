@@ -165,7 +165,8 @@ if ($Exp_Strategy eq "RNA-Seq")
     {
         if (!(-d "$RNA_Path/$cds_sorted"))
         {
-            print STDERR "$RNA_Path/$cds_sorted does not exist, only downloads can be performed!\n";
+            print STDERR "$RNA_Path/$cds_sorted does not exist, only downloads will be performed!\n";
+	    $option = "download";
         } 
     }
     else
@@ -209,7 +210,7 @@ elsif($Exp_Strategy eq "WGS")
 }
 else
 {
-    print STDERR "File type must be either RNA-Seq or WGS.\n";
+    print STDERR "Experimental Strategy must be either RNA-Seq or WGS.\n";
     exit;
 }
 

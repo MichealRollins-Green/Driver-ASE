@@ -44,7 +44,7 @@ if(!defined $disease_abbr || !defined $Exp_Strategy)
 
 if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
 {
-    print STDERR "The file type entered must be RNA-Seq or WGS as these are what this pipeline deals with\n";
+    print STDERR "The experimental strategy entered must be RNA-Seq or WGS as these are what this pipeline deals with.\n";
     exit;
 }
 
