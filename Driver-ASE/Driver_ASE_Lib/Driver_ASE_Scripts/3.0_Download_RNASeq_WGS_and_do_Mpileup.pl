@@ -166,7 +166,6 @@ if ($Exp_Strategy eq "RNA-Seq")
         if (!(-d "$RNA_Path/$cds_sorted"))
         {
             print STDERR "$RNA_Path/$cds_sorted does not exist, only downloads can be performed!\n";
-            exit;
         } 
     }
     else
