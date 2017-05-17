@@ -44,7 +44,7 @@ firewalld - yum -y install firewalld
 
 mariadb-server - yum -y install mariadb-server
 
-cpan - yum -y install cpan
+curl - yum -y install curl
 
 Developement Tools - yum -y groupinstall "Development Tools"
 
@@ -102,7 +102,7 @@ curl -L http://cpanmin.us | perl - strict
 
 curl -L http://cpanmin.us | perl - warnings
 
-##### aria2 is optional for this pipeline but the pipeline does support it.
+##### This pipeline uses curl by default but aria2 is supported.
 
 aria2 - https://aria2.github.io/
 
@@ -113,10 +113,6 @@ aria2 - https://aria2.github.io/
 sudo make
 
 sudo make install
-
-##### This pipeline also uses curl to get data from GDC, so make sure you have curl installed on your system.
-
-sudo yum -y install curl
 
 #### You will need to install the software below as well.
 
