@@ -273,7 +273,7 @@ sub compile_gene_ase
     #Overlap ase_count bed with cds_bed;
     #Be caution about the bed format between the two files, especially for chr label!
     TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_ase_dir/$es[1]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
-    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$es[0]","$ase_path/$temp");   
+    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$es[0]","$ase_path/$temp","$ase_path");   
 }
 
 sub convert2mm
@@ -656,6 +656,7 @@ sub AlleleCount2bed
     my $talliedBed = shift;
     my $RefBed = shift;
     my $gene_ase_out = shift;
+    my $ase_tmp_path = shift;
     my $ase_path = shift;
     
     my $newRefBed = $RefBed;
@@ -697,7 +698,7 @@ sub AlleleCount2bed
     my $snp_ids = 'y';#'y'
     my $print_cd = 'y';#'y'
     
-    `overlapSelect $RefBed $talliedBed $sr $strand -mergeOutput $ase_path/temp.$rr.bed`;
+    `overlapSelect $RefBed $talliedBed $sr $strand -mergeOutput $ase_tmp_path/temp.$rr.bed`;
 
     #Contents of temp.$rr.bed;
     #Array_Num: Headers         RowEelments
@@ -724,11 +725,11 @@ sub AlleleCount2bed
     #conteins of cloumns 1-4: chr1    200295519       200296221        T|C|100|182|100|182|100|182
     $ff += 4;
     #The following SORT step is necessary for correct calculation of parameters, such as ppp,logr, and so on;
-    `sort -k $ff,$ff $ase_path/temp.$rr.bed > $ase_path/sorted.$rr.temp.bed`;
-    `mv $ase_path/sorted.$rr.temp.bed $ase_path/temp.$rr.bed`;
+    `sort -k $ff,$ff $ase_tmp_path/temp.$rr.bed > $ase_tmp_path/sorted.$rr.temp.bed`;
+    `mv $ase_tmp_path/sorted.$rr.temp.bed $ase_tmp_path/temp.$rr.bed`;
     
     my $BEDFH = "BEDFH".rand();
-    open($BEDFH,"$ase_path/temp.$rr.bed") or die "Cannot open $ase_path/temp.$rr.bed: $!\n";
+    open($BEDFH,"$ase_tmp_path/temp.$rr.bed") or die "Cannot open $ase_tmp_path/temp.$rr.bed: $!\n";
     my $OUTFH = "OUTFH".rand();
     open($OUTFH,">$out") or die "Cannot open $out for writing: $!\n";
     
@@ -811,7 +812,7 @@ sub AlleleCount2bed
         }   
         else
         {
-            my $ppp = get_p($can,$var);
+            my $ppp = get_p($can,$var,"$ase_path");
             if($can < $var)
             {
 		$ppp = $ppp*(-1);
@@ -905,7 +906,7 @@ sub AlleleCount2bed
     }#end of each line of while loop;
    
     # print last entry
-    my $ppp = get_p($can,$var);
+    my $ppp = get_p($can,$var,"$ase_path");
     if($can < $var)
     {
         $ppp = $ppp*(-1);
@@ -958,7 +959,7 @@ sub AlleleCount2bed
    
     close($OUTFH);
     close($BEDFH);
-    `rm $ase_path/temp.$rr.bed`;
+    `rm $ase_tmp_path/temp.$rr.bed`;
     system("rm $RefBed");
 }
 
@@ -1016,7 +1017,7 @@ sub get_p
 	}
         else
         {
-	    $out = `R --no-save $s $total 0.5 <$RNA_ASE/pbinom.R --quiet|tail -2|head   -1`;
+	    $out = `R --no-save $s $total 0.5 < $RNA_ASE/pbinom.R --quiet|tail -2|head   -1`;
 	    $out =~ s/\[1\]\s*//;		
 	}
     }
@@ -1028,7 +1029,7 @@ sub get_p
 	}
         else
         {
-	    $out = `R --no-save $t $total 0.5 <$RNA_ASE/pbinom.R --quiet|tail -2|head -1`;
+	    $out = `R --no-save $t $total 0.5 < $RNA_ASE/pbinom.R --quiet|tail -2|head -1`;
 	    $out =~ s/\[1\]\s*//;		
 	}  
         
@@ -1101,7 +1102,7 @@ sub highest_b
     $out =~ /^([0-9]+)\|([0-9]+)/;
     
     my $b = min($1,$2);
-    my $p_out = get_p($1,$2);
+    my $p_out = get_p($1,$2,"$RNA_ASE");
     if($1 < $2)
     {
         $p_out = $p_out*-1;
@@ -1119,7 +1120,7 @@ sub highest_b
         {
             $out = $ss."\t".$tt;
 	    $b = $mm;
-	    $p_out=get_p($ss,$tt,$RNA_ASE);
+	    $p_out = get_p($ss,$tt,"$RNA_ASE");
 	    if($ss < $tt)
             {
 		$p_out = $p_out*-1;
