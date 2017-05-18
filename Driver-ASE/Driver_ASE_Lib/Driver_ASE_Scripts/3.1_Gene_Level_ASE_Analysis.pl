@@ -206,6 +206,10 @@ $parsing->pull_column("$ase/left_gene_pull_collumn.txt",1,"$ase/left_gene_level_
 $parsing->vlookup("$ase/RNA_seq_id_lookup_snp6_bed.txt",1,"$ase/left_gene_level_ase.txt",1,1,"y","$ase/RNA_seq_id_lookup_grep_non_NaN.txt");
 `grep NaN -v $ase/RNA_seq_id_lookup_grep_non_NaN.txt > $ase/RNA_seq_id_lookup_pull_column.txt`;
 $parsing->pull_column("$ase/RNA_seq_id_lookup_pull_column.txt","1,2","$ase/RNA_seq_id_lookup_comp_gene_faster.txt");
+
+#copy the pbinom.R file
+`cp $database_path/pbinom.R $ase`
+
 #compile_gene_ase_faster will use bed file saved in the directory cds_ase_sorted.
 #compile_gene_ase_faster(file that conatins list of ase_counts and associated bed files,cds_sorted_ase directory,path to the refseq.ucsc.ensembl.mrna.hg9.nr.bed file in the Database directory,user defined directory from the command line in script 3.0 or default ase)
 $ase_analysis->compile_gene_ase_faster("$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$ase/$cds_sorted_ase","$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed","$ase","$ase_counts","$gene_level");
