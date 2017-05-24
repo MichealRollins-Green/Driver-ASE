@@ -142,7 +142,7 @@ $Bad_SNP_CNV->pull_normal("cnv_file_names.txt","normal_cnv.txt");
 #move barcode from the cds_sorted directory into a file called have_cd
 print "Now running mv_bcode for cds_sorted_dir\n";
 `ls $RNA_Path/cds_sorted > cds_sorted_dir`;
-mv_bcode(file containing list of bed files from the cds_sorted directory,output file)
+#mv_bcode(file containing list of bed files from the cds_sorted directory,output file)
 $Bad_SNP_CNV->mv_bcode("cds_sorted_dir","have_cd");
 
 print "Now running hv_cd\n";
