@@ -74,11 +74,10 @@ sub mv_bcode
     while(my $r = <MVB>)
     {
         chomp($r);
-        my @a = split("\t",$r);
-        my $TCGA_ID = $a[0];#get TCGA ID
-        my $sample =~ [split("-",$TCGA_ID)]->[-1];#get sample type
-        $TCGA_ID =~ s/-[0-9]+[a-zA-Z]$//;
-        $sample =~ s/[a-zA-Z]$//;
+        my $TCGA_ID = $r;
+        my $sample = [split("-",$TCGA_ID)]->[-1];#get sample type
+        $TCGA_ID =~ s/-[0-9]+[a-zA-Z].[a-zA-Z]+$//;#Get rid of sample and .bed extension
+        $sample =~ s/[a-zA-Z].[a-zA-Z]+$//;#Get rid of sample letter and .bed extension
         print MVBO $r, "\t", $TCGA_ID, "\t", $sample, "\n";
     }
     close(MVB);
