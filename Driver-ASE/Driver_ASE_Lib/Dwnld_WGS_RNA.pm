@@ -535,9 +535,9 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
     
     if($action eq "all" or $action eq "download")
     {
-        my $BAMs;
         if ($action eq "all")
         {
+            my $BAMs;
             #Filters through the table to find the matching bed files in cds_sorted and only includes those entries that have a matching bed in the cds_sorted directory.
             `ls $cds_sorted_path > cds_beds.txt`;
             open(CDS,"cds_beds.txt") or die "Can't open cds_beds.txt: $!\n";
@@ -554,36 +554,32 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             $parsing->vlookup("$bamlist",2,"cds_beds_out.txt",1,1,"y","cds_beds_lookup.txt");
             `grep -v NaN cds_beds_lookup.txt > cds_beds_new.txt`;
             my $bamlist_cds = "cds_beds_new.txt";
-            open($BAMs,"$bamlist_cds") or die "can not open the bamlist file $bamlist: $!\n";
-        }
-        else
-        {
-            open($BAMs,"$bamlist") or die "can not open the bamlist file $bamlist: $!\n";
-        }
-        
-        #Get already done pileup files and remove it from the $bamlist;
-        print STDERR "Going to check already done pileups in the $mpileup_outdir\n";
-        my @already_done = `ls $mpileup_outdir|grep '.'`;
-           @already_done = grep{chomp;-s "$mpileup_outdir/$_";}@already_done;
-        my %already_done = map{my($k,$v) = $_ =~ /([^\.]+)\.([^\.]+)/;$k=>$v}@already_done;
-        open(my $NBAMs,">$bamlist.new") or die "can not write data into the file $bamlist.new: $!\n";
-        while(my $b = <$BAMs>)
-        {
-            chomp($b);
-            my @es = split("\t",$b);
-            if(defined $already_done{$es[0]})
+            open($BAMs,"$bamlist_cds") or die "can not open the bamlist cds file $bamlist_cds: $!\n";
+            
+            #Get already done pileup files and remove it from the $bamlist;
+            print STDERR "Going to check already done pileups in the $mpileup_outdir\n";
+            my @already_done = `ls $mpileup_outdir|grep '.'`;
+            @already_done = grep{chomp;-s "$mpileup_outdir/$_";}@already_done;
+            my %already_done = map{my($k,$v) = $_ =~ /([^\.]+)\.([^\.]+)/;$k=>$v}@already_done;
+            open(my $NBAMs,">$bamlist.new") or die "can not write data into the file $bamlist.new: $!\n";
+            while(my $b = <$BAMs>)
             {
-                print STDERR "The TCGA ID $es[0].$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
+                chomp($b);
+                my @es = split("\t",$b);
+                if(defined $already_done{$es[0]})
+                {
+                    print STDERR "The TCGA ID $es[0].$es[1] has pileup result in the $mpileup_outdir and will not be submitted for pileup again\n";
+                }
+                else
+                {
+                    print $NBAMs $b,"\n" ;          
+                }
             }
-            else
-            {
-                print $NBAMs $b,"\n" ;          
-            }
+            close $BAMs;
+            close $NBAMs;
+            `cp $bamlist $bamlist.backup -f`;
+            $bamlist = "$bamlist.new";
         }
-        close $BAMs;
-        close $NBAMs;
-        `cp $bamlist $bamlist.backup -f`;
-        $bamlist = "$bamlist.new";
         
         my $newdir = $parsing->temp_filename;
         mkdir "$key_dir/$newdir";
