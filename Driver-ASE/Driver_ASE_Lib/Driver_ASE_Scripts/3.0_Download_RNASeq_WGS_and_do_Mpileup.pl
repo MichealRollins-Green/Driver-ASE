@@ -1,5 +1,9 @@
 #!/usr/bin/perl -w
 
+BEGIN{
+	    push @INC, "/home/hpc3256/NGS_lib/TCGA_Lib_HPCVL","/home/hpc3256/NGS_lib/Linux_codes_SAM/usr/share/perl5","/scratch/hpc3177/Math/lib/perl5/x86_64-linux-thread-multi";
+	}
+
 use strict;
 use FindBin qw($Bin);
 use lib "$Bin/..";
@@ -358,7 +362,7 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
 	
 	if ($option ne "download")
 	{
-	     if(!(-d "$RNA_Path/$cds_sorted"))
+	    if(!(-d "$RNA_Path/$cds_sorted"))
 	    {
 		print STDERR "The directory $RNA_Path/$cds_sorted does not exist. It was moved, renamed or deleted\n";
 		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
@@ -374,19 +378,17 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
 	    mkdir "$rna_mpileups" unless(-d "$rna_mpileups");
 	    
 	    chdir "$rna_wgs_dir";
-	}
-        else
-	{
-	    #Downloads RNA BAMs and runs mpileups on them.
-	    #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
+        }
+            
+        #Downloads RNA BAMs and runs mpileups on them.
+        #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
         $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd);
-	}
         copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
     }
 }
 else
 {
-    print "It seems that there is a table in the dir already:\n","$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt\n";
+    print "It seems that there is a table in the table directory already:\n","$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt\n";
     
     #Check gdc key and mv it to db first!
     #copyfile2newfullpath(path to gdc key,path where gdc key will be copied)
