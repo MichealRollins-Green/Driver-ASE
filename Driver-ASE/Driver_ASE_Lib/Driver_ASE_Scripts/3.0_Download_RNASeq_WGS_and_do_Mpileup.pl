@@ -1,9 +1,5 @@
 #!/usr/bin/perl -w
 
-BEGIN{
-	    push @INC, "/home/hpc3256/NGS_lib/TCGA_Lib_HPCVL","/home/hpc3256/NGS_lib/Linux_codes_SAM/usr/share/perl5","/scratch/hpc3177/Math/lib/perl5/x86_64-linux-thread-multi";
-	}
-
 use strict;
 use FindBin qw($Bin);
 use lib "$Bin/..";
