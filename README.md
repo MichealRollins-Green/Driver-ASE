@@ -10,7 +10,9 @@ The pipeline performs ASE analysis with using RNA-Seq, affymetrix genotyping arr
 
 # Install
 
-This pipeline was coded on a Centos 7 x86_64 system and some of the software listed below are for an x86_64 linux distribution and some of the software may not be compatible with i686 or other versions. The commands below may also be different based on what distribution is being used.
+This pipeline was coded on a Centos 7 x86_64 system and the some of the package names listed below are specific to Centos. If you wish to use the pipeline on a different distrobution, install the equivalent packages for the distrobution that you are using. If you don't want to configure your system to use the pipeline, you could use an image that was made with Docker that has all of the dependencies already installed for the pipeline to run.
+
+Docker Images: https://hub.docker.com/r/mikegreen24/driver-ase/
 
 #### Packages
 
@@ -41,8 +43,6 @@ libcurl-devel - yum -y install libcurl-devel
 perl-core - yum -y install perl-core
 
 firewalld - yum -y install firewalld
-
-mariadb-server - yum -y install mariadb-server
 
 curl - yum -y install curl
 
