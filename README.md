@@ -311,6 +311,6 @@ Imputation_Plink.pm - 1.0_Prep_TCGA_for_Imputation_and_Plink.pl, 1.1_Birdseed_to
 
 Bad_SNPS_and_CNVS.pm - 2.0_Lookups_for_normal.pl, 2.1_Get_Bad_SNPs_and_CNVs.pl
 
-Gene_Level_ASE_Analysis.pm - 3.1_ASE_Analysis_for_other_Bams.pl, 3.2_Export_ASE_data.pl
+Gene_Level_ASE_Analysis.pm - 3.1_Gene_Level_ASE_Analysis.pl, 3.2_Export_ASE_data.pl
 
 WGS_Analysis.pm - 4.0_Somatic_Variants.pl, 4.1_Upstream_Downstream_Analysis.pl
