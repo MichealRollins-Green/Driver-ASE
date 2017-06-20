@@ -116,7 +116,7 @@ sudo make install
 
 #### You will need to install the software below as well.
 
-#### NOTE: The URLs provided below may change or the page they direct to may no longer be available, so if that happens the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
+#### NOTE: The URLs provided below may change or the page they direct to may no longer be available. If that happens, the software will need to be aquired elsewhere. Also, the commands below are optional other than the software that requires configure and make to be run.
 
 ##### If you don't have root permissions to install the software, contact your system admin to have the software installed. 
 
