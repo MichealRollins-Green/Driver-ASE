@@ -58,14 +58,16 @@ sub compile_ase_no_tum_norm
     my $ase_counts = shift;
     
     $cds_dir =~ s/\/$//;
+
     open(my $CANTN,$infile) or die "Can't open $infile: $!.\n";
     my @TN = <$CANTN>;
     mce_map
     {
-        chomp($_);
+	chomp($_);
+	print STDERR "Details for ase analysis: $_\n";
         my @a = split("\t",$_);
         my $mpileup = $a[0];
-        my $cd = $a[1];
+        my $cd = $a[2];
         # have both tumor and normal pileups
         print STDERR "working on $cd\n";
         pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","$ase_counts/$mpileup")
@@ -95,7 +97,7 @@ sub pileup_at_cd
     open(ASEC,">$ase_count") or die "Can't open $ase_count: $!\n";
     while(my $r = <CD>)
     {
-        chomp($r);
+	chomp($r);
         my @a = split("\t",$r);
         $CD{$a[0]."-".$a[2]} = $a[3];
     }
@@ -116,7 +118,7 @@ sub pileup_at_cd
 	    {
 		next;
 	    }    
-            #Add prefix 'chr' to $a[0] if it does not have!
+            #Add prefix 'chr' to $a[0] if it does not have it!
             #Which is important for later calculation of gene level ase.
             #As the bed file will be intersected with the annotation bed
             $a[0]="chr".$a[0] if $a[0] =~ /^\d+/i;
@@ -218,62 +220,62 @@ sub compile_gene_ase_faster
     
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $cds_ase_dir = shift;
+    my $cds_dir = shift;
     my $ref_bed = shift;
     my $ase_path = shift;
     my $ase_counts = shift;
     my $gene_level = shift;
     
-    $cds_ase_dir =~ s/\/$//;
+    $cds_dir =~ s/\/$//;
     
     open(my $gene,"$infile") or die "Can't open $infile: $!\n";
-
     my @gene_level = <$gene>;
+    close($gene);
+    
+    my $temp = "temp";
     mce_map
     {
         chomp(my $r = $_);
         my @a = split("\t",$r);
-        my $lines = join(":",@a);
-        my $rr = rand();
-        $rr = substr($rr,2,6); 
-        print STDERR "working on $a[0]\n";
-      
-      #compile_gene_ase($rr,$ref_bed,$cds_dir,$r);
-      #when use the above sub, be caution about pbinom from the perl Math::CDF.
-      #For the following bsub, R pbinom.R was used instead of perl pbinom.
-      
-      compile_gene_ase("$rr","$ref_bed","$cds_ase_dir","$lines","$ase_path","$ase_counts","$gene_level");
-      
+	print STDERR "working on $a[0]\n";
+        my $rd_id = rand();
+        $rd_id = substr($rd_id,2,6);
+	
+	my $bed_ref = $ref_bed;
+	
+	mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
+	
+	print STDERR "Going to convert the file into mm format: $ase_path/ase_counts/$a[0]\n";
+	convert2mm("$ase_path/$ase_counts/$a[0]","$ase_path/$temp/mm.$rd_id.bed");
+	print STDERR "Failed to convert the file into mm format\n" and next unless (-s "$ase_path/$temp/mm.$rd_id.bed" > 0);
+	
+	#Overlap ase_count bed with cds_bed;
+	#Be aware of the bed format between the two files, especially for chr label!
+	#Get rid of last column;
+	
+	Make4colBed("$cds_dir/$a[2]");
+	TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_dir/$a[2]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
+	AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$a[0]","$ase_path/$temp","$ase_path");  
     }@gene_level;
-    close($gene);
 }
 
 #########################################compile_gene_faster subs#############################################
-sub compile_gene_ase
+sub Make4colBed
 {
-    my $rd_id = shift;#random file id;
-    my $bed_ref = shift;
-    my $cds_ase_dir = shift;
-    my $l = shift;
-    my $ase_path = shift;
-    my $ase_counts = shift;
-    my $gene_level = shift;
-    
-    my @es = split(":",$l);
-
-    my $temp = "temp";
-
-    mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
-   
-    #rejoins because the split above separates at the colon between the ase_counts files and cds_ase_sorted files
-    #which means that it will alsp split the ase sorted files as they have a colon in them for UUID and TCGA ID.
-    #$es[0] = join(".",$es[0],$es[1]);
-   
-    convert2mm("$ase_path/$ase_counts/$es[0]","$ase_path/$temp/mm.$rd_id.bed");
-    #Overlap ase_count bed with cds_bed;
-    #Be caution about the bed format between the two files, especially for chr label!
-    TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_ase_dir/$es[1]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
-    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$es[0]","$ase_path/$temp","$ase_path");   
+    my $file=shift;
+    open(my $F, "$file") or die "can not open the file: $file\n";
+    open(my $out,">$file.4col") or die "can not write data into the file: $file.4col\n";
+    while (my $l=<$F>)
+    {
+	chomp($l);
+	my @as=split("\t",$l);
+	print STDERR "The bed file $file contains less than 6 cols\n" and exit if @as<4;
+	print $out join("\t",@as[0..3]),"\n";          
+    }
+    close $F;
+    close $out;
+    unlink $file;
+    rename "$file.4col","$file",;
 }
 
 sub convert2mm
@@ -289,7 +291,7 @@ sub convert2mm
     
     my @Newmm = map
     {
-        my $r = $_;
+	my $r = $_;
         chomp($r);
         my @a = split("\t",$r);
      
@@ -361,7 +363,7 @@ sub TallyOverDefBed
         open($FFH,$snp) or die "$snp not here: $!\n";
         while(my $r = <$FFH>)
         {
-            if($r =~ /\t\+[\s]/)
+	    if($r =~ /\t\+[\s]/)
             {
                 print $PFH $r;
             }
@@ -430,7 +432,7 @@ sub TallyOverDefBed
            	my $nonDB2q = eval("\$q$nonDB2");
            	unless(($nonDB1q >= $phred)|($nonDB2q >= $phred))
                 {
-       		    unless(($can >= $minC) & ($alt >= $minC))
+		    unless(($can >= $minC) & ($alt >= $minC))
                     {
                         next;
                     }								 
@@ -445,8 +447,7 @@ sub TallyOverDefBed
                     #print chrnum,st,end,transcriptID, and read counts;			   
                     print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t+\n";
                	}
-       			
-       	    } #if
+       	    }
        	    else
             {
                 # no phred cuts
@@ -468,13 +469,13 @@ sub TallyOverDefBed
         } #while plus
         close $F_FH;
         `rm $ase_path/tmp.$rr.plus.out`;
-           
+        
         my $FH = "FH".rand();
         open($FH,"$ase_path/tmp.$rr.minus.out") or die "no tmp.minus.out: $!\n";
-           
+        
         while(my $r = <$FH>)
         {    
-            chomp($r);
+	    chomp($r);
             my @aa = split("\t",$r);
             my $x = $aa[3];
             $x =~ s/\|/,/g;
@@ -508,7 +509,7 @@ sub TallyOverDefBed
             my $qalt = eval("\$q$perl[1]");
             my $ccan = eval("\$c$perl[0]");
             my $calt = eval("\$c$perl[1]");
-               	
+            
             if($phred > 0)
             {
                 #want a phred cut
@@ -533,7 +534,7 @@ sub TallyOverDefBed
                     #print chrnum,st,end,transcriptID, and read counts;			   
                     print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t-\n";
                	}
-       	    } #if
+       	    } 
        	    else
             {
                 # no phred cuts
@@ -624,8 +625,7 @@ sub TallyOverDefBed
 		    #print chrnum,st,end,transcriptID, and read counts;
                	    print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[7]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt."\n";
                	}
-       		
-       	    } #if
+       	    }
        	    else
             {
                 # no phred cuts
@@ -644,7 +644,6 @@ sub TallyOverDefBed
 		#print chrnum,st,end,transcriptID, and read counts;			
                	print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[7]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt."\n";
        	    }
-       	    
         }
         close $FH_;
        	unlink("$ase_path/tmp.$rr.all.out");
@@ -892,7 +891,7 @@ sub AlleleCount2bed
 		    }
 		}
 	    }       		
-        }#end of else;
+        }
        
 	#Assign new value for each variable
 	#N.B.: This is very important!
@@ -902,8 +901,7 @@ sub AlleleCount2bed
         $end = $x[$ff-2];
         $orient = $x[$ff+1];
         @pr = @x;
-        
-    }#end of each line of while loop;
+    }
    
     # print last entry
     my $ppp = get_p($can,$var,"$ase_path");
@@ -1278,7 +1276,7 @@ sub have_cnv_snp
     close(HCSO);
 }
 
-sub mk_files
+sub mk_files_snps_cnvs
 {
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
@@ -1295,11 +1293,42 @@ sub mk_files
         my @a = split("\t",$r);
 	$a[2] =~ s/-[0-9]+[a-zA-Z]$//;
         
-        print T "$ase_path/$gene_level/".$a[0], "\t", $a[2], "\n";
-        unless($a[1] eq 'NaN')
+        unless($a[1] eq 'NaN')#prints if there is a matching normal
         {
             print N "$ase_path/$gene_level/".$a[1], "\t", $a[2], "\n";
         }
+	print T "$ase_path/$gene_level/".$a[0], "\t", $a[2], "\n";
+	
+    }
+    close(MKFI);
+    close(N);
+    close(T);
+}
+
+sub mk_files_tum_norm
+{
+    my $infile = shift;
+    my $self = $infile and $infile = shift if ref $infile;
+    my $gene_level_path = shift;
+    
+    open(MKFI,"$infile") or die "Can't open $infile: $!\n";
+    open(N,">normal_ff") or die "no normal out\n";
+    open(T,">tumor_ff") or die "no tumor out\n";
+    
+    while(my $r = <MKFI>)
+    {
+        chomp($r);
+        my @a = split("\t",$r);
+	#$a[1] =~ s/-[0-9]+[a-zA-Z]\.[a-zA-Z]+$//;
+        
+        if($a[4] < 10)#prints if sample is normal
+        {
+	    print T "$gene_level_path/".$a[2], "\t", $a[3], "\n";
+        }
+	else
+	{
+	    print N "$gene_level_path/".$a[2], "\t", $a[3], "\n" unless $a[2] =~ /^NaN/i;
+	}
     }
     close(MKFI);
     close(N);

@@ -44,39 +44,43 @@ sub usage
 {
     my $script = shift;
     my $self = $script and $script = shift if ref $script;
-    
+
     if(!defined $script)
     {
-        $script = "";
+	$script = "";
     }
     
     if($script eq "0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--command|-c curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
-        
-        print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
-        
-        print 'Experimental Strategies used:
-        Copy number estimate
-        Genotypes', "\n";
+	print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--command|-c curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
+	
+	print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
+	
+	print 'Experimental Strategies used:
+	Copy number estimate
+	Genotypes', "\n";
     }
     if($script eq "0_table")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--help|-h]\n";
-        
-        print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
-        
-        print 'Experimental Strategies used:
-        Copy number estimate
-        Genotypes', "\n";
+	print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (Genotyping array)] [--array_type|-a array data type (e.g. Genotypes)] [--help|-h]\n";
+	
+	print"Any names with spaces must be wraped in DOUBLE QUOTES or have back slashes to escape spaces.\n";
+	
+	print 'Experimental Strategies used:
+	Copy number estimate
+	Genotypes', "\n";
     }
     elsif($script eq "3.0")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--option|-o all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--command|-c curl or aria2c] [--var_path|-v path to the VarScan jar file (Enter if -e is WGS)] [--key|-k path to gdc key] [--help|-h]\n";
+	print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--option|-o all, download or mpileups] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--command|-c curl or aria2c] [--var_path|-v path to the VarScan jar file (Enter if -e is WGS)] [--key|-k peht to gdc key] [--help|-h]\n";
     }
     elsif($script eq "3.0_table")
     {
-        print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--command|-c curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
+	print "usage: program [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--exp_strat|-e Experimental Strategy (e.g. WGS/RNA-Seq)] [--command|-c curl or aria2c] [--key|-k peht to gdc key] [--help|-h]\n";
+    }
+    elsif($script eq "3.2")
+    {
+	print "usage: script [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--bsc|-b (y|yes|n|no)] [--help|-h]\n";
     }
     elsif($script eq "4.0")
     {
@@ -84,45 +88,45 @@ sub usage
     }
     else
     {
-        print "usage: script [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--help|-h]\n";
+	print "usage: script [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--help|-h]\n";
     }
     
     print '
-        All available TCGA cancer types:
-	
-	Breast invasive carcinoma [BRCA]
-        Glioblastoma multiforme [GBM]
-        Ovarian serous cystadenocarcinoma [OV]
-        Lung adenocarcinoma [LUAD]
-        Uterine Corpus Endometrial Carcinoma [UCEC]
-        Kidney renal clear cell carcinoma [KIRC]
-        Head and Neck squamous cell carcinoma [HNSC]
-        Brain Lower Grade Glioma [LGG]
-        Thyroid carcinoma [THCA]
-        Lung squamous cell carcinoma [LUSC]
-        Prostate adenocarcinoma [PRAD]
-        Stomach adenocarcinoma [STAD]
-        Skin Cutaneous Melanoma [SKCM]
-        Colon adenocarcinoma [COAD]
-        Bladder Urothelial Carcinoma [BLCA]
-        Liver hepatocellular carcinoma [LIHC]
-        Cervical squamous cell carcinoma and endocervical adenocarcinoma [CESC]
-        Kidney renal papillary cell carcinoma [KIRP]
-        Sarcoma [SARC]
-        Esophageal Carcinoma [ESCA]
-        Pancreatic Adenocarcinoma [PAAD]
-        Pheochromocytoma and Paraganglioma [PCPG]
-        Rectum Adenocarcinoma [READ]
-        Testicular Germ Cell Tumors [TGCT]
-        Acute Myeloid Leukemia [LAML]
-        Thymoma [THYM]
-        Kidney Chromophobe [KICH]
-        Adernocortical Carcinoma [ACC]
-        Mesothelioma [MESC]
-        Uveal Melanoma [UVM]
-        Lymphoid Neoplasm Diffuse Large B-cell Lymphoma [DLBC]
-        Uterine Carcinosarcoma [UCS]
-        Cholangiocarcinoma [CHOL]',"\n";
+    All available TCGA cancer types:
+    
+    Breast invasive carcinoma [BRCA]
+    Glioblastoma multiforme [GBM]
+    Ovarian serous cystadenocarcinoma [OV]
+    Lung adenocarcinoma [LUAD]
+    Uterine Corpus Endometrial Carcinoma [UCEC]
+    Kidney renal clear cell carcinoma [KIRC]
+    Head and Neck squamous cell carcinoma [HNSC]
+    Brain Lower Grade Glioma [LGG]
+    Thyroid carcinoma [THCA]
+    Lung squamous cell carcinoma [LUSC]
+    Prostate adenocarcinoma [PRAD]
+    Stomach adenocarcinoma [STAD]
+    Skin Cutaneous Melanoma [SKCM]
+    Colon adenocarcinoma [COAD]
+    Bladder Urothelial Carcinoma [BLCA]
+    Liver hepatocellular carcinoma [LIHC]
+    Cervical squamous cell carcinoma and endocervical adenocarcinoma [CESC]
+    Kidney renal papillary cell carcinoma [KIRP]
+    Sarcoma [SARC]
+    Esophageal Carcinoma [ESCA]
+    Pancreatic Adenocarcinoma [PAAD]
+    Pheochromocytoma and Paraganglioma [PCPG]
+    Rectum Adenocarcinoma [READ]
+    Testicular Germ Cell Tumors [TGCT]
+    Acute Myeloid Leukemia [LAML]
+    Thymoma [THYM]
+    Kidney Chromophobe [KICH]
+    Adernocortical Carcinoma [ACC]
+    Mesothelioma [MESC]
+    Uveal Melanoma [UVM]
+    Lymphoid Neoplasm Diffuse Large B-cell Lymphoma [DLBC]
+    Uterine Carcinosarcoma [UCS]
+    Cholangiocarcinoma [CHOL]',"\n";
     exit;
 }
 
@@ -138,13 +142,13 @@ sub copyfile2newfullpath
     `mkdir -p "$newdir"` unless (-d $newdir);
     if(-f $gdc_key_fullpath)
     {   
-        `cp -f $gdc_key_fullpath \'$newfullpath\'`;
+	`cp -f $gdc_key_fullpath \'$newfullpath\'`;
         print "Now copying the key: $gdc_key_fullpath to the new fullpath $newfullpath $!\n";
     }
     else
     {
-       print STDERR "The path to the gdc key doesn\'t exist:\n","$gdc_key_fullpath\n";
-       exit;      
+	print STDERR "The path to the gdc key doesn\'t exist:\n","$gdc_key_fullpath\n";
+	exit;      
     }
 }
 
@@ -179,22 +183,22 @@ sub QueryBase
     my %hash;
     while(my $l = <Q>)
     {
-    	chomp($l);
+	chomp($l);
     	my @line1;
     	if($l =~ /^\s*$/)
         {
-            next;
+	    next;
 	}
         else
         {
 	    @line1 = split("\t",$l);
             if($KeepAllColsinQeryFile eq 1)
             {
-                push @{$hash{$line1[$queryCol]}},$l unless $line1[$queryCol] eq "";
+		push @{$hash{$line1[$queryCol]}},$l unless $line1[$queryCol] eq "";
             }
             else
             {
-                push @{$hash{$line1[$queryCol]}},$line1[$queryCol] unless $line1[$queryCol] eq "";   
+		push @{$hash{$line1[$queryCol]}},$line1[$queryCol] unless $line1[$queryCol] eq "";   
             }
         }
     } 
@@ -205,7 +209,7 @@ sub QueryBase
     my @headers = split("\t",$temp_array[0]);
     foreach my $q(keys %hash)
     {
-        foreach my $b (@temp_array)
+	foreach my $b (@temp_array)
         {
 	    my @tmp = split("\t",$b);
             my $match_idx = get_element_position_in_array($q,\@tmp);
@@ -214,14 +218,14 @@ sub QueryBase
             {
 		foreach my $v (@{$hash{$q}})
                 {
-                    print RES $v,"\t",$tmp[$rgx_match_idx],"\n";
+		    print RES $v,"\t",$tmp[$rgx_match_idx],"\n";
 		}
             }
             elsif($match_idx >= 0)
             {
 		foreach my $v (@{$hash{$q}})
                 {
-                    print RES $v,"\t","NaN","\n";
+		    print RES $v,"\t","NaN","\n";
 		}
 	    }
         }
@@ -238,11 +242,11 @@ sub get_element_position_in_array
     
     if(defined($index))
     {
-        return $index;
+	return $index;
     }
     else
     {
-        return -500;
+	return -500;
     }
 }
 
@@ -255,11 +259,11 @@ sub get_rgx_matched_position_in_array
     
     if(defined($index))
     {
-        return $index;
+	return $index;
     }
     else
     {
-        return -500;
+	return -500;
     }
 }
 
@@ -283,7 +287,7 @@ sub vlookup
     my $nan = '';
     for(my $i = 0;$i < scalar(@cols);$i++)
     {
-        $cols[$i] -= 1; $nan = $nan."\t"."NaN"
+	$cols[$i] -= 1; $nan = $nan."\t"."NaN"
     }
     $nan =~ s/^\t//;
     
@@ -297,7 +301,7 @@ sub vlookup
         }
         else
         {
-            my @a = split("\t",$r);
+	    my @a = split("\t",$r);
             $look{$a[$col]} = join("\t",@a[@cols]);    
         }
     }
@@ -352,12 +356,12 @@ sub pull_column
     open(C,">$outfile") or die("Can't open file for output. $!\n");
     for(my $i=0;$i < scalar(@cols);$i++)
     {
-        $cols[$i]-=1;
+	$cols[$i]-=1;
     }
     
     while(my $r = <P>) 
     {
-        chomp($r);
+	chomp($r);
         my @a = split("\t",$r);
         print C join("\t",@a[@cols]), "\n";
     }
@@ -420,12 +424,12 @@ sub matricize
     open(F,$index_file);
     my @ids;
     
-    while(my $r = <F>) 
+    while (my $r = <F>) 
     {
-        chomp($r);
+	chomp($r);
         my @a = split("\t",$r);
         open(FF,$a[0]) or die "$a[0] does not exist\n";
-        while(my $rr = <FF>)
+        while (my $rr=<FF>)
         {
             chomp($rr);
             my @aa = split("\t",$rr);
@@ -434,63 +438,64 @@ sub matricize
         close(FF);
     }
     close(F);
-    @ids = unique(@ids);
+    @ids=unique(@ids);
     
     # for each file, get it into a hash, then append to an @out array
     print STDERR "loading in data\n";
-    my @out = ();
+    my @out=();
     my @samples;
-    my $j = 0;
+    my $j=0;
     open(F,$print_file);
-    while(my $r = <F>) 
+    while (my $r = <F>) 
     {
         chomp($r);
         my @a = split("\t",$r);
-            push(@samples,$a[1]);
+        push(@samples,$a[1]);
         print STDERR "working on $a[1]\n";
-            open(FF,$a[0]) or die "$a[1] does not exist\n";
-            my %hash = ();
-        while(my $rr=<FF>)
+        open(FF,$a[0]) or die "$a[1] does not exist\n";
+        my %hash=();
+	while (my $rr=<FF>)
         {
-            chomp($rr);
+	    chomp($rr);
             my @aa = split("\t",$rr);
-            $hash{$aa[$idx_col_print-1]} = $aa[$out_col-1];
+            $hash{$aa[$idx_col_print-1]}=$aa[$out_col-1];
         }
         close(FF);
        
         # append to out
-        for(my $i = 0;$i < scalar(@ids);$i++)
+        for(my $i=0; $i<scalar(@ids); ++$i)
         {
             if(exists($hash{$ids[$i]}))
             {
-                $out[$j][$i] = $hash{$ids[$i]};
+		$out[$j][$i]=$hash{$ids[$i]};
             }
             else
             {
-                $out[$j][$i] = 'NaN';
+                $out[$j][$i]='NaN';
             }
         }
-        $j++;
+        ++$j;
+       
     }
     close(F);
     
     # print contents out
     print STDERR "printing output\n";
-    open(COL,">$dirpath/collabels.txt") or die "Can't open file $dirpath/collabels.txt: $!\n";
+    open(COL,">$dirpath/collabels.txt");
     print COL join("\n",@samples), "\n";
     close(COL);
-    open(ROW,">$dirpath/rowlabels.txt") or die "Can't open file $dirpath/rowlabels.txt: $!\n";
+    open(ROW,">$dirpath/rowlabels.txt");
     print ROW join("\n",@ids), "\n";
     close(ROW);
-    open(MAT,">$dirpath/matrix.tab") or die "Can't open file $dirpath/matrix.tab: $!\n";
-    for(my $i = 0; $i < scalar(@ids);$i++)
+    open(MAT,">$dirpath/matrix.tab");
+    for(my $i=0; $i<scalar(@ids); ++$i)
     {
-        my $lineout = '';
-        for(my $k = 0;$k < $j;$k++)
+        my $lineout='';
+        for(my $k=0; $k<$j; ++$k)
         {
             $lineout .= $out[$k][$i]."\t";
         }
-        $lineout =~ s/\t$/\n/;
+        $lineout=~s/\t$/\n/;
         print MAT $lineout;
     }
     close(MAT);
@@ -536,10 +541,10 @@ sub matricize_version_two
     {
         chomp($r);
         my @a = split("\t",$r);
-            push(@samples,$a[1]);
+        push(@samples,$a[1]);
         print STDERR "working on $a[1]\n";
-            open(FF,$a[0]) or die "$a[1] does not exist\n";
-            my %hash = ();
+        open(FF,$a[0]) or die "$a[1] does not exist\n";
+        my %hash = ();
         while (my $rr=<FF>)
         {
             chomp($rr);
