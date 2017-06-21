@@ -289,7 +289,7 @@ Below are the scripts that are included in this pipeline:
 
 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl – Downloads either RNA-Seq or WGS bams for a cancer type. By default this script is set to download a certain number of bams unless the user specifies the amount that they want to download in the command line, deletes them afterwards and downloads more when done.
 
-3.0_Dwnld_Table_4_RNASeq_WGS_From_GDC.pl - Downloads the RNA-Seq or WGS table of specified cancer types from GDC. Only run this script if the table file is missing from the tables directory of the cancer type.
+3.0_Dwnld_RNASeq_WGS_Table_From_GDC.pl  - Downloads the RNA-Seq or WGS table of specified cancer types from GDC. Only run this script if the table file is missing from the tables directory of the cancer type.
 
 3.1_Gene_Level_ASE_Analysis.pl – Performs gene level ASE Analysis on the samples that had mpileups done on them.
 
@@ -305,7 +305,7 @@ Modules that are incorporated in the scripts are listed below:
 
 Parsing_Routines.pm - All scripts use this module.
 
-Dwnld_WGS_RNA.pm - 0_Download_SNPArray_From_GDC.pl, 0_Download_SNPArray_Table_From_GDC.pl, 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl, 3.0_Dwnld_Table_4_RNASeq_WGS_From_GDC.pl
+Dwnld_WGS_RNA.pm - 0_Download_SNPArray_From_GDC.pl, 0_Download_SNPArray_Table_From_GDC.pl, 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl, 3.0_Dwnld_RNASeq_WGS_Table_From_GDC.pl 
 
 Imputation_Plink.pm - 1.0_Prep_TCGA_for_Imputation_and_Plink.pl, 1.1_Birdseed_to_ped_and_maps.pl, 1.2_Shapeit_and_Imputation.pl, 1.3_Make_het_cds.pl
 
