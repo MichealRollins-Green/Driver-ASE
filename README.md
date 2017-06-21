@@ -260,8 +260,8 @@ https://mega.nz/#!XFFCTTJR!RSeaBGz60ITDXX7pugovkiXutSYOYmgNhaOaiVy2d1Q
 
 You will also need to have a GDC account to get the key for downloading as it does expire over a certain period of time. Just go to: https://gdc-portal.nci.nih.gov/ 
 
-#### 1. Go to login. 
-#### 2. Click on your account name in the top right to open the drop down and click download token. 
+#### 1. Click on the login tab in the top right corner to enter in your login credentials. 
+#### 2. After logging in, click on your account name in the top right to open the drop down and click download token. 
 #### 3. Rename the downloaded token to gdc.key.
 #### 4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
