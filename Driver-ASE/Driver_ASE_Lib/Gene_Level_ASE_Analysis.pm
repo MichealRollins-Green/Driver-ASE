@@ -63,7 +63,7 @@ sub compile_ase_no_tum_norm
     my @TN = <$CANTN>;
     mce_map
     {
-	chomp($_);
+        chomp($_);
 	print STDERR "Details for ase analysis: $_\n";
         my @a = split("\t",$_);
         my $mpileup = $a[0];
@@ -97,7 +97,7 @@ sub pileup_at_cd
     open(ASEC,">$ase_count") or die "Can't open $ase_count: $!\n";
     while(my $r = <CD>)
     {
-	chomp($r);
+        chomp($r);
         my @a = split("\t",$r);
         $CD{$a[0]."-".$a[2]} = $a[3];
     }
@@ -262,20 +262,20 @@ sub compile_gene_ase_faster
 #########################################compile_gene_faster subs#############################################
 sub Make4colBed
 {
-    my $file=shift;
-    open(my $F, "$file") or die "can not open the file: $file\n";
-    open(my $out,">$file.4col") or die "can not write data into the file: $file.4col\n";
-    while (my $l=<$F>)
-    {
-	chomp($l);
-	my @as=split("\t",$l);
-	print STDERR "The bed file $file contains less than 6 cols\n" and exit if @as<4;
-	print $out join("\t",@as[0..3]),"\n";          
-    }
-    close $F;
-    close $out;
-    unlink $file;
-    rename "$file.4col","$file",;
+   my $file=shift;
+   open(my $F, "$file") or die "can not open the file: $file\n";
+   open(my $out,">$file.4col") or die "can not write data into the file: $file.4col\n";
+   while (my $l=<$F>)
+   {
+        chomp($l);
+        my @as=split("\t",$l);
+        print STDERR "The bed file $file contains less than 6 cols\n" and exit if @as<4;
+        print $out join("\t",@as[0..3]),"\n";          
+   }
+   close $F;
+   close $out;
+   unlink $file;
+   rename "$file.4col","$file",;
 }
 
 sub convert2mm
@@ -291,7 +291,7 @@ sub convert2mm
     
     my @Newmm = map
     {
-	my $r = $_;
+        my $r = $_;
         chomp($r);
         my @a = split("\t",$r);
      
@@ -363,7 +363,7 @@ sub TallyOverDefBed
         open($FFH,$snp) or die "$snp not here: $!\n";
         while(my $r = <$FFH>)
         {
-	    if($r =~ /\t\+[\s]/)
+            if($r =~ /\t\+[\s]/)
             {
                 print $PFH $r;
             }
@@ -432,7 +432,7 @@ sub TallyOverDefBed
            	my $nonDB2q = eval("\$q$nonDB2");
            	unless(($nonDB1q >= $phred)|($nonDB2q >= $phred))
                 {
-		    unless(($can >= $minC) & ($alt >= $minC))
+       		    unless(($can >= $minC) & ($alt >= $minC))
                     {
                         next;
                     }								 
@@ -447,7 +447,8 @@ sub TallyOverDefBed
                     #print chrnum,st,end,transcriptID, and read counts;			   
                     print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t+\n";
                	}
-       	    }
+       			
+       	    } #if
        	    else
             {
                 # no phred cuts
@@ -469,13 +470,13 @@ sub TallyOverDefBed
         } #while plus
         close $F_FH;
         `rm $ase_path/tmp.$rr.plus.out`;
-        
+           
         my $FH = "FH".rand();
         open($FH,"$ase_path/tmp.$rr.minus.out") or die "no tmp.minus.out: $!\n";
-        
+           
         while(my $r = <$FH>)
         {    
-	    chomp($r);
+            chomp($r);
             my @aa = split("\t",$r);
             my $x = $aa[3];
             $x =~ s/\|/,/g;
@@ -509,7 +510,7 @@ sub TallyOverDefBed
             my $qalt = eval("\$q$perl[1]");
             my $ccan = eval("\$c$perl[0]");
             my $calt = eval("\$c$perl[1]");
-            
+               	
             if($phred > 0)
             {
                 #want a phred cut
@@ -534,7 +535,7 @@ sub TallyOverDefBed
                     #print chrnum,st,end,transcriptID, and read counts;			   
                     print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t-\n";
                	}
-       	    } 
+       	    } #if
        	    else
             {
                 # no phred cuts
@@ -625,7 +626,8 @@ sub TallyOverDefBed
 		    #print chrnum,st,end,transcriptID, and read counts;
                	    print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[7]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt."\n";
                	}
-       	    }
+       		
+       	    } #if
        	    else
             {
                 # no phred cuts
@@ -644,6 +646,7 @@ sub TallyOverDefBed
 		#print chrnum,st,end,transcriptID, and read counts;			
                	print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[7]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt."\n";
        	    }
+       	    
         }
         close $FH_;
        	unlink("$ase_path/tmp.$rr.all.out");
@@ -891,7 +894,7 @@ sub AlleleCount2bed
 		    }
 		}
 	    }       		
-        }
+        }#end of else;
        
 	#Assign new value for each variable
 	#N.B.: This is very important!
@@ -901,7 +904,8 @@ sub AlleleCount2bed
         $end = $x[$ff-2];
         $orient = $x[$ff+1];
         @pr = @x;
-    }
+        
+    }#end of each line of while loop;
    
     # print last entry
     my $ppp = get_p($can,$var,"$ase_path");
@@ -1148,11 +1152,11 @@ sub pull_TN
     my $bad_snp = 0;
     my $bad_cnv = 0;
     
-    if(-e $bad_cnv_dir."/".$old[1])
+    if(-e $bad_cnv_dir."/".$old[1].".bed")
     {
         $bad_cnv = 1;
     }
-    if(-e $bad_snp_bed_dir."/".$old[1])
+    if(-e $bad_snp_bed_dir."/".$old[1].".bed")
     {
         $bad_snp = 1;
     }
@@ -1208,7 +1212,7 @@ sub pull_TN
 	
         @old = @a;
         
-       if (-e $bad_cnv_dir."/".$old[1])
+       if (-e $bad_cnv_dir."/".$old[1].".bed")
         {
             $bad_cnv = 1;
         }
@@ -1216,7 +1220,7 @@ sub pull_TN
         {
             $bad_cnv = 0;
         }
-        if (-e $bad_snp_bed_dir."/".$old[1])
+        if (-e $bad_snp_bed_dir."/".$old[1].".bed")
         {
             $bad_snp = 1;
         }
@@ -1410,5 +1414,123 @@ sub pull_problems
     close(PPI);
     close(PPO);
 }
+
+sub Intersect_Files
+{
+    my $files=shift;
+    my $self = $files and $files = shift if ref $files;
+    my @filename=split(",",$files);
+    my $outputtype=shift;
+    my $IntersectColsInEachFile=shift;
+    my $intersect_file = shift;
+    my @cols=split(",",$IntersectColsInEachFile);
+    
+    if ($outputtype != 0 and $outputtype != 1)
+    {
+	print "$outputtype is not valid. It must be 0 or 1.\n";
+	exit;
+    }
+    
+    
+    my @AllItems=();
+    my %Letters_hash=();
+    my %count=();
+    my %inv_count=();
+    
+    %Letters_hash=map {
+			    $filename[$_]=>Letters($_)
+				} 0..$#filename;
+    my %filename_hash=reverse %Letters_hash;
+    
+    map
+    {
+	#open_and_transform;
+	my $f=$filename[$_];
+	my $col=$cols[$_];
+	open my $fileHandle,"$f" or die "can not open the file: $f $!\n";
+	my @array;
+	my $n=@array=<$fileHandle>;
+	foreach my $line (@array)
+	{
+	    chomp $line;
+	    #$line=~s/\r//g;
+	    next if $line=~/^\s*$/;
+	    my @new_array=split("\t",$line);
+	    push @AllItems,$Letters_hash{$f}."_".$new_array[$col];              
+	}
+	close $fileHandle; 
+    }0..$#filename;
+    
+    #print OUT "@AllItems\n";
+    
+    
+    foreach my $key (@AllItems)
+    {
+	$count{substr($key,2,)}.=substr($key,0,1);
+    }
+    my @tmp;
+    foreach my $hash_key (keys %count)
+    {
+	my $group=$count{$hash_key};
+	if ($inv_count{$group})
+	{
+	    @tmp=($inv_count{$group});
+	}
+	else
+	{
+	    @tmp=();
+	}
+	push (@tmp,$hash_key);
+	$inv_count{$count{$hash_key}}=join("\n",@tmp);	
+    }
+    
+    my %Seen=();
+    open(INF,">$intersect_file") or die "Can't open $intersect_file: $!\n";
+    foreach my $inv_key (sort keys %inv_count)
+    {
+	#this code is for removing duplicating targets in the @targets;
+	my @targets=split("\n",$inv_count{$inv_key});
+	my @unique_items=grep {!$Seen{$_}++} @targets;
+	my $n=@unique_items;
+	my $unique_items=join("\n",@unique_items);
+	my @ls=split("",$inv_key);
+	my %uniq;
+	@ls=grep{!$uniq{$_}++}@ls;
+	if ($outputtype==1)
+	{
+	    #Summary for intersect;
+	    print INF "$inv_key=>$n for file(s): (";
+	    foreach my $l (@ls)
+	    {
+		print INF " $l=>$filename_hash{$l} ";                       
+	    }
+	    print INF ")\n";
+	    print INF "$unique_items\n\n";
+	}
+	else
+	{
+	    #Long format data for other software;
+	    foreach my $e(@unique_items)
+	    {	
+		print INF $inv_key,"\t";
+		print INF join("|",@filename_hash{sort @ls}),"\t",$e,"\n";
+	    }
+	}    
+    }
+    close(INF);
+}
+
+################Intersect_Files sub###############
+sub Letters
+{
+    my @letters=('a'..'z','A'..'Z');
+    my $letters_num=shift;
+    $letters_num=$letters_num;
+    #print OUT "$letters_num\n";
+    #print OUT "@letters\n";
+    return ($letters[$letters_num]);
+}
+
+###############End of Intersect_Files sub##########
 
 1;
