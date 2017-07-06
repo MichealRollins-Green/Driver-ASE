@@ -293,7 +293,7 @@ Below are the scripts that are included in this pipeline:
 
 3.1_Gene_Level_ASE_Analysis.pl – Performs gene level ASE Analysis on the samples that had mpileups done on them.
 
-3.2_Export_ASE_Data.pl – Performs the final touches by compressing what will be needed for further analysis and moving them into a specific directory.
+3.2_Export_ASE_Data.pl – Performs the final touches by compressing what will be needed for further analysis and moving them into a specific directory. If data is going to be overlapped, the tables for RNA-Seq, WGS and Genotypes will be needed.
 
 4.0_Somatic_Variants.pl – Processes WGS data to get somatic variants.
 
