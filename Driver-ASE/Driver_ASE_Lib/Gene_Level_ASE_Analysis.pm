@@ -1450,7 +1450,6 @@ sub pull_problems
     close(PPO);
 }
 
-
 sub Intersect_Files
 {
     my $files=shift;
