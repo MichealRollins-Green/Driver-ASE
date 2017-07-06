@@ -122,7 +122,6 @@ if (!(-d "$RNA_Path/$cds_sorted"))
     exit;
 }
 
-mkdir "$matrix" unless(-d "$matrix");
 mkdir "$logs" unless(-d "$logs");
 mkdir "$ase_counts" unless(-d "$ase_counts");
 
@@ -136,14 +135,15 @@ opendir (CD, "$RNA_Path/$cds_sorted") or die "can not open the directory $RNA_Pa
 my @cds= grep{!/^\./ && -f "$RNA_Path/$cds_sorted/$_"} readdir(CD);
 closedir(CD);
 @cds = map{
-            s/\.bed//;$_;
-            }@cds;
+        s/\.bed//;$_;
+    }@cds;
 
 #match cds with its corresponding mpileup file;
 open(my $T, ">RNA_CDS_mpileups.txt") or die "can not write data into the file RNA_CDS_mpileups.txt: $!";
 for my $m (@mfs){
     my ($uuid,$tcga)=split("\\.",$m);
-    if ($tcga~~\@cds) {
+    if ($tcga~~\@cds)
+    {
         print $T $m,"\t",$tcga,"\t","$tcga.bed\n";   
     }   
 }
@@ -184,12 +184,12 @@ closedir(ASE);
 #Checks if the file contains mpileups that do not have ase_counts
 if (-s "RNA_seq_id_ase_no_tum_norm.txt" != 0)
 {
-            $ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Path/$cds_sorted","$mpileups_path",$ase_counts);  
+    $ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Path/$cds_sorted","$mpileups_path",$ase_counts);
 }
 #if the above file is empy, it then checks if the ase_counts directory is empty before running the process on all mpileups
 elsif(scalar(@asecount) == 0)
 {
-            $ase_analysis->compile_ase_no_tum_norm("RNA_CDS_mpileups.txt","$RNA_Path/$cds_sorted","$mpileups_path",$ase_counts);
+    $ase_analysis->compile_ase_no_tum_norm("RNA_CDS_mpileups.txt","$RNA_Path/$cds_sorted","$mpileups_path",$ase_counts);
 }
 
 #get gene level ase_counts
@@ -214,7 +214,7 @@ $parsing->pull_column("$ase/RNA_seq_id_lookup_pull_column.txt","1,2,3","$ase/RNA
 
 if (-s "$ase/RNA_seq_id_lookup_comp_gene_faster.txt" != 0)
 {
-            $ase_analysis->compile_gene_ase_faster("$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$RNA_Path/$cds_sorted","$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed","$ase","$ase_counts","$gene_level");
+    $ase_analysis->compile_gene_ase_faster("$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$RNA_Path/$cds_sorted","$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed","$ase","$ase_counts","$gene_level");
 }
 
 
