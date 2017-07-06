@@ -80,7 +80,7 @@ sub usage
     }
     elsif($script eq "3.2")
     {
-	print "usage: script [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--bsc|-b (y|yes|n|no)] [--overlap|-o (y|yes|n|no)] [--help|-h]\n";
+	print "usage: script [--disease_abbr|-d disease_abbr (e.g. PRAD)] [--bsc|-b (y|yes|n|no)] [--overlap|-o (y|yes|n|no)] [--duplicates|-du (y|yes|n|no)] [--compress|-c (y|yes|n|no)] [--remfiles|-r (y|yes|n|no)] [--help|-h]\n";
     }
     elsif($script eq "4.0")
     {
@@ -591,7 +591,7 @@ sub matricize_version_two
     close OUT;
 }
 
-############matricize and matricize_version_two sub####################
+############matricize and matricize.v2 sub####################
 sub unique 
 {
     my (@in) = @_;

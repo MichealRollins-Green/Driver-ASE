@@ -64,13 +64,21 @@ sub compile_ase_no_tum_norm
     mce_map
     {
         chomp($_);
-	print STDERR "Details for ase analysis: $_\n";
         my @a = split("\t",$_);
         my $mpileup = $a[0];
         my $cd = $a[2];
-        # have both tumor and normal pileups
-        print STDERR "working on $cd\n";
-        pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","$ase_counts/$mpileup")
+	
+	if (-s "$mpileups_path/$mpileup" != 0)
+	{
+	    print STDERR "Details for ase analysis: $_\n";
+	    # have both tumor and normal pileups
+	    print STDERR "working on $cd...\n";
+	    pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","$ase_counts/$mpileup")
+	}
+	else
+	{
+	    print "$mpileups_path/$mpileup is empty.\n";
+	}
     }@TN;
 }
 
@@ -237,25 +245,33 @@ sub compile_gene_ase_faster
     {
         chomp(my $r = $_);
         my @a = split("\t",$r);
-	print STDERR "working on $a[0]\n";
-        my $rd_id = rand();
-        $rd_id = substr($rd_id,2,6);
-	
-	my $bed_ref = $ref_bed;
-	
-	mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
-	
-	print STDERR "Going to convert the file into mm format: $ase_path/ase_counts/$a[0]\n";
-	convert2mm("$ase_path/$ase_counts/$a[0]","$ase_path/$temp/mm.$rd_id.bed");
-	print STDERR "Failed to convert the file into mm format\n" and next unless (-s "$ase_path/$temp/mm.$rd_id.bed" > 0);
-	
-	#Overlap ase_count bed with cds_bed;
-	#Be aware of the bed format between the two files, especially for chr label!
-	#Get rid of last column;
-	
-	Make4colBed("$cds_dir/$a[2]");
-	TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_dir/$a[2]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
-	AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$a[0]","$ase_path/$temp","$ase_path");  
+	if (-e "$ase_path/$ase_counts/$a[0]")
+	{
+	    
+	    print STDERR "working on $a[0]...\n";
+	    my $rd_id = rand();
+	    $rd_id = substr($rd_id,2,6);
+	    
+	    my $bed_ref = $ref_bed;
+	    
+	    mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
+	    
+	    print STDERR "Going to convert the file into mm format: $ase_path/ase_counts/$a[0]\n";
+	    convert2mm("$ase_path/$ase_counts/$a[0]","$ase_path/$temp/mm.$rd_id.bed");
+	    print STDERR "Failed to convert the file into mm format!\n" and next unless (-s "$ase_path/$temp/mm.$rd_id.bed" > 0);
+	    
+	    #Overlap ase_count bed with cds_bed;
+	    #Be aware of the bed format between the two files, especially for chr label!
+	    #Get rid of last column;
+	    
+	    Make4colBed("$cds_dir/$a[2]");
+	    TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_dir/$a[2]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
+	    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$a[0]","$ase_path/$temp","$ase_path");  
+	}
+	else
+	{
+	    print "No file named $ase_path/$ase_counts/$a[0]. This file must be empty in mpileups directory.\n";
+	}
     }@gene_level;
 }
 
@@ -1286,6 +1302,7 @@ sub mk_files_snps_cnvs
     my $self = $infile and $infile = shift if ref $infile;
     my $ase_path = shift;
     my $gene_level = shift;
+    my $duplicates = shift;
     
     open(MKFI,"$infile") or die "Can't open $infile: $!\n";
     open(N,">normal_ff") or die "no normal out\n";
@@ -1295,8 +1312,11 @@ sub mk_files_snps_cnvs
     {
         chomp($r);
         my @a = split("\t",$r);
-	$a[2] =~ s/-[0-9]+[a-zA-Z]$//;
-        
+	if (lc $duplicates eq "n" or lc $duplicates eq "no")
+	{
+	    $a[2] =~ s/-[0-9]+[a-zA-Z]$//;
+	}
+	
         unless($a[1] eq 'NaN')#prints if there is a matching normal
         {
             print N "$ase_path/$gene_level/".$a[1], "\t", $a[2], "\n";
@@ -1314,6 +1334,7 @@ sub mk_files_tum_norm
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
     my $gene_level_path = shift;
+    my $duplicates = shift;
     
     open(MKFI,"$infile") or die "Can't open $infile: $!\n";
     open(N,">normal_ff") or die "no normal out\n";
@@ -1327,11 +1348,25 @@ sub mk_files_tum_norm
         
         if($a[4] < 10)#prints if sample is normal
         {
-	    print T "$gene_level_path/".$a[2], "\t", $a[3], "\n";
+	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
+	    {
+		print T "$gene_level_path/".$a[2], "\t", $a[1], "\n";
+	    }
+	    else
+	    {
+		print T "$gene_level_path/".$a[2], "\t", $a[3], "\n";
+	    }
         }
 	else
 	{
-	    print N "$gene_level_path/".$a[2], "\t", $a[3], "\n" unless $a[2] =~ /^NaN/i;
+	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
+	    {
+		print N "$gene_level_path/".$a[2], "\t", $a[1], "\n" unless $a[2] =~ /^NaN/i;
+	    }
+	    else
+	    {
+		print N "$gene_level_path/".$a[2], "\t", $a[3], "\n" unless $a[2] =~ /^NaN/i;
+	    }
 	}
     }
     close(MKFI);
@@ -1414,6 +1449,7 @@ sub pull_problems
     close(PPI);
     close(PPO);
 }
+
 
 sub Intersect_Files
 {
