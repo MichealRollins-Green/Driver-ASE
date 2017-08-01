@@ -94,6 +94,8 @@ curl -L http://cpanmin.us | perl - Getopt::Long
 
 curl -L http://cpanmin.us | perl - LWP::Simple
 
+curl -L http://cpanmin.us | perl - File::Which
+
 curl -L http://cpanmin.us | perl - autodie
 
 curl -L http://cpanmin.us | perl - lib
