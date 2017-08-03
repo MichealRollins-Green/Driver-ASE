@@ -104,7 +104,7 @@ curl -L http://cpanmin.us | perl - strict
 
 curl -L http://cpanmin.us | perl - warnings
 
-##### This pipeline uses curl by default but aria2 is supported.
+##### This pipeline uses curl by default but aria2 is supported for the core downloading of GDC data.
 
 aria2 - https://aria2.github.io/
 
