@@ -10,6 +10,8 @@ use lib "$Bin/";
 use Parsing_Routines;
 use FileHandle;
 use MCE::Map;
+use autodie;
+no warnings 'once';
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -44,32 +46,24 @@ sub new
 
 ##############################################subs#############################
 
-sub CheckPlink{
-    my $P = `which plink`;
-    if($P =~ /^no plink/i) {
-        print STDERR "You need to install plink and add its path in bashrc or bash_profile\n";
-        exit;
-    }
-}
-
 sub ParseAnnoAffxSNP6
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $GenoWideSNP = shift; #GenomeWideSNP_6.na35.annot.csv
+    my $self = $GenoWideSNP and $GenoWideSNP = shift if ref $GenoWideSNP;
+    my $snp6_anno_file = shift; #snp6.anno.txt
     
-    open(PAR,$infile) or die("Can't open file $infile for input: $!");
-    open(ANNO,">$outfile") or die("Can't open file $outfile for output: $!");
-    while(my $r = <PAR> )
+    open (GEN,$GenoWideSNP);
+    open (ANNO,">$snp6_anno_file");
+    while(my $r = <GEN> )
     {
-        if($r =~ /^\#/)
+        if ($r =~ /^\#/)
         {
             next;
         }
         chomp($r);
         $r =~ s/\"//g;
         my @a = split(",",$r);
-        if($a[4] eq '-')
+        if ($a[4] eq '-')
         {
             $a[4] = '+';
             $a[8] =~ tr/ACGT/TGCA/;
@@ -77,20 +71,20 @@ sub ParseAnnoAffxSNP6
         }
         print ANNO join("\t",@a[0,2..4,8,9,1]),"\n";
     }
-    close(PAR);
-    close(ANNO);
+    close (GEN);
+    close (ANNO);
 }
 
 sub PrepareAffxAlleleAccording2ImputationAlleles
 {
-    my $path = shift;
-    my $self = $path and $path = shift if ref $path;
-    my $database_path = shift;
+    my $affy6_path = shift; #affy6 directory path
+    my $self = $affy6_path and $affy6_path = shift if ref $affy6_path;
+    my ($database_path,$snp6_anno_file,$snp6_cd_file) = @_; #Database path, snp6.anno.txt, snp6.cd.txt
     
     my $hap_tag = "nomono";
     #nomono=>ALL.integrated_phase1_SHAPEIT_16-06-14.nomono.tgz
     #nosing=>ALL.integrated_phase1_SHAPEIT_16-06-14.nosing.tgz 
-    my $AffxInput = "$path/snp6.anno.txt";
+    my $AffxInput = "$affy6_path/$snp6_anno_file";
     
     my $OneKG_legend_Path = "$database_path/ALL.integrated_phase1_SHAPEIT_16-06-14.$hap_tag";
     
@@ -104,15 +98,15 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
     #column 7-10 (afr.aaf amr.aaf asn.aaf eur.aaf) alternate (non-reference) allele frequencies in 4 ancestral groups
     #column 11-14 (afr.maf amr.maf asn.maf eur.maf) minor allele frequencies (MAF) in 4 ancestral groups
     
-    my $OUT = "$path/snp6.cd.txt";
+    my $OUT = "$affy6_path/$snp6_cd_file";
     my %AFFX_SNPs;
-    open AFFX, "$AffxInput" or die "Couldn\'t open the AFFX file: $!";
+    open (AFFX, "$AffxInput");
     while(<AFFX>)
     {
         my $line = $_;
         chomp($line);
         my @tp = split("\t",$line);
-        if(uc($tp[1]) eq "X")
+        if (uc($tp[1]) eq "X")
         {
             $tp[1] = 23;
         }
@@ -126,9 +120,9 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
         #The program IMPUTE2 identifies SNPs internally by their base pair positions
         #(which means that duplicate SNPs at a single position can cause problems).
         
-        if($tp[1] =~ /\d+/)
+        if ($tp[1] =~ /\d+/)
         {
-            if(defined($AFFX_SNPs{$tp[1]}{$tp[1].":".$tp[2].":"."SNP"}))
+            if (defined($AFFX_SNPs{$tp[1]}{$tp[1].":".$tp[2].":"."SNP"}))
             {
                 #For duplicate chr:pos in SNPARRAY;
                 @{$AFFX_SNPs{$tp[1]}{$tp[1].":".$tp[2].":"."SNP_dup"}} = @tp[2,4,5,0,6];
@@ -143,33 +137,31 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
     
     my %IntersectSNPs;
     
-    open(OUT,">$OUT") or die "Could not output data into the file: $!\n";
+    open (OUT,">$OUT");
     foreach my $k (sort keys %AFFX_SNPs)
     {
-        if($k > 0 and $k < 24)
+        if ($k > 0 and $k < 24)
         {
-            if($k == 23)
+            if ($k == 23)
             {
                 #ALL_1000G_phase1integrated_v3_chrX_nonPAR_impute.legend.gz
-                open ONEKG,"zcat $OneKG_legend_Path/ALL_1000G_phase1integrated_v3_chrX_nonPAR_impute.legend.gz |"
-                or die "Couldn\'t open the OneKG reference maps: $!";	
+                open (ONEKG,"zcat $OneKG_legend_Path/ALL_1000G_phase1integrated_v3_chrX_nonPAR_impute.legend.gz |");	
             }
             else
             {
-                open ONEKG,"zcat $OneKG_legend_Path/ALL.chr$k.integrated_phase1_v3.20101123.snps_indels_svs.genotypes.$hap_tag.legend.gz |"
-                or die "Couldn\'t open the OneKG reference maps: $!";	
+                open (ONEKG,"zcat $OneKG_legend_Path/ALL.chr$k.integrated_phase1_v3.20101123.snps_indels_svs.genotypes.$hap_tag.legend.gz |");	
             }
            
             while(<ONEKG>)
             {
                 chomp($_);
-                if($. > 1)
+                if ($. > 1)
                 {
                     my $l = $_;
                     my @temp = split("\t| ",$l);
                     @temp = @temp[0..4];
                     my $chrpos = $k.":".$temp[1].":".$temp[4];#chr:pos:SNP
-                    if(exists($AFFX_SNPs{$k}{$chrpos}))
+                    if (exists($AFFX_SNPs{$k}{$chrpos}))
                     {
                         #check existance of snps=>chr:pos:SNP
                         $IntersectSNPs{$chrpos} = 1;#Recording available snps in OneKG ref db;
@@ -187,14 +179,14 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
                         #Thus we can simply use the following conditions to tranform alleles;
                         #Otherwise, it is prone to error when when the strand info is absent!
                         
-                        if($AffxAB[0] eq $OneKGAB[0] and $AffxAB[1] eq $OneKGAB[1])
+                        if ($AffxAB[0] eq $OneKGAB[0] and $AffxAB[1] eq $OneKGAB[1])
                         {
                             print OUT "chr".$k, "\t", $AFFX_SNPs{$k}{$chrpos}->[0]-1, "\t",
                             $AFFX_SNPs{$k}{$chrpos}->[0], "\t", $AFFX_SNPs{$k}{$chrpos}->[3], "\t",
                             $temp[2]."|".$temp[3], "\t",$AFFX_SNPs{$k}{$chrpos}->[1], "\t",
                             $AFFX_SNPs{$k}{$chrpos}->[2],"\t",$temp[0],"\n";
                         }
-                        elsif($TranAffxAB[0] eq $OneKGAB[0] and $TranAffxAB[1] eq $OneKGAB[1])
+                        elsif ($TranAffxAB[0] eq $OneKGAB[0] and $TranAffxAB[1] eq $OneKGAB[1])
                         {
                             print OUT "chr".$k, "\t", $AFFX_SNPs{$k}{$chrpos}->[0]-1, "\t",
                             $AFFX_SNPs{$k}{$chrpos}->[0], "\t", $AFFX_SNPs{$k}{$chrpos}->[3],
@@ -203,17 +195,17 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
                         }
                         else
                         {
-                            print STDERR "Conflict pattern for the SNP $temp[0] or  $AFFX_SNPs{$k}{$chrpos}->[3] ($chrpos) is observed as: \n";
-                            print STDERR "Query Alleles: ", join("|",@AffxAB),"\n";
-                            print STDERR "OneKG Alleles: ", join("|",@OneKGAB), "\n";
+                            print "Conflicting pattern for the SNP $temp[0] or  $AFFX_SNPs{$k}{$chrpos}->[3] ($chrpos) is observed as: \n";
+                            print "Query Alleles: ", join("|",@AffxAB),"\n";
+                            print "OneKG Alleles: ", join("|",@OneKGAB), "\n";
                             #After checking, we want that these SNPs having more than two observed alleles;
                             #In the ref, it contains two of these alleles, and only one is observed in two
                             #alleles of query SNP
-                            print STDERR "\nWe decide to not keep these SNPs in their original format!\n\n";
+                            print "\nSNPs will be kept in their original format!\n\n";
                         }
                         
                         #For duplicate chr:pos SNPs;
-                        if(exists($AFFX_SNPs{$k}{$chrpos."_dup"}))
+                        if (exists($AFFX_SNPs{$k}{$chrpos."_dup"}))
                         {
                             $chrpos .= "_dup";
                             $IntersectSNPs{$chrpos} = 1;#Recording available snps in OneKG ref db;
@@ -225,7 +217,7 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
                     }
                 }
             }
-            close ONEKG;
+            close (ONEKG);
         }
     }
     #Keep left SNPs in their original format!
@@ -243,26 +235,23 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
             }
         }
     }
-    close OUT;
+    close (OUT);
 }
 
 sub Prepare_Genos
 {
-    my $birdseed = shift;
-    my $self = $birdseed and $birdseed = shift if ref $birdseed;
-    my $BirdseedPath = shift;
-    my $AffxAnno = shift;
-    my $bases = shift;
-    my $type = shift;
+    my $Genotype_birdseed_file = shift; # Genotype birdseed files from the directory that they were downloaded to
+    my $self = $Genotype_birdseed_file and $Genotype_birdseed_file = shift if ref $Genotype_birdseed_file;
+    my ($BirdseedPath,$snp6_cd_file,$bases,$type) = @_; #Path to birdseed files, snp6.cd.txt, processing directory, normal|tumor|normal/tumor (0|1|2)
     
-    my @a = split("\\.",$birdseed);
+    my @a = split("\\.",$Genotype_birdseed_file);
     
     unless (defined($type))
     {
         #Default type is for tumor/normal;
-        print "You didn\'t choose which type of TCGA samples (tumor or normal) to be analyzed.\n";
+        print "No option for TCGA samples (tumor or normal) was chosen.\n";
         print "The default samples used for analysis will be normal samples only!\n";
-        $type=2;#0 for normal, 1 for tumor, and 2 for tumor and normal;
+        $type = 0;#0 for normal, 1 for tumor, and 2 for tumor and normal;
     }
     
     my $pid = $a[1];
@@ -276,36 +265,35 @@ sub Prepare_Genos
     my $tmp_num4 = $parsing->rand_num;
     $tmp_f1 = "tmp$tmp_num1".$tmp_num2;
     $tmp_f2 = "tmp$tmp_num3".$tmp_num4;
-    my $AffxAnno1 = "$AffxAnno.TMP.$tmp_num1.$tmp_num3";
-    `cp $AffxAnno $AffxAnno1`;
-    if($tag =~ /[0-9]/)
+    my $AffxAnno1 = "$snp6_cd_file.TMP.$tmp_num1.$tmp_num3";
+    `cp $snp6_cd_file $AffxAnno1`;
+    if ($tag =~ /[0-9]/)
     {
-        if($type == 2)
+        if ($type == 2)
         {
-
-            print STDERR "working on tumor/normal sample: $pid\n";
-            $parsing->strip_head("$BirdseedPath/$birdseed","$bases/$pid.t",2);
+            print "Working on tumor/normal sample: $pid\n";
+            $parsing->strip_head("$BirdseedPath/$Genotype_birdseed_file","$bases/$pid.t",2);
             $parsing->vlookup("$bases/$pid.t",1,"$AffxAnno1",4,"6,7,1","y","$tmp_f1");
             mk_genos("$tmp_f1","$tmp_f2");
             $parsing->pull_column($tmp_f2,"1,7,6","$bases/$pid");
         }
-        elsif($type == 0)
+        elsif ($type == 0)
         {
-            if($tag > 9)
+            if ($tag > 9)
             {
-                print STDERR "working on normal sample only: $pid\n";
-                $parsing->strip_head("$BirdseedPath/$birdseed","$bases/$pid.t",2);
+                print "Working on normal sample only: $pid\n";
+                $parsing->strip_head("$BirdseedPath/$Genotype_birdseed_file","$bases/$pid.t",2);
                 $parsing->vlookup("$bases/$pid.t",1,"$AffxAnno1",4,"6,7,1","y","$tmp_f1");
                 mk_genos("$tmp_f1","$tmp_f2");
                 $parsing->pull_column($tmp_f2,"1,7,6","$bases/$pid");
             }
         }
-        elsif($type == 1)
+        elsif ($type == 1)
         {
-            if($tag < 10)
+            if ($tag < 10)
             { 
-                print STDERR "working on tumor sample only: $pid\n";
-                $parsing->strip_head("$BirdseedPath/$birdseed","$bases/$pid.t",2);
+                print "Working on tumor sample only: $pid\n";
+                $parsing->strip_head("$BirdseedPath/$Genotype_birdseed_file","$bases/$pid.t",2);
                 $parsing->vlookup("$bases/$pid.t",1,"$AffxAnno1",4,"6,7,1","y","$tmp_f1");
                 mk_genos("$tmp_f1","$tmp_f2");
                 $parsing->pull_column($tmp_f2,"1,7,6","$bases/$pid");
@@ -313,10 +301,10 @@ sub Prepare_Genos
         }
         else
         {
-            print "Don\'t know your input sample type $type for analysis!\n" and die;
+            print STDERR "Input type $type is incorrect! The input type must be 0|1|2.\n" and die;
         }
     }
-    if(defined $tmp_f1 || defined $tmp_f2)
+    if (defined $tmp_f1 && defined $tmp_f2)
     {
         `rm -f $tmp_f1 $tmp_f2 $AffxAnno1`;
     }
@@ -328,21 +316,21 @@ sub mk_genos
     my $self = $infile and $infile = shift if ref $infile;
     my $outfile = shift;
     
-    open(MK,$infile) or die("Can't open file for input: $!\n");
-    open(GEN,">$outfile")or die("Can't open file for output: $!\n");
-    while(my $r = <MK> )
+    open (MK,$infile);
+    open (GEN,">$outfile");
+    while(my $r = <MK>)
     {
         chomp($r);
         my @a = split("\t",$r);
-        if($a[1] == 0)
+        if ($a[1] == 0)
         {
             print GEN $r, "\t", $a[3].",".$a[3], "\t";
         }
-        elsif($a[1] == 1)
+        elsif ($a[1] == 1)
         {
             print GEN $r, "\t", $a[3].",".$a[4], "\t";
         }
-        elsif($a[1] == 2)
+        elsif ($a[1] == 2)
         {
             print GEN $r, "\t", $a[4].",".$a[4], "\t";
         }
@@ -352,22 +340,22 @@ sub mk_genos
         }
         print GEN $a[5], "\n";
     }
-    close(MK);
-    close(GEN);
+    close (MK);
+    close (GEN);
 }
 
 sub mk_map
 {
-    my $filename = shift;
-    my $self = $filename and $filename = shift if ref $filename;
-    my $RNA_map_path = shift;
+    my $mk_map_file = shift; #File to process
+    my $self = $mk_map_file and $mk_map_file = shift if ref $mk_map_file;
+    my $RNA_map_path = shift; #Path to write map files
     
-    open(MKM,$filename) or die("Can't open $filename for input: $!");
+    open (MKM,$mk_map_file);
     my $old = <MKM>;
     chomp($old);
     my @o = split("\t",$old);
     $o[0] =~ s/chr//;
-    open(OUT,">$RNA_map_path/$o[0].map") or die "no out\n";
+    open (OUT,">$RNA_map_path/$o[0].map");
     
     while(my $r = <MKM>) 
     {
@@ -375,24 +363,23 @@ sub mk_map
         my @a = split("\t",$r);
         $a[0] =~ s/chr//;
         print OUT $o[0], "\t", $o[2], "\t0\t", $o[1], "\n";
-        if($o[0] ne $a[0])
+        if ($o[0] ne $a[0])
         {
-            close OUT; open(OUT,">$RNA_map_path/$a[0].map") or die "no out\n";
+            close OUT;
+            open (OUT,">$RNA_map_path/$a[0].map");
         }
         @o = @a;
     }
     print OUT $o[0], "\t", $o[2], "\t0\t", $o[1], "\n";
-    close(MKM);
-    close(OUT);
+    close (MKM);
+    close (OUT);
 }
 
 sub mk_ped_list_4_plink
 {
-    my $chr_file = shift;
+    my $chr_file = shift; #File with chr numbers
     my $self = $chr_file and $chr_file = shift if ref $chr_file;
-    my $bases_dir = shift;
-    my $pedlist = shift;
-    my $outdir = shift;
+    my ($bases_dir,$pedlist,$RNA_Path) = @_; #Directory with processed files, list to make ped files, path to output
     
     my $chr_fh=FileHandle->new("$chr_file");
     my @chrs = <$chr_fh>;
@@ -407,8 +394,8 @@ sub mk_ped_list_4_plink
         $chr =~ s/\.map//;
         for(my $i = 0;$i < scalar(@samples);$i++)
         {
-            print STDERR "working on $chr for sample $samples[$i].\n";
-            print $outfile "$chr\t$samples[$i]\t$i\t$outdir\n";
+            print "Working on chr$chr for sample $samples[$i].\n";
+            print $outfile "$chr\t$samples[$i]\t$i\t$RNA_Path\n";
         }
     }
     $outfile->close;
@@ -418,43 +405,36 @@ sub Make_Plink_Bed
 {
     my $chr = shift;#$chr;
     my $self = $chr and $chr = shift if ref $chr;
-    my $sample = shift;#$samples[$i];
-    my $sampleid = shift;#$i;
-    my $path = shift;#$dir_path;
-    my $bases = shift;
-    my $map_dir = shift;
+    my ($sample,$sampleid,$RNA_Path,$bases,$map_dir,$plink) = @_; #sampte type, sample id, path to data
     
     #Copy map file to avoid of reading errors when using qsub;
-    copy "$path/$map_dir/$chr.map", "$path/$map_dir/$sample.chr$chr.map";
+    copy "$RNA_Path/$map_dir/$chr.map", "$RNA_Path/$map_dir/$sample.chr$chr.map";
     
-    $parsing->vlookup("$path/$map_dir/$sample.chr$chr.map",2,"$bases/$sample",1,2,"y","$path/$map_dir/$sample.chr$chr.pro");
+    $parsing->vlookup("$RNA_Path/$map_dir/$sample.chr$chr.map",2,"$bases/$sample",1,2,"y","$RNA_Path/$map_dir/$sample.chr$chr.pro");
     
-    ped_it_4_plink("$sample",$sampleid,"$path/$map_dir/$sample.chr$chr.pro","$path/$map_dir/$sample.chr$chr.ped");
+    ped_it_4_plink("$sample",$sampleid,"$RNA_Path/$map_dir/$sample.chr$chr.pro","$RNA_Path/$map_dir/$sample.chr$chr.ped");
    
     #Transform ped into BED of plink;
-    print STDERR "Now making plink bed for $sample.chr$chr\n";
-    `plink --map $path/$map_dir/$sample.chr$chr.map --ped $path/$map_dir/$sample.chr$chr.ped --make-bed --out $path/$map_dir/$sample.chr$chr`;
+    print "Now making plink bed for $sample.chr$chr\n";
+    `$plink --map $RNA_Path/$map_dir/$sample.chr$chr.map --ped $RNA_Path/$map_dir/$sample.chr$chr.ped --make-bed --out $RNA_Path/$map_dir/$sample.chr$chr`;
     
-    unlink("$path/$map_dir/$sample.chr$chr.map",
-           "$path/$map_dir/$sample.chr$chr.ped",
-           "$path/$map_dir/$sample.chr$chr.pro",
-           "$path/$map_dir/$sample.chr$chr.txt");
+    unlink("$RNA_Path/$map_dir/$sample.chr$chr.map",
+           "$RNA_Path/$map_dir/$sample.chr$chr.ped",
+           "$RNA_Path/$map_dir/$sample.chr$chr.pro",
+           "$RNA_Path/$map_dir/$sample.chr$chr.txt");
 }
 
 sub ped_it_4_plink
 {
-    my $sample = shift;
-    my $fam = shift;
-    my $infile = shift;
-    my $outfile = shift;
+    my ($sample,$fam,$sample_map_pro,$sample_map_ped) = @_; #sample type, sample id, sample map pro file, sample map ped file
     
-    my $fh=FileHandle->new("<$infile");
+    my $fh=FileHandle->new("<$sample_map_pro");
     
     $fam = $fam + 1;
     
-    if(-s $infile)
+    if (-s $sample_map_pro)
     {
-        open(P4P,">$outfile") or die("Can't open file for output: $!");
+        open (P4P,">$sample_map_ped");
         print P4P "FAM".$fam, "\t", $sample, "\t", 0, "\t", 0, "\t", 2, "\t", 0;
        
         while(my $r = <$fh>)
@@ -476,65 +456,57 @@ sub ped_it_4_plink
         }
         print "\n";
         $fh->close;
-        close(P4P);
+        close (P4P);
     }
 }
 
 sub submit_shapeit
 {
-    my $Ref_Hap_Path = shift;
+    my $Ref_Hap_Path = shift; #Path to the ALL.integrated_phase1_SHAPEIT_16-06-14.nomono directory
     my $self = $Ref_Hap_Path and $Ref_Hap_Path = shift if ref $Ref_Hap_Path;
-    my $rna_path = shift;
-    my $phased = shift;
-    my $map_dir = shift;
-    my $ped_dir = shift;
-    my $logs = shift;
+    my ($rna_path,$phased,$map_dir,$ped_dir,$logs,$shapeit) = @_; #path to RNA analysis data, path to directory where phased files are, path to directory where map files are, path to directory where logs will be stored, shapeit command
+
     my @cmds;
     
     $Ref_Hap_Path =~ s/\/$//;
     
     for(my $i = 1;$i < 23;$i++)
     {
-        print "Working on $i for shapeit\n";
-        push @cmds,"shapeit --input-ped $rna_path/$ped_dir/$i.ped $rna_path/$map_dir/$i.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --output-log $rna_path/$logs/$i.shapeit_log";
+        print "Running shapeit for $i.\n";
+        push @cmds,"$shapeit --input-ped $rna_path/$ped_dir/$i.ped $rna_path/$map_dir/$i.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --output-log $rna_path/$logs/$i.shapeit_log";
     }
     my $i = 'X';
-    print "Working on $i for shapeit\n";
-    push @cmds,"shapeit --input-ped $rna_path/$ped_dir/23.ped $rna_path/$map_dir/23.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_nonPAR_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --chrX --output-log $rna_path/$logs/$i.shapeit_log";
+    print "Running shapeit for $i.\n";
+    push @cmds,"$shapeit --input-ped $rna_path/$ped_dir/23.ped $rna_path/$map_dir/23.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_nonPAR_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --chrX --output-log $rna_path/$logs/$i.shapeit_log";
     
     return @cmds;
 }
 
 sub submit_all
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $OneKG_Ref_Path = shift;
-    my $Phased_hap = shift;
-    my $Phased_out_path = shift;
+    my $chr_sizes_file = shift; #file with chr sizes
+    my $self = $chr_sizes_file and $chr_sizes_file = shift if ref $chr_sizes_file;
+    my ($OneKG_Ref_Path,$Phased_hap,$Phased_out_path,$impute) = @_; #path to the ALL.integrated_phase1_SHAPEIT_16-06-14.nomono directory, path to directory where phased files are, path to output processed data, impute2 command
+
     my @cmds;
     
-    open(SA,$infile) or die("Can't open file for input");
+    open (SA,$chr_sizes_file);
     
     while(my $r = <SA>) 
     {
         chomp($r);
         my @a = split("\t",$r);
         $a[0] =~ s/chr//;
-        push @cmds,submit_impute_chr($a[0],$a[1],5e6,$OneKG_Ref_Path,$Phased_hap,$Phased_out_path);
+        push @cmds,submit_impute_chr($a[0],$a[1],5e6,$OneKG_Ref_Path,$Phased_hap,$Phased_out_path,"$impute");
     }
+    close (SA);
     return @cmds;    
 }
 
 ##################submit all sub#######################
 sub submit_impute_chr
 {
-    my $chr = shift;#chr_number
-    my $chr_len = shift;#chr_number
-    my $ww = shift;#window_size
-    my $OneKG_Ref_Path = shift;
-    my $Phased_hap = shift;
-    my $Phased_out_path = shift;
+    my ($chr,$chr_len,$ww,$OneKG_Ref_Path,$Phased_hap,$Phased_out_path,$impute) = @_; #chr number, chr length, window size, path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono directory, path to directory where phased files are, path to output processed data, impute2 command
     
     $chr =~ s/chr//i;
     
@@ -544,7 +516,7 @@ sub submit_impute_chr
     my $know_haps_g = "$Phased_hap/$chr.phased.haps";
     my $phased_chunk_out = "$Phased_out_path/chr$chr.chunk";
     
-    if($chr =~ /X/i or $chr == 23)
+    if ($chr =~ /X/i or $chr == 23)
     {
         $impute2_m = "$OneKG_Ref_Path/genetic_map_chrX_nonPAR_combined_b37.txt";
         $impute2_h = "$OneKG_Ref_Path/ALL_1000G_phase1integrated_v3_chrX_nonPAR_impute.hap.gz";
@@ -560,13 +532,13 @@ sub submit_impute_chr
     {
         my $ss = $i;
         my $ee = $i + $ww - 1;
-        push @cmds,"impute2 -use_prephased_g -m $impute2_m -h $impute2_h -l $impute2_l -known_haps_g $know_haps_g -int $ss $ee -o $phased_chunk_out.$chunk -phase";
+        push @cmds,"$impute -use_prephased_g -m $impute2_m -h $impute2_h -l $impute2_l -known_haps_g $know_haps_g -int $ss $ee -o $phased_chunk_out.$chunk -phase";
         
         $chunk++;
     }
     my $ss = $i;
     my $ee = $chr_len;
-    push @cmds,"impute2 -use_prephased_g -m $impute2_m -h $impute2_h -l $impute2_l -known_haps_g $know_haps_g -int $ss $ee -o $phased_chunk_out.$chunk -phase";
+    push @cmds,"$impute -use_prephased_g -m $impute2_m -h $impute2_h -l $impute2_l -known_haps_g $know_haps_g -int $ss $ee -o $phased_chunk_out.$chunk -phase";
     print "We are going to do imputation for chr$chr!\n";
     return @cmds;
 }
@@ -574,14 +546,11 @@ sub submit_impute_chr
 
 sub impute_2_out
 {
-    my $path = shift;
-    my $self = $path and $path = shift if ref $path;
-    my $RNA_Path = shift;
-    my $infile = shift;
-    my $phased = shift;
-    my $imputation = shift;
+    my $Impute2out = shift; #path to output processed data from submit_impute_chr
+    my $self = $Impute2out and $Impute2out = shift if ref $Impute2out;
+    my ($RNA_Path,$infile,$phased,$imputation,$plink) = @_; #path to RNA analysis data, file that contains a list of files from the directory where data was processed from the submit_impute_chr routine, directory where data will be written, plink command
     
-    open(IM2O,$infile) or die("Can't open file for output: $!");
+    open (IM2O,$infile);
     my @cmds;
 
     while(<IM2O>)
@@ -591,18 +560,19 @@ sub impute_2_out
         my $id = $_;
         my ($chr) = $id =~ /chr(\d+)\./;
         system("cp $phased/21.phased.sample $imputation/$id.sample");
-        push @cmds,"plink --oxford-single-chr $chr --hard-call-threshold 0.05 --gen $path/$id --sample $imputation/$id.sample --make-bed --out $imputation/$id";
+        push @cmds,"$plink --oxford-single-chr $chr --hard-call-threshold 0.05 --gen $Impute2out/$id --sample $imputation/$id.sample --make-bed --out $imputation/$id";
     }
+    close (IM2O);
     return @cmds;
 }
 
 sub Assign_ChrPos_MissingId_SNPs
 {
-    my $bimpath = shift;
+    my $bimpath = shift; # path to bim files created in impute_2_out
     my $self = $bimpath and $bimpath = shift if ref $bimpath;
     
     my %UniqSNPs;#Used to change depulicated SNP names!
-    my $fh = FileHandle->new("< $bimpath") or die "Can not find the bim file: $!\n";
+    my $fh = FileHandle->new("< $bimpath");
     my @SNPs = <$fh>;
     $fh->close;
     my $outfh = FileHandle->new(">$bimpath");
@@ -612,7 +582,7 @@ sub Assign_ChrPos_MissingId_SNPs
         chomp($e);
         $e =~ s/^(\S+)\t\.\t0\t(\d+)(.*)$/$1\tchr$1:$2\t0\t$2$3/ if $e=~/^\S+\t\.\t0/;    
         my @as = split("\t| ",$e);
-        if(defined($UniqSNPs{$as[1]}))
+        if (defined($UniqSNPs{$as[1]}))
         {
             $as[1].="_".$as[3]."_".$as[4];
             print $outfh join("\t",@as),"\n";
@@ -630,9 +600,7 @@ sub Extract_Ind_Het_Genos
 {
     my $chr = shift;#should be "chr\d+";
     my $self = $chr and $chr = shift if ref $chr;
-    my $BED = shift;
-    my $phased_sample_info = shift;
-    my $cds_plink_dir = shift;
+    my ($BED,$phased_sample_info,$cds_plink_dir,$plink) = @_; #path to plink bed files, path to sample file, path to directory where plink beds were made, plink command
     
     my $fam_fh=FileHandle->new("$BED.fam");
     chomp(my @ids=<$fam_fh>);
@@ -646,7 +614,7 @@ sub Extract_Ind_Het_Genos
         my $keep_fh = FileHandle->new(">$es[1].$chr.txt");
         print $keep_fh join("\t",@es[0..1]);
         $keep_fh->close;
-         my $cmd = "plink --bfile $BED --keep $cds_plink_dir/$es[1].$chr.txt --make-bed --out $cds_plink_dir/temp.$chr.$es[1]; plink --bfile $cds_plink_dir/temp.$chr.$es[1] --max-mac 1 --mac 1 --write-snplist --out $cds_plink_dir/$es[1].$chr; rm $cds_plink_dir/temp.$chr.$es[1].*"; 
+         my $cmd = "$plink --bfile $BED --keep $cds_plink_dir/$es[1].$chr.txt --make-bed --out $cds_plink_dir/temp.$chr.$es[1]; $plink --bfile $cds_plink_dir/temp.$chr.$es[1] --max-mac 1 --mac 1 --write-snplist --out $cds_plink_dir/$es[1].$chr; rm $cds_plink_dir/temp.$chr.$es[1].*"; 
     }@ids;
     return @cmds;
 }
@@ -655,12 +623,12 @@ sub Append_snplist_chrs
 {
     my $ID = shift;
     my $self = $ID and $ID = shift if ref $ID;
-    my $outdir = shift;
+    my $cds_plink = shift; #directory to output data
     
     my @files = glob "$ID.chr*.snplist";#In linux, if included * in the perl command line, perl script will not work!
-    $outdir =~ s/\/$//;
+    $cds_plink =~ s/\/$//;
     
-    open OUT,">$outdir/$ID.snplist" or die "Couldn\'t write data into the output file $outdir/$ID.snplist: $!";
+    open (OUT,">$cds_plink/$ID.snplist");
     
     my @filenames = sort
     {
@@ -669,7 +637,7 @@ sub Append_snplist_chrs
     
     foreach my $file(@filenames)
     {
-        open IN, "$file" or die "Cannot open $file for read: $!";
+        open (IN, "$file");
         while(my $l = <IN>)
         {
             chomp($l);
@@ -682,7 +650,7 @@ sub Append_snplist_chrs
 
 sub merge_tcga_snplist
 {
-    my $RNA_cds_plink_path = shift;
+    my $RNA_cds_plink_path = shift; # path to directory where plink files are
     my $self = $RNA_cds_plink_path and $RNA_cds_plink_path = shift if ref $RNA_cds_plink_path;
 
     for(my $chr = 1;$chr < 24;$chr++)
@@ -693,26 +661,25 @@ sub merge_tcga_snplist
 
 sub Get_Uniq_SNPS_From_SNPlists
 {
-    my $dir = shift;#Is used to input and output files
-    my $self = $dir and $dir = shift if ref $dir;
-    my $file_tag = shift;
-    my $out_filename = shift;
+    my $cds_plink = shift; #Is used to input and output files
+    my $self = $cds_plink and $cds_plink = shift if ref $cds_plink;
+    my ($file_tag,$snplist_file) = @_; # snplist file
     
-    $dir =~ s/\/$//;
+    $cds_plink =~ s/\/$//;
    
-    opendir(DIR,$dir) or die "can not open the $dir directory: $!\n";
+    opendir (DIR,$cds_plink);
     my @files = readdir(DIR);
-    close(DIR);
+    closedir (DIR);
        @files = grep{/$file_tag/;}@files;
     my %Uniq_line;
-    open(OUT,">$dir/$out_filename") or die "Can not write unique lines into the file: $!\n";
+    open (OUT,">$cds_plink/$snplist_file");
     foreach my $f (@files)
     {
-        my $FH=FileHandle->new("$dir/$f");
+        my $FH=FileHandle->new("$cds_plink/$f");
         while(my $l = <$FH>)
         {
             chomp($l);
-            if(($l !~ /^\s*$/) and (!defined($Uniq_line{$l})))
+            if (($l !~ /^\s*$/) and (!defined($Uniq_line{$l})))
             {
                 $Uniq_line{$l} = 1;
                 print OUT $l,"\n";
@@ -725,33 +692,29 @@ sub Get_Uniq_SNPS_From_SNPlists
 
 sub Snplist_Query_Haps_for_Beds
 {
-    my $SNPList = shift;
+    my $SNPList = shift; #snplist file
     my $self = $SNPList and $SNPList = shift if ref $SNPList;
-    my $phased_sample_info = shift;
-    my $hap_dir = shift;
-    my $out_bed = shift;
-    my $chr = shift;
+    my ($phased_sample_info,$Impute2out,$out_bed,$chr) = @_; #path to sample phased file, path to directory where data was processed from the submit_impute_chr routine, files that will hold bed data, chr label
     
-    $hap_dir =~ s/\/$//;
+    $Impute2out =~ s/\/$//;
 
-    open(SNPList,"$SNPList")
-    or die "Could not find the SNPList $SNPList: $!\n";
+    open (SNPList,"$SNPList");
     my %SNPList_info;
     #Load SNPList into hash;
     while(my $l=<SNPList>)
     {
         chomp($l);
         my @ln = split("\t| ",$l);
-        if($ln[1] == $chr)
+        if ($ln[1] == $chr)
         {
             my $SNP = $ln[0];
             $SNPList_info{$SNP} = 1;
         }
     }
-    close SNPList;
+    close (SNPList);
     # load in samples
     # which contains all the sample ids;
-    open(SS,$phased_sample_info) or die "no samples file\n";
+    open (SS,$phased_sample_info);
     my @ss;
     my $r = <SS>;
     $r = <SS>;
@@ -764,18 +727,18 @@ sub Snplist_Query_Haps_for_Beds
         $ss[$cc] = $a[1];
         $cc++;
     }
-    close(SS);
+    close (SS);
     
-    opendir(my $HAP,$hap_dir) or die "can not open the dir $hap_dir: $!\n";
+    opendir (my $HAP,$Impute2out);
     my @HapFiles = readdir($HAP);
-       @HapFiles = grep{/^chr$chr.*_haps$/;}@HapFiles;
-    close($HAP);
-    my $Out_FH = FileHandle->new(">$out_bed.chr$chr.bed") or die "Could not write info into $out_bed.bed: $!\n";
+    @HapFiles = grep{/^chr$chr.*_haps$/;}@HapFiles;
+    closedir ($HAP);
+    my $Out_FH = FileHandle->new(">$out_bed.chr$chr.bed");
     print $Out_FH "Chr\tSt\tEnd\trsID\t",join("\t",@ss),"\n";
     # go through haps and geno_probs
     foreach my $hap(@HapFiles)
     {
-        open(H,"$hap_dir/$hap") or die "no haps file: $!\n";
+        open (H,"$Impute2out/$hap");
         my ($chrom) = $hap =~ /(chr\w+)\.chunk\.\d+_haps/i;
         while(my $hh = <H>)
         {
@@ -786,12 +749,12 @@ sub Snplist_Query_Haps_for_Beds
             $allel[1] = $h[4];
             my $rsid = $h[1];
             #Some SNPs may be without SNP IDs;
-            if($rsid =~ /^\./)
+            if ($rsid =~ /^\./)
             {
                 $rsid = $chrom.":".$h[2];#chr\d+:pos ID;
             }
            
-            if(defined($SNPList_info{$rsid}))
+            if (defined($SNPList_info{$rsid}))
             {
                 my $ppos = $h[2];
                 
@@ -806,7 +769,7 @@ sub Snplist_Query_Haps_for_Beds
                     my $b_pos = $h[$ii+1];               
                     my $A = $allel[$a_pos];
                     my $B = $allel[$b_pos];
-                    if($A ne $B)
+                    if ($A ne $B)
                     {
                         print $Out_FH "\t",$A,"|",$B;
                     }
@@ -820,14 +783,14 @@ sub Snplist_Query_Haps_for_Beds
                 delete $SNPList_info{$rsid};
             }
         }
-       close H;
+       close (H);
     }
-    close $Out_FH;
+    close ($Out_FH);
 }
 
 sub Split_Bed_Haps_for_individuals
 {
-    my $RNA_cdsplink_path = shift;
+    my $RNA_cdsplink_path = shift; #path to plink files
     my $self = $RNA_cdsplink_path and $RNA_cdsplink_path = shift if ref $RNA_cdsplink_path;
     
     my @cmds;
@@ -842,33 +805,30 @@ sub Split_Bed_Haps_for_individuals
 
 sub Split_BedHaps
 {
-    my $Bed_Haps=shift;
+    my $Bed_Haps=shift; #path to bed hap files
     my $self = $Bed_Haps and $Bed_Haps = shift if ref $Bed_Haps;
-    my $outdir = shift;
-    my $chr = shift;
-    my $filehandle_num = shift;
+    my ($cds_sorted,$chr,$filehandle_num) = @_; #directory where data will be written, chr number, filehandle number
     
-    $outdir =~ s/\/$//;
+    $cds_sorted =~ s/\/$//;
     
-    my $BED_FH=FileHandle->new("$Bed_Haps") or die "Could not open the Bed Hap file: $!\n";
+    my $BED_FH=FileHandle->new("$Bed_Haps");
     chomp(my $header = <$BED_FH>);
     $BED_FH->close;
     
     my @Hds = split("\t| ",$header);
     my $opened_files_num = (@Hds-4)/$filehandle_num;#Open $filehandle_num files each time;
-       ($opened_files_num) = $opened_files_num =~ /^(\d+)\.\d+/;
+    ($opened_files_num) = $opened_files_num =~ /^(\d+)\.\d+/;
     
     my $fn;
     
     for($fn = 1;$fn <= $opened_files_num;$fn++)
     {
-        my $BEDFH = FileHandle->new("$Bed_Haps") or die "Could not open the Bed Hap file: $!\n";
+        my $BEDFH = FileHandle->new("$Bed_Haps");
         <$BEDFH>;
         my @FHs;
         for(my $i = ($fn - 1) * $filehandle_num;$i < $filehandle_num + ($fn - 1) * $filehandle_num;$i++)
         {
-            my $H = FileHandle->new(">$outdir/$Hds[$i+4].chr$chr.bed")
-            or die "Can not open the bed $outdir/$Hds[$i+4].chr$chr.bed for exporting: $!\n";
+            my $H = FileHandle->new(">$cds_sorted/$Hds[$i+4].chr$chr.bed");
             push @FHs,$H;
         }
        
@@ -880,11 +840,11 @@ sub Split_BedHaps
             for(my $ii = ($fn - 1) * $filehandle_num;$ii < $filehandle_num + ($fn - 1) * $filehandle_num;$ii++)
             {
                 my $hi = $ii - ($fn - 1) * $filehandle_num;
-                if(defined($FHs[$hi]))
+                if (defined($FHs[$hi]))
                 {
                     my $FileHandle = $FHs[$hi];
                     #Keep only SNPs;
-                    if(length($as[$ii+4]) == 3)
+                    if (length($as[$ii+4]) == 3)
                     {
                         #$as[$ii+4] eq "NA|NA" is also removed!
                         #Keep only het SNPs!;
@@ -893,21 +853,20 @@ sub Split_BedHaps
                 }
             }
         }
-       $BEDFH->close or die;
+       $BEDFH->close;
        for(my $fi = 0;$fi < @FHs;$fi++)
         {
             my $FH = $FHs[$fi];
-            $FH->close or die "Can not close the $FH: $!\n";
+            $FH->close;
         }
     }
     
-    my $BEDFH1 = FileHandle->new("$Bed_Haps") or die "Could not open the Bed Hap file: $!\n";
+    my $BEDFH1 = FileHandle->new("$Bed_Haps");
     <$BEDFH1>;
     my @LeftFHs;
     for(my $li = ($fn - 1) * $filehandle_num;$li < @Hds - 4;$li++)
     {
-        my $HH = FileHandle->new(">$outdir/$Hds[$li+4].chr$chr.bed")
-        or die "Can not open the bed $outdir/$Hds[$li+4].chr$chr.bed for exporting: $!\n";
+        my $HH = FileHandle->new(">$cds_sorted/$Hds[$li+4].chr$chr.bed");
         push @LeftFHs,$HH;
     }
   
@@ -919,11 +878,11 @@ sub Split_BedHaps
         for(my $x = ($fn - 1) * $filehandle_num;$x < @as - 4;$x++)
         {
             my $pi = $x - ($fn - 1) * $filehandle_num;
-            if(defined($LeftFHs[$pi]))
+            if (defined($LeftFHs[$pi]))
             {
                 my $FileHandle1 = $LeftFHs[$pi];
                 #Keep only SNPs;
-                if(length($as[$x+4]) == 3)
+                if (length($as[$x+4]) == 3)
                 {
                     #$as[$x+4] eq "NA|NA" is also removed!
                     #Keep only het SNPs!;
@@ -936,27 +895,26 @@ sub Split_BedHaps
     for(my $lfi = 0;$lfi < @LeftFHs;$lfi++)
     {
         my $LeftFH = $LeftFHs[$lfi];
-        $LeftFH->close or die "Can not close the $LeftFH: $!\n";    
+        $LeftFH->close;
     }
     $BEDFH1->close;
 }
 
 sub Merge_All_Chrs_4_Single_TCGA_Bed
 {
-    my $sample_file = shift;
+    my $sample_file = shift; #path to sample phased file
     my $self = $sample_file and $sample_file = shift if ref $sample_file;
-    my $snplist_dir = shift;
-    my $out_dir = shift;
+    my ($cds_plink,$cds_sorted) = @_; #path to directory where plink files were made, path to directory where data will be written
     
     my @fam_list = `cat $sample_file`;
     @fam_list = grep {/TCGA-*-*-*/}@fam_list;
   
     for (my $i = 0;$i < scalar(@fam_list);$i++)
     {
-            chomp($fam_list[$i]);
-            my @tcga_id = split("\t| ",$fam_list[$i]);
-            my $id = $tcga_id[1];
-            Append_Beds("$id","$snplist_dir","$out_dir");       
+        chomp($fam_list[$i]);
+        my @tcga_id = split("\t| ",$fam_list[$i]);
+        my $id = $tcga_id[1];
+        Append_Beds("$id","$cds_plink","$cds_sorted");       
     }
 }
 
@@ -964,14 +922,13 @@ sub Append_Beds
 {
     my $ID = shift;
     my $self = $ID and $ID = shift if ref $ID;
-    my $snplist_dir = shift; 
-    my $outdir = shift;
+    my ($cds_plink,$cds_sorted) = @_; #path to plink files, path where plink sorted bed files will be stored
     
     my @files = glob "$ID.chr*";#In linux, if included * in the perl command line, perl script will not work!
-    $snplist_dir =~ s/\/$//;
-    $outdir =~ s/\/$//;
+    $cds_plink =~ s/\/$//;
+    $cds_sorted =~ s/\/$//;
     #Import snplist of TCGAID to remove SNPs with geno probability >0.95;
-    my $SNPLIST=FileHandle->new("$snplist_dir/$ID.snplist") or die "can not open the $ID.snplist: $!\n";
+    my $SNPLIST=FileHandle->new("$cds_plink/$ID.snplist");
     my %SNPs;
     while(my $snp = <$SNPLIST>)
     {
@@ -979,21 +936,21 @@ sub Append_Beds
         $SNPs{$snp} = 1;   
     }
     $SNPLIST->close;
-    my $Out="$outdir/$ID.bed";
-    open OUT,">$Out" or die "Couldn\'t write data into the output file $Out: $!";
+    my $Out="$cds_sorted/$ID.bed";
+    open (OUT,">$Out");
     my @filenames = sort
     {
         $a cmp $b
     }@files;                                   
     foreach my $file(@filenames)
     {
-        open IN, "$file" or die "Cannot open $file for read: $!";
+        open (IN, "$file");
         my $i = 0;
         while(my $l = <IN>)
         {
             chomp($l);
             my @as = split("\t| ",$l);
-            if(defined($SNPs{$as[-1]}))
+            if (defined($SNPs{$as[-1]}))
             {
                 unless ($l =~ /^Chr\S+/)
                 {
@@ -1003,22 +960,21 @@ sub Append_Beds
                 }
             } 
         }
-        close IN;
+        close (IN);
     }
-    close OUT;
+    close (OUT);
 }
 
 sub Change_CD_ChrInfo_for_Mpileup
 {
-    my $cd = shift;
+    my $cd = shift; #TCGA ID
     my $self = $cd and $cd = shift if ref $cd;
-    my $cd_dir = shift;
-    my $outfile = shift;
+    my ($cd_sorted,$bed_file) = @_; #path to bed files, file to output bed data
     
-    $cd_dir =~ s/\/$//;
+    $cd_sorted =~ s/\/$//;
     
-    open(COUT,">$outfile") or die("Can't open file for output: $!");
-    my $FH = FileHandle->new("$cd_dir/$cd") or die "no cd input: $!\n";
+    open (COUT,">$bed_file");
+    my $FH = FileHandle->new("$cd_sorted/$cd");
     while(my $l = <$FH>)
     {
         chomp($l);
@@ -1027,7 +983,7 @@ sub Change_CD_ChrInfo_for_Mpileup
         print COUT $l,"\n"; 
     }
     $FH->close;
-    close(COUT);
+    close (COUT);
 }
 
 sub fetch_Chrom_Sizes

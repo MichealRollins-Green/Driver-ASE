@@ -1,10 +1,7 @@
-#!/usr/bin/perl
-
 package Driver_ASE_Lib::Gene_Level_ASE_Analysis;
 
 use warnings;
 use strict;
-use Parsing_Routines;
 use FileHandle;
 use File::Copy qw(copy);
 use MCE::Map;
@@ -13,7 +10,10 @@ use Cwd;
 use Math::CDF qw(:all);
 use FindBin qw($Bin);
 use lib "$Bin/";
+use Parsing_Routines;
 no strict "refs";
+use autodie;
+no warnings 'once';
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -51,15 +51,13 @@ sub new
     
 sub compile_ase_no_tum_norm
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $cds_dir = shift;
-    my $mpileups_path = shift;
-    my $ase_counts = shift;
+    my $mpileup_file = shift; #file with list of mpileups files
+    my $self = $mpileup_file and $mpileup_file = shift if ref $mpileup_file;
+    my ($cds_dir,$mpileups_path,$ase_counts) = @_; #path to directory with sorted bed files, path to directory that hold mpileups, path to directory that will hold ase counts
     
     $cds_dir =~ s/\/$//;
 
-    open(my $CANTN,$infile) or die "Can't open $infile: $!.\n";
+    open (my $CANTN,$mpileup_file);
     my @TN = <$CANTN>;
     mce_map
     {
@@ -70,16 +68,17 @@ sub compile_ase_no_tum_norm
 	
 	if (-s "$mpileups_path/$mpileup" != 0)
 	{
-	    print STDERR "Details for ase analysis: $_\n";
+	    print "Details for ase analysis: $_\n";
 	    # have both tumor and normal pileups
-	    print STDERR "working on $cd...\n";
+	    print "Working on $cd\n";
 	    pileup_at_cd("$mpileups_path/$mpileup","$cds_dir/$cd","$ase_counts/$mpileup")
 	}
 	else
 	{
-	    print "$mpileups_path/$mpileup is empty.\n";
+	    print "$mpileups_path/$mpileup is empty!\n";
 	}
     }@TN;
+    close ($CANTN);
 }
 
 sub pileup_at_cd
@@ -95,21 +94,19 @@ sub pileup_at_cd
     #1: 245042304       245042311
     #2: 245042305       245042312
     #3: T|C             A|G
-    my $mpileupfile = shift;
-    my $cfile = shift;
-    my $ase_count = shift;
+    my ($mpileupfile, $cd_sorted_file,$ase_count) = @_; #mpileup file, sorted bed file, directory that will hold ase count files
     
     my %CD;
-    open(MP,"$mpileupfile") or die "Can't open $mpileupfile: $!\n";
-    open(CD,"$cfile") or die "no cd: $!\n";
-    open(ASEC,">$ase_count") or die "Can't open $ase_count: $!\n";
+    open (MP,"$mpileupfile");
+    open (CD,"$cd_sorted_file");
+    open (ASEC,">$ase_count");
     while(my $r = <CD>)
     {
         chomp($r);
         my @a = split("\t",$r);
         $CD{$a[0]."-".$a[2]} = $a[3];
     }
-    close(CD);
+    close (CD);
     
     while(my $r = <MP>)
     {
@@ -133,8 +130,8 @@ sub pileup_at_cd
             $a[0]="chrX" if ( ($a[0] =~ /^x/i) or ($a[0] =~ /23/));
             print ASEC $a[0], "-", $a[1]-1, "\t", $a[0], "\t", $a[1]-1, "\t", $a[1], "\t", $cd, "\t", $a_counts, "\t", $b_counts, "\n";
     }
-    close(MP);
-    close(ASEC);
+    close (MP);
+    close (ASEC);
 }
 
 ####################pileup_at_cd subs############################
@@ -145,8 +142,8 @@ sub get_counts
     $alts =~ s/\|/\,/;
     my @w = split(",",$alts);
     
-    my $aa=0;
-    my $bb=0;
+    my $aa = 0;
+    my $bb = 0;
 
     if (defined($string))
     {
@@ -154,7 +151,7 @@ sub get_counts
         
         my @ST = split("",$string);
         
-        for (my $i=0;$i < scalar(@ST);$i++)
+        for (my $i = 0;$i < scalar(@ST);$i++)
         {
 	    if($ST[$i] eq $w[0])
 	    {
@@ -178,48 +175,9 @@ sub get_ncbi2ucsc
         $nn = substr($nn,length($nn)-6,6);    
         $ucsc{'NC_'.$nn} = $i;
     }
-	
     return(%ucsc);	
 }
 ####################end of pileup_at_cd subs############################
-
-sub change_beds_gl_ase
-{
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $RNA_Path_cds_sorted = shift;
-    my $ase_cds_sorted_ase = shift;
-
-    mce_map_f
-    {
-	my $TCGA = [split("\t",$_)]->[0];
-        chomp($TCGA);
-        print "Now working on $TCGA\n";
-        Change_CDChr_Info_For_GeneASE("$TCGA","$RNA_Path_cds_sorted","$ase_cds_sorted_ase/$TCGA");
-    }$infile;
-}
-
-sub Change_CDChr_Info_For_GeneASE
-{
-    my $cd = shift;
-    my $cd_dir = shift;
-    my $outdir = shift;
-    
-    $cd_dir =~ s/\/$//;
-    
-    my $FH = FileHandle->new("$cd_dir/$cd") or die "no $cd_dir/$cd: $!\n";
-    my $OU = FileHandle->new(">$outdir") or die "Can't open $outdir: $!\n";
-    while(my $l = <$FH>)
-    {
-        chomp($l);
-        $l =~ s/^(chr23|23|X)/chrX/i;
-        $l =~ s/^(\d+)/chr$1/i;
-        my @as = split("\t| ",$l);
-        print $OU join("\t",@as[0..3]),"\n"; #remove rsID to avoid of downstream interuption;
-    }
-    $FH->close;
-    $OU->close;
-}
 
 sub compile_gene_ase_faster
 {
@@ -228,19 +186,16 @@ sub compile_gene_ase_faster
     
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $cds_dir = shift;
-    my $ref_bed = shift;
-    my $ase_path = shift;
-    my $ase_counts = shift;
-    my $gene_level = shift;
+    my ($cds_dir,$ref_bed,$ase_path,$ase_counts,$gene_level,$overlapSelect) = @_; #path to sorted beds directory, path to reference bed file, path to the directory that will hold the ase analysis data, directory that holds ase count files, directory that will hold gene level analysis data, overlapSelect command
     
     $cds_dir =~ s/\/$//;
     
-    open(my $gene,"$infile") or die "Can't open $infile: $!\n";
+    open (my $gene,"$infile");
     my @gene_level = <$gene>;
-    close($gene);
+    close ($gene);
     
     my $temp = "temp";
+    mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
     mce_map
     {
         chomp(my $r = $_);
@@ -248,62 +203,347 @@ sub compile_gene_ase_faster
 	if (-e "$ase_path/$ase_counts/$a[0]")
 	{
 	    
-	    print STDERR "working on $a[0]...\n";
+	    print "Working on $a[0]\n";
 	    my $rd_id = rand();
 	    $rd_id = substr($rd_id,2,6);
 	    
 	    my $bed_ref = $ref_bed;
 	    
-	    mkdir "$ase_path/$temp" unless(-d "$ase_path/$temp");
-	    
-	    print STDERR "Going to convert the file into mm format: $ase_path/ase_counts/$a[0]\n";
+	    print "Going to convert the file into mm format: $ase_path/ase_counts/$a[0]\n";
 	    convert2mm("$ase_path/$ase_counts/$a[0]","$ase_path/$temp/mm.$rd_id.bed");
-	    print STDERR "Failed to convert the file into mm format!\n" and next unless (-s "$ase_path/$temp/mm.$rd_id.bed" > 0);
+	    print "Failed to convert the file into mm format!\n" and next unless (-s "$ase_path/$temp/mm.$rd_id.bed" > 0);
 	    
 	    #Overlap ase_count bed with cds_bed;
 	    #Be aware of the bed format between the two files, especially for chr label!
 	    #Get rid of last column;
 	    
 	    Make4colBed("$cds_dir/$a[2]");
-	    TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_dir/$a[2]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp");
-	    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$a[0]","$ase_path/$temp","$ase_path");  
+	    TallyOverDefBed("$ase_path/$temp/mm.$rd_id.bed","$cds_dir/$a[2]","$ase_path/$temp/tallied.$rd_id.bed","$ase_path/$temp","$overlapSelect");
+	    AlleleCount2bed("$ase_path/$temp/tallied.$rd_id.bed","$bed_ref","$ase_path/$gene_level/$a[0]","$ase_path/$temp","$ase_path","$overlapSelect");  
 	}
 	else
 	{
-	    print "No file named $ase_path/$ase_counts/$a[0]. This file must be empty in mpileups directory.\n";
+	    print "No file named $ase_path/$ase_counts/$a[0]!\n This file must be empty in mpileups directory.\n";
 	}
     }@gene_level;
+}
+
+sub pull_TN
+{
+    my $ase_file = shift; #file with ase files listed
+    my $self = $ase_file and $ase_file = shift if ref $ase_file;
+    my ($bad_cnv_dir,$bad_snp_bed_dir,$cnv_snps_file,$cancer_type) = @_; #directory where bad cnvs files are stored, directory where bad snp bed files are stored, file to output results, cancer type
+    
+    open (PTNI,"$ase_file");
+    open (PTNO,">$cnv_snps_file");
+    
+    my $r = <PTNI>;
+    chomp($r);
+    my @old = split("\t",$r);
+    my @a;
+    my $bad_snp = 0;
+    my $bad_cnv = 0;
+    
+    if(-e $bad_cnv_dir."/".$old[1].".bed")
+    {
+        $bad_cnv = 1;
+    }
+    if(-e $bad_snp_bed_dir."/".$old[1].".bed")
+    {
+        $bad_snp = 1;
+    }
+    
+    while($r = <PTNI>)
+    {
+        chomp($r);
+        @a = split("\t",$r);
+        
+        if ($old[3] < 10 || $old[3] < 11)
+        {
+            if ($old[3]!~/0/)
+            {
+                $old[3] = '0' . $old[3];
+            }
+        }
+	
+	if ($cancer_type eq "SKCM")
+	{
+	    if (($old[2] eq $a[2]) & ($old[3] eq '06') & ($a[3] eq '10') | ($a[3] eq '11')) # have matched N
+	    {
+		unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '01'))
+		{
+		    print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+		}
+	    }
+	    elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
+	    {
+		unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+		{
+		    print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+		}
+	    }
+	    else
+	    {
+		print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+	    }
+	}
+	elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
+        {
+            unless (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+            {
+                print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+            }
+        }
+        else
+        {
+            unless (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
+            {
+                print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+            }
+        }
+	
+        @old = @a;
+        
+       if (-e $bad_cnv_dir."/".$old[1].".bed")
+        {
+            $bad_cnv = 1;
+        }
+        else
+        {
+            $bad_cnv = 0;
+        }
+        if (-e $bad_snp_bed_dir."/".$old[1].".bed")
+        {
+            $bad_snp = 1;
+        }
+        else
+        {
+            $bad_snp = 0;
+        }
+    }
+    
+    if (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06') & ($cancer_type ne "SKCM"))
+    {
+	EXIT_IF:
+	{
+	    last EXIT_IF;
+	}
+    }
+    
+    if (($old[3] eq '06') & ($cancer_type eq "SKCM") & (($a[3] eq '10') | ($a[3] eq '11')))
+    {
+	print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+    }
+    elsif (($old[3] eq '01') & ($cancer_type eq "SKCM") & (($a[3] eq '10') | ($a[3] eq '11')))
+    {
+	print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+    }
+    elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & (($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
+    {
+        print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+    }
+    else
+    {
+        print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+    }
+    close (PTNI);
+    close (PTNO);
+}
+
+sub have_cnv_snp
+{
+    my $cnv_snps_file = shift; #cnv snps file
+    my $self = $cnv_snps_file and $cnv_snps_file = shift if ref $cnv_snps_file;
+    my $cnv_snps_sort_file = shift; #cnv snps file to sort
+    
+    open (HCSI,"$cnv_snps_file");
+    open (HCSO,">$cnv_snps_sort_file");
+    
+    while(my $r = <HCSI>)
+    {
+        chomp($r);
+        my @a = split("\t",$r);
+        if( ($a[3] == 1) && ($a[4] == 1))
+        {
+            print HCSO $r, "\n";
+        }
+    }
+    close (HCSI);
+    close (HCSO);
+}
+
+sub mk_files_snps_cnvs
+{
+    my $cnv_snps_tn_file = shift; #bad snps and cnv tumor/normal file
+    my $self = $cnv_snps_tn_file and $cnv_snps_tn_file = shift if ref $cnv_snps_tn_file;
+    my ($ase_path,$gene_level,$duplicates) = @_; #path to directory where ase analysis data is stored, directory where gene level ase data is stored, option to include duplicates
+    
+    open (MKFI,"$cnv_snps_tn_file");
+    open (N,">normal_ff");
+    open (T,">tumor_ff");
+    
+    while(my $r = <MKFI>)
+    {
+        chomp($r);
+        my @a = split("\t",$r);
+	if (lc $duplicates eq "n" or lc $duplicates eq "no")
+	{
+	    $a[2] =~ s/-[0-9]+[a-zA-Z]$//;
+	}
+	
+        unless($a[1] =~ /NaN/i) #prints if there is a matching normal
+        {
+            print N "$ase_path/$gene_level/".$a[1], "\t", $a[2], "\n";
+        }
+	print T "$ase_path/$gene_level/".$a[0], "\t", $a[2], "\n";
+	
+    }
+    close (MKFI);
+    close (N);
+    close (T);
+}
+
+sub mk_files_tum_norm
+{
+    my $ase_file = shift; #file with list of ase files
+    my $self = $ase_file and $ase_file = shift if ref $ase_file;
+    my ($gene_level_path,$duplicates) = @_; #path to directory where gene level analysis data is stored, option to allow duplicates
+    
+    open (MKFI,"$ase_file");
+    open (N,">normal_ff");
+    open (T,">tumor_ff");
+    
+    while(my $r = <MKFI>)
+    {
+        chomp($r);
+        my @a = split("\t",$r);
+	#$a[1] =~ s/-[0-9]+[a-zA-Z]\.[a-zA-Z]+$//;
+        
+        if($a[4] < 10)#prints if sample is normal
+        {
+	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
+	    {
+		print T "$gene_level_path/".$a[2], "\t", $a[1], "\n";
+	    }
+	    else
+	    {
+		print T "$gene_level_path/".$a[2], "\t", $a[3], "\n";
+	    }
+        }
+	else
+	{
+	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
+	    {
+		print N "$gene_level_path/".$a[2], "\t", $a[1], "\n" unless $a[2] =~ /^NaN/i;
+	    }
+	    else
+	    {
+		print N "$gene_level_path/".$a[2], "\t", $a[3], "\n" unless $a[2] =~ /^NaN/i;
+	    }
+	}
+    }
+    close (MKFI);
+    close (N);
+    close (T);
+}
+
+sub run_problem_cnvs
+{
+    my $bad_cnv_dir = shift; #directory where bad cnv files are stored
+    my $self = $bad_cnv_dir and $bad_cnv_dir = shift if ref $bad_cnv_dir;
+    my ($cnv_tn_file,$ase_path,$matrix,$problem_cnvs,$overlapSelect) = @_; #bad snps and cnv tumor/normal file,path to directory where as data is stored, directory that will store matrix data for MatLab etc., directory that will store problem cnv files, overlapSelect command
+    
+    open (RPCI,"$cnv_tn_file");
+    
+    mkdir "$ase_path/$problem_cnvs" unless(-d "$ase_path/$problem_cnvs");
+    system("rm -f $ase_path/$problem_cnvs/*");
+    while(my $r = <RPCI>)
+    {
+        chomp($r);
+        my @a = split("\t",$r);
+        
+        print "Working on $a[0]\n";
+        
+        my $bed = "$a[2].bed";
+        
+        `$overlapSelect $bad_cnv_dir/$bed $ase_path/$matrix/rowlabels.bed $ase_path/cnv_t`;
+        pull_problems("$ase_path/cnv_t","$ase_path/$problem_cnvs/$a[0]");
+    }
+    close (RPCI);
+}
+
+sub run_problem_snps
+{
+    my $bad_snp_dir = shift; #directory where bad snp files are stored
+    my $self = $bad_snp_dir and $bad_snp_dir = shift if ref $bad_snp_dir;
+    my ($snps_tn_file,$ase_path,$matrix,$problem_snps,$overlapSelect) = @_; #bad snps and cnv tumor/normal file,path to directory where as data is stored, directory that will store matrix data for MatLab etc., directory that will store problem cnv files, overlapSelect command
+    
+    $bad_snp_dir =~ s/\/$//;
+    
+    mkdir "$ase_path/$problem_snps" unless(-d "$ase_path/$problem_snps");
+    system("rm -f $ase_path/$problem_snps/*");
+    
+    open (PPSI,"$snps_tn_file");
+    
+    while(my $r = <PPSI>)
+    {
+	chomp($r);
+	my @a = split("\t",$r);
+	
+	print STDERR "Working on $a[0]\n";
+	
+	my $bed = "$a[2].bed";
+	
+	`$overlapSelect $bad_snp_dir/$bed $ase_path/$matrix/rowlabels.bed $ase_path/snp_t`;
+	pull_problems("$ase_path/snp_t","$ase_path/$problem_snps/$a[0]");
+    }
+    close (PPSI);
+}
+
+sub pull_problems
+{
+    my ($snps_cnvs_pull_file,$snps_cnvs_outdir) = @_; #snps and cnvs file to pull problems, snps and cnvs output directory
+    
+    open (PPI,"$snps_cnvs_pull_file");
+    open (PPO,">$snps_cnvs_outdir");
+    while(my $r = <PPI>)
+    {
+        chomp($r);
+        my @a = split("\t",$r);
+        print PPO $a[3], "\t", 1, "\n";
+    }
+    close (PPI);
+    close (PPO);
 }
 
 #########################################compile_gene_faster subs#############################################
 sub Make4colBed
 {
-   my $file=shift;
-   open(my $F, "$file") or die "can not open the file: $file\n";
-   open(my $out,">$file.4col") or die "can not write data into the file: $file.4col\n";
-   while (my $l=<$F>)
+   my $sorted_bed_file = shift; #file from the sorted bed directory
+   open (my $F, "$sorted_bed_file");
+   open (my $out,">$sorted_bed_file.4col");
+   while (my $l = <$F>)
    {
         chomp($l);
-        my @as=split("\t",$l);
-        print STDERR "The bed file $file contains less than 6 cols\n" and exit if @as<4;
+        my @as = split("\t",$l);
+        print STDERR "The bed file $sorted_bed_file contains less than 6 cols!\n" and exit if @as<4;
         print $out join("\t",@as[0..3]),"\n";          
    }
    close $F;
    close $out;
-   unlink $file;
-   rename "$file.4col","$file",;
+   unlink $sorted_bed_file;
+   rename "$sorted_bed_file.4col","$sorted_bed_file",;
 }
 
 sub convert2mm
 {
     #summarize reads of all four bases (A,C,G,T)and prepare data for TallyOVerDefBed
-    my $ase_count_file = shift;
-    my $out_file = shift;
+    my ($ase_count_file,$out_file) = @_;
     
     my $FH = "FH".rand();
     my $OUT = "OUT".rand();
-    open($FH, "$ase_count_file") or die "Can not open the ase count file $ase_count_file $!\n";
-    open($OUT, ">$out_file") or die "Can not write data into the file $out_file  $!\n";
+    open ($FH, "$ase_count_file");
+    open ($OUT, ">$out_file");
     
     my @Newmm = map
     {
@@ -337,10 +577,7 @@ sub convert2mm
 
 sub TallyOverDefBed
 {
-    my $snp = shift;#snp.bed
-    my $def = shift;#def.bed, such as refseq.ucsc.ensembl.mrna.hg9.nr.bed
-    my $out = shift;#output filename
-    my $ase_path = shift;#ase path
+    my ($snp,$def,$out,$ase_path,$overlapSelect) = @_;
     
     my $sr = 0;
     my $minC = 0;
@@ -354,16 +591,16 @@ sub TallyOverDefBed
     $rr = substr($rr,2,6).substr($rr2,2,6);
    
     my $OUT_FH = "OUT_FH".rand();
-    open($OUT_FH,">$out") or die "Can not open the file to write data: $!";
+    open ($OUT_FH,">$out");
 
     unless ($phred =~ /^[0-9\.]+$/)
     {
-        print "-phred must be a number, not $phred\n";
+        print STDERR "-phred must be a number, not $phred!\n";
         exit;
     }
     unless ($minC =~ /^[0-9]+$/)
     {
-        print "-minC must be a number, not $phred\n";
+        print STDERR "-minC must be a number, not $phred!\n";
         exit;
     }
     
@@ -374,9 +611,9 @@ sub TallyOverDefBed
         my $MFH = "M".rand();
         my $FFH = "F".rand();
        
-        open($PFH,">$ase_path/plus.$rr.bed") or die "cant write data into plus.$rr.bed: $!";;
-        open($MFH,">$ase_path/minus.$rr.bed") or die "cant write data into minus.$rr.bed: $!";
-        open($FFH,$snp) or die "$snp not here: $!\n";
+        open ($PFH,">$ase_path/plus.$rr.bed");
+        open ($MFH,">$ase_path/minus.$rr.bed");
+        open ($FFH,$snp);
         while(my $r = <$FFH>)
         {
             if($r =~ /\t\+[\s]/)
@@ -397,10 +634,10 @@ sub TallyOverDefBed
     
     if($sr == 1)
     {
-        `overlapSelect $def $ase_path/plus.$rr.bed -mergeOutput $ase_path/tmp.$rr.plus.out`;
-        `overlapSelect $def $ase_path/minus.$rr.bed -mergeOutput $ase_path/tmp.$rr.minus.out`;
+        `$overlapSelect $def $ase_path/plus.$rr.bed -mergeOutput $ase_path/tmp.$rr.plus.out`;
+        `$overlapSelect $def $ase_path/minus.$rr.bed -mergeOutput $ase_path/tmp.$rr.minus.out`;
         my $F_FH = "F_FH".rand();
-        open($F_FH,"$ase_path/tmp.$rr.plus.out") or die "no tmp.plus.out: $!\n";
+        open ($F_FH,"$ase_path/tmp.$rr.plus.out");
         
         while(my $r = <$F_FH>)
         {    
@@ -463,7 +700,6 @@ sub TallyOverDefBed
                     #print chrnum,st,end,transcriptID, and read counts;			   
                     print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t+\n";
                	}
-       			
        	    } #if
        	    else
             {
@@ -486,10 +722,10 @@ sub TallyOverDefBed
         } #while plus
         close $F_FH;
         `rm $ase_path/tmp.$rr.plus.out`;
-           
+        
         my $FH = "FH".rand();
-        open($FH,"$ase_path/tmp.$rr.minus.out") or die "no tmp.minus.out: $!\n";
-           
+        open ($FH,"$ase_path/tmp.$rr.minus.out");
+        
         while(my $r = <$FH>)
         {    
             chomp($r);
@@ -577,10 +813,10 @@ sub TallyOverDefBed
     else
     {
         # no -strand
-       	`overlapSelect $def $snp -mergeOutput $ase_path/tmp.$rr.all.out`;
+       	`$overlapSelect $def $snp -mergeOutput $ase_path/tmp.$rr.all.out`;
         my $FH_= "FH_".rand();
-        open($FH_,"$ase_path/tmp.$rr.all.out") or die "no tmp.$rr.all.out: $!\n";
-           
+        open ($FH_,"$ase_path/tmp.$rr.all.out");
+     
         while(my $r = <$FH_>)
         {    
             chomp($r);
@@ -670,12 +906,8 @@ sub TallyOverDefBed
 }
 
 sub AlleleCount2bed
-{   
-    my $talliedBed = shift;
-    my $RefBed = shift;
-    my $gene_ase_out = shift;
-    my $ase_tmp_path = shift;
-    my $ase_path = shift;
+{
+    my ($talliedBed,$RefBed,$gene_ase_out,$ase_tmp_path,$ase_path,$overlapSelect) = @_;
     
     my $newRefBed = $RefBed;
     my $rn = rand();
@@ -716,7 +948,7 @@ sub AlleleCount2bed
     my $snp_ids = 'y';#'y'
     my $print_cd = 'y';#'y'
     
-    `overlapSelect $RefBed $talliedBed $sr $strand -mergeOutput $ase_tmp_path/temp.$rr.bed`;
+    `$overlapSelect $RefBed $talliedBed $sr $strand -mergeOutput $ase_tmp_path/temp.$rr.bed`;
 
     #Contents of temp.$rr.bed;
     #Array_Num: Headers         RowEelments
@@ -747,9 +979,9 @@ sub AlleleCount2bed
     `mv $ase_tmp_path/sorted.$rr.temp.bed $ase_tmp_path/temp.$rr.bed`;
     
     my $BEDFH = "BEDFH".rand();
-    open($BEDFH,"$ase_tmp_path/temp.$rr.bed") or die "Cannot open $ase_tmp_path/temp.$rr.bed: $!\n";
+    open ($BEDFH,"$ase_tmp_path/temp.$rr.bed");
     my $OUTFH = "OUTFH".rand();
-    open($OUTFH,">$out") or die "Cannot open $out for writing: $!\n";
+    open ($OUTFH,">$out");
     
     my $r = <$BEDFH>;
     $r =~ s/\n//g;
@@ -770,7 +1002,9 @@ sub AlleleCount2bed
     my $var = $counts[3];#182 of T|C|100|182|100|182|100|182
     my $snps_out = $counts[2]."|".$counts[3];#100|182 of T|C|100|182|100|182|100|182
     my $snp_ids_out = $x[0]."-".$x[1];#chrid-snp_st;
-    $tt2 = $x[3]; $tt2=~s/\|/,/g; @tt1=split(",",$tt2); my $print_cd_out=$tt1[0]."|".$tt1[1];#allele1|allele2
+    $tt2 = $x[3];
+    $tt2 =~ s/\|/,/g; @tt1 = split(",",$tt2);
+    my $print_cd_out = $tt1[0]."|".$tt1[1];#allele1|allele2
     my $aa_dir = 0;
     my $bb_dir = 0;
     my $informative_snps = 0;
@@ -809,8 +1043,8 @@ sub AlleleCount2bed
             $snps_out = $snps_out.",".$counts[2]."|".$counts[3];
             $snp_ids_out = $snp_ids_out.",".$x[0]."-".$x[1];
             $tt2 = $x[3];
-	    $tt2=~s/\|/,/g;
-	    @tt1=split(",",$tt2);
+	    $tt2 =~ s/\|/,/g;
+	    @tt1 = split(",",$tt2);
 	    $print_cd_out = $print_cd_out.",".$tt1[0]."|".$tt1[1];
             unless($counts[2] == $counts[3])
             {
@@ -852,7 +1086,7 @@ sub AlleleCount2bed
             if($agree eq 'y')
             {
                 my $agree_out = agree($aa_dir,$bb_dir);
-                my $num_snps=num($snps_out);
+                my $num_snps = num($snps_out);
                 print $OUTFH "\t", $agree_out, "\t", $informative_snps;
 	    }
             
@@ -888,9 +1122,9 @@ sub AlleleCount2bed
             $snps_out = $counts[2]."|".$counts[3];
             $snp_ids_out = $x[0]."-".$x[1];
             $tt2 = $x[3];
-	    $tt2=~s/\|/,/g;
-	    @tt1=split(",",$tt2);
-	    $print_cd_out=$tt1[0]."|".$tt1[1];
+	    $tt2 =~ s/\|/,/g;
+	    @tt1 = split(",",$tt2);
+	    $print_cd_out = $tt1[0]."|".$tt1[1];
             $aa_dir = 0;
             $bb_dir = 0;
             $informative_snps = 0;
@@ -975,8 +1209,8 @@ sub AlleleCount2bed
         print $OUTFH "\t", join("\t",@pr[18..(scalar(@pr)-1)]), "\n";
     }
    
-    close($OUTFH);
-    close($BEDFH);
+    close ($OUTFH);
+    close ($BEDFH);
     `rm $ase_tmp_path/temp.$rr.bed`;
     system("rm $RefBed");
 }
@@ -1149,423 +1383,63 @@ sub highest_b
 }
 #########################################end of compile_gene_faster subs#############################################
 
-sub pull_TN
+sub ase_filter_overlap
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $bad_cnv_dir = shift;
-    my $bad_snp_bed_dir = shift;
-    my $outfile = shift;
-    my $disease_abbr = shift;
-    
-    open(PTNI,"$infile") or die "Can't open $infile: $!\n";
-    open(PTNO,">$outfile") or die "Can't open $outfile: $!\n";
-    
-    my $r = <PTNI>;
-    chomp($r);
-    my @old = split("\t",$r);
-    my @a;
-    my $bad_snp = 0;
-    my $bad_cnv = 0;
-    
-    if(-e $bad_cnv_dir."/".$old[1].".bed")
+    my $self = shift;
+    my ($filter_names,$RNA_table_file,$output_names_file) = @_;
+
+    open(RMP,">lookup_file.txt");
+    foreach my $rnamp (@$filter_names)
     {
-        $bad_cnv = 1;
+        chomp($rnamp);
+        my @split_name = split("\\.",$rnamp);
+        my $tcga = $split_name[1];
+        $tcga =~ s/-[0-9]+[a-zA-Z]$//; #get rid of the sample id at the end of the TCGA ID
+        print RMP $split_name[0],"\t",$split_name[1],"\t",$tcga,"\n";
     }
-    if(-e $bad_snp_bed_dir."/".$old[1].".bed")
+    close (RMP);
+
+    $parsing->vlookup("lookup_file.txt",3,"$RNA_table_file",2,2,"y","lookup_NaN.txt"); #new $RNA_table file contains only overlap IDs and matches those IDs to the IDs in the rna_look.txt file
+
+    my @filt_mpileups = `cat lookup_NaN.txt`;
+    open(MPO,"> $output_names_file");
+    foreach my $mpm (@filt_mpileups)
     {
-        $bad_snp = 1;
-    }
-    
-    while($r = <PTNI>)
-    {
-        chomp($r);
-        @a = split("\t",$r);
-        
-        if ($old[3] < 10 || $old[3] < 11)
+        chomp($mpm);
+        if ($mpm !~ /\tNaN+$/i)
         {
-            if ($old[3]!~/0/)
-            {
-                $old[3] = '0' . $old[3];
-            }
-        }
-	
-	if ($disease_abbr eq "SKCM")
-	{
-	    if (($old[2] eq $a[2]) & ($old[3] eq '06') & ($a[3] eq '10') | ($a[3] eq '11')) # have matched N
-	    {
-		unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '01'))
-		{
-		    print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-		}
-	    }
-	    elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
-	    {
-		unless(($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
-		{
-		    print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-		}
-	    }
-	    else
-	    {
-		print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-	    }
-	}
-	elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & ( ($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
-        {
-            unless (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
-            {
-                print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-            }
-        }
-        else
-        {
-            unless (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06'))
-            {
-                print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-            }
-        }
-	
-        @old = @a;
-        
-       if (-e $bad_cnv_dir."/".$old[1].".bed")
-        {
-            $bad_cnv = 1;
-        }
-        else
-        {
-            $bad_cnv = 0;
-        }
-        if (-e $bad_snp_bed_dir."/".$old[1].".bed")
-        {
-            $bad_snp = 1;
-        }
-        else
-        {
-            $bad_snp = 0;
+            my @new_mp = split("\t",$mpm);
+            my $joined_mp = join(".",$new_mp[0],$new_mp[1]); #re-joins the file name after being split and used in vlookup
+            print MPO "$joined_mp","\n"; #prints the path to the mpileup file
         }
     }
+    close(MPO);      
+}
+
+sub print_ase_gene_level_path
+{
+    my $self = shift;
+    my ($ase,$list_dir,$lookup_file,$output_file,$count_gene_archive,$overlap,$RNA_CDS_Mpileups_overlap) = @_;
     
-    if (($old[3] eq '10') | ($old[3] eq '11') | ($old[3] eq '06') & ($disease_abbr ne "SKCM"))
+    if (lc $overlap eq "y" or lc $overlap eq "yes")
     {
-	EXIT_IF:
-	{
-	    last EXIT_IF;
-	}
-    }
-    
-    if (($old[3] eq '06') & ($disease_abbr eq "SKCM") & (($a[3] eq '10') | ($a[3] eq '11')))
-    {
-	print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-    }
-    elsif (($old[3] eq '01') & ($disease_abbr eq "SKCM") & (($a[3] eq '10') | ($a[3] eq '11')))
-    {
-	print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
-    }
-    elsif (($old[2] eq $a[2]) & ($old[3] eq '01') & (($a[3] eq '10') | ($a[3] eq '11'))) # have matched N
-    {
-        print PTNO $old[0], "\t", $a[0], "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+        `ls $list_dir > $lookup_file`;
+        $parsing->vlookup("$ase/$lookup_file",1,"$RNA_CDS_Mpileups_overlap",1,1,"y","$ase/counts_gene_NaN.txt");
+        `grep -v NaN $ase/counts_gene_NaN.txt > $ase/counts_gene_pull.txt`;
+        $parsing->pull_column("$ase/counts_gene_pull.txt","1","$output_file");
     }
     else
     {
-        print PTNO $old[0], "\t", "NaN", "\t", substr($old[1],0,16), "\t", $bad_cnv, "\t", $bad_snp, "\n";
+        `ls $ase/$list_dir > $output_file`; 
     }
-    close(PTNI);
-    close(PTNO);
+    
+    my @count_gene_files = `cat $ase/$output_file`;
+    open (CGA,">$ase/$count_gene_archive");
+    foreach my $asea (@count_gene_files)
+    {
+        print CGA "$ase\t$list_dir/$asea";
+    }
+    close(CGA);
 }
-
-sub have_cnv_snp
-{
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
-    
-    open(HCSI,"$infile") or die "Can't open $infile: $!\n";
-    open(HCSO,">$outfile") or die "Can't open $outfile: $!\n";
-    
-    while(my $r = <HCSI>)
-    {
-        chomp($r);
-        my @a = split("\t",$r);
-        if( ($a[3] == 1) && ($a[4] == 1))
-        {
-            print HCSO $r, "\n";
-        }
-    }
-    close(HCSI);
-    close(HCSO);
-}
-
-sub mk_files_snps_cnvs
-{
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $ase_path = shift;
-    my $gene_level = shift;
-    my $duplicates = shift;
-    
-    open(MKFI,"$infile") or die "Can't open $infile: $!\n";
-    open(N,">normal_ff") or die "no normal out\n";
-    open(T,">tumor_ff") or die "no tumor out\n";
-    
-    while(my $r = <MKFI>)
-    {
-        chomp($r);
-        my @a = split("\t",$r);
-	if (lc $duplicates eq "n" or lc $duplicates eq "no")
-	{
-	    $a[2] =~ s/-[0-9]+[a-zA-Z]$//;
-	}
-	
-        unless($a[1] eq 'NaN')#prints if there is a matching normal
-        {
-            print N "$ase_path/$gene_level/".$a[1], "\t", $a[2], "\n";
-        }
-	print T "$ase_path/$gene_level/".$a[0], "\t", $a[2], "\n";
-	
-    }
-    close(MKFI);
-    close(N);
-    close(T);
-}
-
-sub mk_files_tum_norm
-{
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $gene_level_path = shift;
-    my $duplicates = shift;
-    
-    open(MKFI,"$infile") or die "Can't open $infile: $!\n";
-    open(N,">normal_ff") or die "no normal out\n";
-    open(T,">tumor_ff") or die "no tumor out\n";
-    
-    while(my $r = <MKFI>)
-    {
-        chomp($r);
-        my @a = split("\t",$r);
-	#$a[1] =~ s/-[0-9]+[a-zA-Z]\.[a-zA-Z]+$//;
-        
-        if($a[4] < 10)#prints if sample is normal
-        {
-	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
-	    {
-		print T "$gene_level_path/".$a[2], "\t", $a[1], "\n";
-	    }
-	    else
-	    {
-		print T "$gene_level_path/".$a[2], "\t", $a[3], "\n";
-	    }
-        }
-	else
-	{
-	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
-	    {
-		print N "$gene_level_path/".$a[2], "\t", $a[1], "\n" unless $a[2] =~ /^NaN/i;
-	    }
-	    else
-	    {
-		print N "$gene_level_path/".$a[2], "\t", $a[3], "\n" unless $a[2] =~ /^NaN/i;
-	    }
-	}
-    }
-    close(MKFI);
-    close(N);
-    close(T);
-}
-
-sub run_problem_cnvs
-{
-    my $bad_cnv_dir = shift;
-    my $self = $bad_cnv_dir and $bad_cnv_dir = shift if ref $bad_cnv_dir;
-    my $infile = shift;
-    my $ase_path = shift;
-    my $matrix = shift;
-    my $problem_cnvs = shift;
-    
-    open(RPCI,"$infile") or die "Can't open $infile: $!";
-    
-    mkdir "$ase_path/$problem_cnvs" unless(-d "$ase_path/$problem_cnvs");
-    system("rm -f $ase_path/$problem_cnvs/*");
-    while(my $r = <RPCI>)
-    {
-        chomp($r);
-        my @a = split("\t",$r);
-        
-        print STDERR "working on $a[0]\n";
-        
-        my $bed = "$a[2].bed";
-        
-        `overlapSelect $bad_cnv_dir/$bed $ase_path/$matrix/rowlabels.bed $ase_path/cnv_t`;
-        pull_problems("$ase_path/cnv_t","$ase_path/$problem_cnvs/$a[0]");
-    }
-    close(RPCI);
-}
-
-sub run_problem_snps
-{
-    my $bad_snp_dir = shift;
-    my $self = $bad_snp_dir and $bad_snp_dir = shift if ref $bad_snp_dir;
-    my $infile = shift;
-    my $ase_path = shift;
-    my $matrix = shift;
-    my $problem_snps = shift;
-    
-    $bad_snp_dir =~ s/\/$//;
-    
-    mkdir "$ase_path/$problem_snps" unless(-d "$ase_path/$problem_snps");
-    system("rm -f $ase_path/$problem_snps/*");
-    
-    open(PPSI,"$infile") or die "Can't open $infile: $!\n";
-    
-    while(my $r = <PPSI>)
-    {
-	chomp($r);
-	my @a = split("\t",$r);
-	
-	print STDERR "working on $a[0]\n";
-	
-	my $bed = "$a[2].bed";
-	
-	`overlapSelect $bad_snp_dir/$bed $ase_path/$matrix/rowlabels.bed $ase_path/snp_t`;
-	pull_problems("$ase_path/snp_t","$ase_path/$problem_snps/$a[0]");
-    }
-    close(PPSI);
-}
-
-sub pull_problems
-{
-    my $infile = shift;
-    my $outdir = shift;
-    
-    open(PPI,"$infile") or die "Can't open $infile: $!\n";
-    open(PPO,">$outdir") or die "Can't open $outdir: $!\n";
-    while(my $r = <PPI>)
-    {
-        chomp($r);
-        my @a = split("\t",$r);
-        print PPO $a[3], "\t", 1, "\n";
-    }
-    close(PPI);
-    close(PPO);
-}
-
-sub Intersect_Files
-{
-    my $files=shift;
-    my $self = $files and $files = shift if ref $files;
-    my @filename=split(",",$files);
-    my $outputtype=shift;
-    my $IntersectColsInEachFile=shift;
-    my $intersect_file = shift;
-    my @cols=split(",",$IntersectColsInEachFile);
-    
-    if ($outputtype != 0 and $outputtype != 1)
-    {
-	print "$outputtype is not valid. It must be 0 or 1.\n";
-	exit;
-    }
-    
-    
-    my @AllItems=();
-    my %Letters_hash=();
-    my %count=();
-    my %inv_count=();
-    
-    %Letters_hash=map {
-			    $filename[$_]=>Letters($_)
-				} 0..$#filename;
-    my %filename_hash=reverse %Letters_hash;
-    
-    map
-    {
-	#open_and_transform;
-	my $f=$filename[$_];
-	my $col=$cols[$_];
-	open my $fileHandle,"$f" or die "can not open the file: $f $!\n";
-	my @array;
-	my $n=@array=<$fileHandle>;
-	foreach my $line (@array)
-	{
-	    chomp $line;
-	    #$line=~s/\r//g;
-	    next if $line=~/^\s*$/;
-	    my @new_array=split("\t",$line);
-	    push @AllItems,$Letters_hash{$f}."_".$new_array[$col];              
-	}
-	close $fileHandle; 
-    }0..$#filename;
-    
-    #print OUT "@AllItems\n";
-    
-    
-    foreach my $key (@AllItems)
-    {
-	$count{substr($key,2,)}.=substr($key,0,1);
-    }
-    my @tmp;
-    foreach my $hash_key (keys %count)
-    {
-	my $group=$count{$hash_key};
-	if ($inv_count{$group})
-	{
-	    @tmp=($inv_count{$group});
-	}
-	else
-	{
-	    @tmp=();
-	}
-	push (@tmp,$hash_key);
-	$inv_count{$count{$hash_key}}=join("\n",@tmp);	
-    }
-    
-    my %Seen=();
-    open(INF,">$intersect_file") or die "Can't open $intersect_file: $!\n";
-    foreach my $inv_key (sort keys %inv_count)
-    {
-	#this code is for removing duplicating targets in the @targets;
-	my @targets=split("\n",$inv_count{$inv_key});
-	my @unique_items=grep {!$Seen{$_}++} @targets;
-	my $n=@unique_items;
-	my $unique_items=join("\n",@unique_items);
-	my @ls=split("",$inv_key);
-	my %uniq;
-	@ls=grep{!$uniq{$_}++}@ls;
-	if ($outputtype==1)
-	{
-	    #Summary for intersect;
-	    print INF "$inv_key=>$n for file(s): (";
-	    foreach my $l (@ls)
-	    {
-		print INF " $l=>$filename_hash{$l} ";                       
-	    }
-	    print INF ")\n";
-	    print INF "$unique_items\n\n";
-	}
-	else
-	{
-	    #Long format data for other software;
-	    foreach my $e(@unique_items)
-	    {	
-		print INF $inv_key,"\t";
-		print INF join("|",@filename_hash{sort @ls}),"\t",$e,"\n";
-	    }
-	}    
-    }
-    close(INF);
-}
-
-################Intersect_Files sub###############
-sub Letters
-{
-    my @letters=('a'..'z','A'..'Z');
-    my $letters_num=shift;
-    $letters_num=$letters_num;
-    #print OUT "$letters_num\n";
-    #print OUT "@letters\n";
-    return ($letters[$letters_num]);
-}
-
-###############End of Intersect_Files sub##########
 
 1;

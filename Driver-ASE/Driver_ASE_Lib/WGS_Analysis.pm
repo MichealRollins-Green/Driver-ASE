@@ -6,6 +6,8 @@ use FileHandle;
 use FindBin qw($Bin);
 use lib "$Bin/";
 use Parsing_Routines;
+use autodie;
+no warnings 'once';
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -39,108 +41,21 @@ sub new
 }
 
 ###############################subs#############################
-sub launch_prune
-{
-    my $indir = shift;#mpileups_directory
-    my $self = $indir and $indir = shift if ref $indir;
-    my $outdir = shift;#output_directory
-    my $MAN = shift;#max_alt_n
-    my $MAT = shift;#min_alt_t
-    my $MC = shift;#min_cov
-    
-    opendir(DD,$indir) or die "no dir\n";
-    my @dd = readdir(DD);
-    closedir(DD);
-    
-    for(my $i = 0;$i < scalar(@dd);$i++)
-    {
-        if($dd[$i] =~ /^\.+$/)
-        {
-            next;
-        }
-        $dd[$i] =~ /^(.*?)\./;
-        my $out = $1;
-        print STDERR "processing $dd[$i]\n";
-        prune_varscan("$indir/$dd[$i]",$MAN,$MAT,$MC,"$outdir/$out");
-    }
-}
-
-sub prune_varscan
-{
-    my $indir = shift;
-    my $self = $indir and $indir = shift if ref $indir;
-    my $MAN = shift;
-    my $MAT = shift;
-    my $MC = shift;
-    my $outdir = shift;
-    
-    open(PVI,"$indir") or die("Can't open file for output: $!\n");
-    open(PVO,">$outdir") or die("Can't open for output: $!\n");
-    my $r = <PVI>;
-
-    while($r = <PVI>) 
-    {
-        chomp($r);
-        my @a = split("\t",$r);
-        
-        # only somatic calls
-        unless($a[12] =~ /Somatic/gi)
-        {
-            next;
-        }
-        
-        # min cov
-        my $n_cov = $a[4] + $a[5];
-        my $t_cov = $a[8] + $a[9];
-        unless(($n_cov >= $MC) & ($t_cov >= $MC))
-        {
-            next;
-        }
-        
-        # min prop alt
-        unless(($a[5] / $n_cov) <= $MAN)
-        {
-            next;
-        }
-        unless(($a[9] / $t_cov) >= $MAT)
-        {
-            next;
-        }
-        
-        if($a[0] =~ /^[0-9xy]+$/i)
-        {
-            $a[0] = "chr".$a[0];
-        }
-        
-        my $var = $a[2]."|".alt_it($a[2],$a[11]);
-        
-        print PVO $a[0]."-".$a[1]."-".$var, "\t", $a[0], "\t", $a[1]-1, "\t", $a[1], "\t", $var, "\t", 1, "\n";
-    }
-    close(PVI);
-    close(PVO);
-}
 
 sub Varscan_filter
 {
-    my $input = shift;
-    my $self = $input and $input = shift if ref $input;
-    die unless (-e "$input");
-    my $output = shift;
+    my $wgs_mpileups = shift; #path to the directory where wgs mpileups are stored
+    my $self = $wgs_mpileups and $wgs_mpileups = shift if ref $wgs_mpileups;
+    my $somatic = shift; #directory where somatic data will be stored
     my $readcutoff = shift || 20;
-    print STDERR "You need to provide readcutoff in numeric\n" and die if $readcutoff =~ /^\D+/i;
-    my $VarType = shift || ".*";
+    my $VarType = shift || ".*"; #what will be filtered in this routine (Somatic)
     my $normal_alt_frq = shift || 1;
-       $normal_alt_frq *= 100;
+    $normal_alt_frq *= 100;
     my $tumor_alt_frq = shift || 0;
-       $tumor_alt_frq *= 100;
-    print STDERR "Please be noted that your parameters for Varscan_Filter are listed below:\n",
-                 "VarscanOutput: $input\n","readcutoff: $readcutoff\n",
-                 "VarType: $VarType\n","normal_alt_frq: $normal_alt_frq\n",
-                 "tumor_alt_frq: $tumor_alt_frq\n";
-                 
-                 
+    $tumor_alt_frq *= 100;
+
     #Columns of Varscan output;
-    #ARRAY_NUM: HEADERS           ROWEELMENTS
+    #ARRAY_NUM: HEADERS           ROWELMENTS
     #0: chrom                     1
     #1: position                  10250
     #2: ref                       A
@@ -164,21 +79,47 @@ sub Varscan_filter
     #20: normal_reads1_minus      6
     #21: normal_reads2_plus       0
     #22: normal_reads2_minus      0
-    
-opendir(DD,$input) or die "no dir\n";
-    my @dd = readdir(DD);
-       @dd=grep{!/^\./}@dd;
-    closedir(DD);
+    my @dd;
+    #directory or file will be passed to routine based on if user wants to overlap data or not
+    if (-d $wgs_mpileups)
+    {
+        opendir (DD,$wgs_mpileups);
+        @dd = grep{!/^\./ && -f "$wgs_mpileups/$_"} readdir(DD);
+        closedir (DD);
+    }
+    elsif (-f $wgs_mpileups)
+    {
+        @dd = `cat $wgs_mpileups`;
+    }
+    else
+    {
+        print STDERR "$wgs_mpileups is not a file or directory!\n";
+        exit;
+    }
     
     for(my $i = 0;$i < scalar(@dd);$i++)
     {
         my $newfile = $dd[$i];
-           chomp($newfile);
-           $newfile =~ s/\.(snp|indel)//;
-           $newfile =~ s/\.varscan//;
-        open (my $V,"$input/$dd[$i]") or die "Can not open the file $input/$dd[$i]: $!";
-        open(SOM,">>$output/$newfile") or die "Can't open $output/$newfile: $!\n";
-        while (my $l=<$V>)
+        chomp($newfile);
+        if ($newfile =~ /\//)
+        {
+            $newfile = [split("/",$newfile)]->[-1];
+        }
+        $newfile =~ s/\.(snp|indel)//;
+        $newfile =~ s/\.varscan//;
+        
+        my $V;
+        if (-d $wgs_mpileups)
+        {
+            open ($V,"$wgs_mpileups/$dd[$i]");
+        }
+        else
+        {
+            open ($V,"$dd[$i]");
+        }
+        
+        open (SOM,">>$somatic/$newfile");
+        while (my $l = <$V>)
         {
             chomp($l);
             next if $l =~ /^chrom/;
@@ -186,37 +127,31 @@ opendir(DD,$input) or die "no dir\n";
             next if $l =~ /^\s*$/;
             my @as = split("\t",$l);
             if (!defined $as[5])
-               {
+            {
                 next;
-               }
+            }
             my $N_n = $as[4] + $as[5];
             my $T_n = $as[8] + $as[9];
             my $T_alt_frq = $as[10];           
-               $T_alt_frq =~ s/%//g;
-               
+            $T_alt_frq =~ s/%//g;
+            
             my $N_alt_frq = $as[6];
-               $N_alt_frq =~ s/%//g;
+            $N_alt_frq =~ s/%//g;
             #only consider specific type variants;   
             next unless ($as[12] =~ /$VarType/i);
-            
-            if ($N_n >= $readcutoff and
-                $T_n >= $readcutoff and
-                $N_alt_frq <= $normal_alt_frq and
-                $T_alt_frq >= $tumor_alt_frq and
-                $as[3] !~ /[+-]/
-                )
+            my $print_value;
+            if ($N_n >= $readcutoff and $T_n >= $readcutoff and $N_alt_frq <= $normal_alt_frq and $T_alt_frq >= $tumor_alt_frq and $as[3] !~ /[+-]/)
             {
                 #for single somatic mutations
-                print SOM VarscanTable2Simple($l),"\n" if $l =~ /^(chr)*(\d+|x|y)\b/i;  
+                $print_value = VarscanTable2Simple($l);
+                print SOM $print_value,"\n" if $l =~ /^(chr)*(\d+|x|y)\b/i;
                 
             }
-            elsif($as[3] =~ /[+-]/ and
-                $N_n >= $readcutoff and
-                $T_n >= $readcutoff
-                )
+            elsif ($as[3] =~ /[+-]/ and $N_n >= $readcutoff and $T_n >= $readcutoff)
             {
                 #for indels, only consider read cutoff;
-                print SOM VarscanTable2Simple($l),"\n" if $l =~ /^(chr)*(\d+|x|y)\b/i;
+                $print_value = VarscanTable2Simple($l);
+                print SOM $print_value,"\n" if $l =~ /^(chr)*(\d+|x|y)\b/i;
             }
             
             #For het geno in normal, that is T_alt_frq >45;
@@ -224,8 +159,8 @@ opendir(DD,$input) or die "no dir\n";
             #and most of somatic muations called by varscan are actually SNPs;
             #Thus no need to consider further!
         }
-        close $V;
-        close SOM;
+        close ($V);
+        close (SOM);
     } 
 }
 
@@ -238,81 +173,33 @@ sub VarscanTable2Simple
     my $out = $as[0]."-".$as[1]."-".$ref_alt."\t".$as[0]."\t".($as[1]-1)."\t".$as[1]."\t".$ref_alt."\t1";
     return $out;
 }
-#################################prune_varscan sub##############################
-sub alt_it
-{
-    my($aa,$bb) = @_;
-    
-    my $iu = 'R	AG
-    Y	CT
-    S	GC
-    W	AT
-    K	GT
-    M	AC';
-    
-    my @I = split("\n",$iu);
-    
-    for(my $i = 0;$i < scalar(@I);$i++)
-    {
-        my @w = split("\t",$I[$i]);
-        if($w[0] eq $bb)
-        {# this is it!
-            if(substr($w[1],0,1) eq $aa)
-            {
-                return(substr($w[1],1,1));
-            }
-            elsif(substr($w[1],1,1) eq $aa)
-            {
-                return(substr($w[1],0,1));
-            }
-            else
-            {
-                return('problem')
-            }
-        }
-    }
-    #This may be for parsing indel;
-    if($bb =~ /^[ACGT]$/)
-     {
-        return($bb);
-    }
-    elsif($bb =~ /^\*\/([\+\-].*)/)
-    {
-        return($1);
-    }
-    else
-    {
-        return('problem2');
-    }
-}
-#################################end of prune_varscan sub##############################
 
 sub mk_files_for_wgs
 {
-    my $indir = shift;
-    my $self = $indir and $indir = shift if ref $indir;
-    my $outfile = shift;
+    my $somatic = shift; #path to directory where somatic data is stored, file that will list somatic data files
+    my $self = $somatic and $somatic = shift if ref $somatic;
+    my $somatic_list = shift;
     
-    opendir(DD,$indir) or die "Can't open $indir: $!\n";
-    my @dd = readdir(DD);
-    @dd = grep{!/\.$/}@dd;
-    open(MFO,">$outfile") or die "Can't open $outfile: $!\n";
+    opendir (DD,$somatic);
+    my @dd = grep{!/^\./ && -f "$somatic/$_"} readdir(DD);
+    closedir (DD);
+    open (MFO,">$somatic_list");
    
     for(my $i = 0;$i < scalar(@dd);$i++)
     {  
-        print MFO $indir."/".$dd[$i], "\t", $dd[$i], "\n";
+        print MFO $somatic."/".$dd[$i], "\t", $dd[$i], "\n";
     }
-    close(MFO);
+    close (MFO);
 }
 
 sub var_ID_to_bed
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $rowlabels = shift; #file that contains rowlabels for wgs
+    my $self = $rowlabels and $rowlabels = shift if ref $rowlabels;
+    my $varsbed = shift; #output file for rowlabels
     
-    open(VTBI,"$infile") or die "Can't open $infile: $!\n";
-    open(VTBO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (VTBI,"$rowlabels");
+    open (VTBO,">$varsbed");
     while(my $r = <VTBI>)
     {
         chomp($r);
@@ -320,46 +207,44 @@ sub var_ID_to_bed
         
         print VTBO $a[0], "\t", $a[1]-1, "\t", $a[1], "\t", $r, "\n";
     }
-    close(VTBI);
-    close(VTBO);
+    close (VTBI);
+    close (VTBO);
 }
 
 sub simpl
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $reg_file = shift; #path to files from reg directory in the Database directory
+    my $self = $reg_file and $reg_file = shift if ref $reg_file;
+    my $output_bed = shift; #file to output data
     
-    open(SI,"$infile") or die "Can't open $infile: $!\n";
-    open(SO,">$outfile") or die "Can't open $outfile: $!";
+    open (SI,"$reg_file");
+    open (SO,">$output_bed");
     while(my $r = <SI>)
     {
         chomp($r);
         my @a = split("\t",$r);
         print SO join("\t",@a[0..2]), "\t", 1 , "\n";
     }
-    close(SI);
-    close(SO);
+    close (SI);
+    close (SO);
 }
 
 sub up_down_tss
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $upstream_of_tss_len = shift;
-    my $downstream_of_tss_len = shift;
-    my $outfile = shift;
+    my $bed_file = shift; #input bed file
+    my $self = $bed_file and $bed_file = shift if ref $bed_file;
+    my ($upstream_of_tss_len,$downstream_of_tss_len,$output_bed) = @_; #upstream number, downstream number, bed file to output results
     
-    open(UDTI,"$infile") or die "Can't open $infile: $!\n";
-    open(UDTO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (UDTI,"$bed_file");
+    open (UDTO,">$output_bed");
     while(my $r = <UDTI>)
     {
         chomp($r);
         my @a = split("\t",$r);
         
-        if( $a[5] eq '+')
+        if ($a[5] eq '+')
         {
-            if($a[1] > $upstream_of_tss_len)
+            if ($a[1] > $upstream_of_tss_len)
             {
                 print UDTO $a[0], "\t", $a[1] - $upstream_of_tss_len, "\t", $a[1] + $downstream_of_tss_len, "\t", join("\t",@a[3..5]), "\n";
             }
@@ -369,11 +254,11 @@ sub up_down_tss
             }
         }
         
-        if( $a[5] eq '-')
+        if ($a[5] eq '-')
         {
-            if($a[2] > $downstream_of_tss_len)
+            if ($a[2] > $downstream_of_tss_len)
             {
-                print UDTO $a[0], "\t", $a[2] - $downstream_of_tss_len, "\t", $a[2]+$upstream_of_tss_len, "\t", join("\t",@a[3..5]), "\n";
+                print UDTO $a[0], "\t", $a[2] - $downstream_of_tss_len, "\t", $a[2] + $upstream_of_tss_len, "\t", join("\t",@a[3..5]), "\n";
             }
             else
             {
@@ -381,45 +266,44 @@ sub up_down_tss
             }
         }
     }
-    close(UDTI);
-    close(UDTO);
+    close (UDTI);
+    close (UDTO);
 }
 
 sub print_1
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $upstream_bed = shift; #bed file from up_down_tss
+    my $self = $upstream_bed and $upstream_bed = shift if ref $upstream_bed;
+    my $output_bed = shift; #bed file that will have data written to it
     
-    open(PRI,"$infile") or die "Can't open $infile: $!\n";
-    open(PRO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (PRI,"$upstream_bed");
+    open (PRO,">$output_bed");
     while(my $r = <PRI>)
     {
         chomp($r);
         my @a = split("\t",$r);
         print PRO join("\t",@a[0..2]), "\t", 1, "\n";
     }
-    close(PRI);
-    close(PRO);
+    close (PRI);
+    close (PRO);
 }
 
 sub up_tss_gene
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $upstream_of_tss_len = shift;
-    my $outfile = shift;
+    my $upstream_bed = shift; #bed file from up_down_tss
+    my $self = $upstream_bed and $upstream_bed = shift if ref $upstream_bed;
+    my ($upstream_of_tss_len,$output_bed) = @_; #upstream length number, bed file that will have data written to it
     
-    open(UTGI,"$infile") or die "Can't open $infile: $!\n";
-    open(UTGO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (UTGI,"$upstream_bed");
+    open (UTGO,">$output_bed");
     while(my $r = <UTGI>)
     {
         chomp($r);
         my @a = split("\t",$r);
         
-        if( $a[5] eq '+')
+        if ($a[5] eq '+')
         {
-            if($a[1] > $upstream_of_tss_len)
+            if ($a[1] > $upstream_of_tss_len)
             {
                 print UTGO $a[0], "\t", $a[1] - $upstream_of_tss_len, "\t", $a[2], "\t", join("\t",@a[3..5]), "\n";
             }
@@ -429,61 +313,59 @@ sub up_tss_gene
             }
         }
         
-        if( $a[5] eq '-')
+        if ($a[5] eq '-')
         {
             print UTGO $a[0], "\t", $a[1], "\t", $a[2] + $upstream_of_tss_len, "\t", join("\t",@a[3..5]), "\n";
         }
     }
-    close(UTGI);
-    close(UTGO);
+    close (UTGI);
+    close (UTGO);
 }
 
 sub vlookem_all
 {
-    my $dir = shift;
-    my $self = $dir and $dir = shift if ref $dir;
-    my $vars_path = shift;
-    my $an_vars = shift;
+    my $overlap = shift; #path to the directory that holds beds made from routine print_1
+    my $self = $overlap and $overlap = shift if ref $overlap;
+    my ($vars_bed,$an_vars,$overlapSelect,$stream_data) = @_; #path to output bed file, path to directory where annotation data is stored, overlapSelect command, name of stream data file
     
-    opendir(DD,$dir) or die "no $dir: $!\n";
-    my @dd = readdir(DD);
-    @dd = grep{!/\.$/}@dd;
+    opendir (DD,$overlap);
+    my @dd = grep{!/^\./ && -f "$overlap/$_"} readdir(DD);
+    closedir (DD);
+    
     my $cc = 1;
     
-    open(COL,">collabels.txt") or die "no collabels\n";
+    open (COL,">collabels.txt");
     
     for(my $i = 0;$i < scalar(@dd);$i++)
     {
         my $cc2 = $cc + 1;
         
-        print STDERR "working on $dd[$i]\n";
+        print "Working on $dd[$i]\n";
         print COL $dd[$i], "\n";
         
-        `overlapSelect $dir/$dd[$i] $vars_path -idOutput out`; 
-        $parsing->vlookup("$an_vars/tt$cc",1,"out",1,2,"y","$an_vars/tt$cc2");
+        `$overlapSelect $overlap/$dd[$i] $vars_bed -idOutput out`; 
+        $parsing->vlookup("$an_vars/$stream_data"."$cc",1,"out",1,2,"y","$an_vars/$stream_data"."$cc2");
         $cc++;
     }
-    close(COL);
+    close (COL);
 }
 
 sub my_up_down_tss
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $upstream_of_tss_len = shift;
-    my $downstream_of_tss_len = shift;
-    my $outfile = shift;
+    my $refseq_hg9_bed = shift; #path to bed refseq bed file in Database directory
+    my $self = $refseq_hg9_bed and $refseq_hg9_bed = shift if ref $refseq_hg9_bed;
+    my ($upstream_of_tss_len,$downstream_of_tss_len,$refseq_hg9_output) = @_; #upstream length number, downstream length number, file to output results
     
-    open(MUDTI,"$infile") or die "Can't open $infile: $!\n";
-    open(MUDTO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (MUDTI,"$refseq_hg9_bed");
+    open (MUDTO,">$refseq_hg9_output");
     while(my $r = <MUDTI>)
     {
         chomp($r);
         my @a = split("\t",$r);
         
-        if( $a[5] eq '+')
+        if ($a[5] eq '+')
         {
-            if($a[1] > $upstream_of_tss_len)
+            if ($a[1] > $upstream_of_tss_len)
             {
                 #be cautious of $upstream of tss length
                 print MUDTO $a[0], "\t", $a[1]-$upstream_of_tss_len, "\t", $a[2], "\t", join("\t",@a[3..5]), "\n";
@@ -494,9 +376,9 @@ sub my_up_down_tss
             }
         }
         
-        if( $a[5] eq '-')
+        if ($a[5] eq '-')
         {
-            if($a[2] > $downstream_of_tss_len)
+            if ($a[2] > $downstream_of_tss_len)
             {
                 #be cautious of $downstream of tss length
                 print MUDTO $a[0], "\t", $a[1], "\t", $a[2] + $upstream_of_tss_len, "\t", join("\t",@a[3..5]), "\n";
@@ -507,18 +389,18 @@ sub my_up_down_tss
             }
         }
     }
-    close(MUDTI);
-    close(MUDTO);
+    close (MUDTI);
+    close (MUDTO);
 }
 
 sub mk_coding
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $var_bed = shift; #bed file create from var_ID_to_bed routine
+    my $self = $var_bed and $var_bed = shift if ref $var_bed;
+    my $var_bed_output = shift; #file to output results
     
-    open(MCI,"$infile") or die "Can't open $infile: $!\n";
-    open(MCO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (MCI,"$var_bed");
+    open (MCO,">$var_bed_output");
     
     while(my $r = <MCI>) 
     {
@@ -532,7 +414,7 @@ sub mk_coding
         $tt =~ s/\|/,/;
         my @w2 = split(",",$tt);
         
-        if($w2[1] =~ /[+\-]/)
+        if ($w2[1] =~ /[+\-]/)
         {
             
             my $t = $w2[1];
@@ -540,7 +422,7 @@ sub mk_coding
             $t =~ s/^[\+\-]//;
             
             my $ll = length($t)/3;
-            if($ll =~ /\./) # no triplet - disruptive
+            if ($ll =~ /\./) # no triplet - disruptive
             {
                $a[3] = $w2[0]."|"."frameshift";        
             }
@@ -555,24 +437,20 @@ sub mk_coding
             } 
         print MCO join("\t",@a), "\n";
     }
-    close(MCI);
-    close(MCO);
+    close (MCI);
+    close (MCO);
 }
 
 sub Syn
 {
-    my $SNP = shift;
-    my $self = $SNP and $SNP = shift if ref $SNP;
-    my $genome = shift;
-    my $outfile = shift;
-    my $dbpath = shift;
+    my $subs_bed = shift; #input bed file with default name subs.bed
+    my $self = $subs_bed and $subs_bed = shift if ref $subs_bed;
+    my ($genome,$subs_syn,$dbpath,$overlapSelect,$ccds_bed,$ccds_tab) = @_; #genome hg19, file to output data with default name subs.syn, path to the Database directory, overlapSelect command, bed file in the Database directory with the default name of ccds.hg19.bed, tab file in the Database directory with the default name of ccds.hg19.tab
     
-    open(SO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (SO,">$subs_syn");
     
     my $syn = 0;
     my $nsyn = 0;
-    my $ccds;
-    my $ccds_tab;
     
     #data format of ccds
     # 0: chr1
@@ -588,12 +466,12 @@ sub Syn
     # 10: 10,64,25,72,57,55,176,12,12,25,52,86,93,75,501,128,127,60,112,156,133,203,65,165,23,
     # 11: 0,91488,98711,101585,105418,108451,109185,126154,133171,136636,137585,138922,142645,145319,147510,154789,155831,161075,184935,194905,199389,204976,206299,206913,208714,
     
-    if($genome eq 'hg19')
+    if ($genome eq 'hg19')
     {
-        $ccds = "$dbpath/ccds.hg19.bed";
-        print "No $ccds is found!\n" unless(-e $ccds);
-        $ccds_tab = "$dbpath/ccds.hg19.tab";
-        print "No $ccds_tab is found!\n" unless(-e $ccds_tab);    
+        $ccds_bed = "$dbpath/$ccds_bed";
+        print STDERR "$ccds_bed does not exist in directory $dbpath!\n" and exit unless(-e $ccds_bed);
+        $ccds_tab = "$dbpath/$ccds_tab";
+        print STDERR "$ccds_tab does not exit in directory $dbpath!\n" and exit unless(-e $ccds_tab);    
     }
     else
     {
@@ -601,10 +479,10 @@ sub Syn
         exit;
     }
 
-    print STDERR "overlapping with ccds.bed\n";
-    my $s = "overlapSelect $ccds $SNP ccds.input.out -mergeOutput";
-    print $s;
-    `$s`;
+    print "Overlapping with $ccds_bed\n";
+    my $select_command = "$overlapSelect $ccds_bed $subs_bed ccds.input.out -mergeOutput";
+    print $select_command,"\n";
+    `$select_command`;
     
     #data format of ccds.input.out;
     # 0: chr1
@@ -624,19 +502,19 @@ sub Syn
     # 14: 205,77,102,60,70,166,70,156,57,126,125,52,71,168,109,333,
     # 15: 0,5389,6759,7164,8982,10253,10660,13131,13897,14225,14659,15978,17319,18372,18678,23600,
     
-    open(F,"ccds.input.out") or die "no ccds.input.out\n";
+    open (F,"ccds.input.out");
     
     #make lookup
-    print STDERR  "making sequence lookup table\n";
+    print "Making sequence lookup table\n";
     my %hash = ();
-    open(LOOK,$ccds_tab) or die "no ccds file\n";
+    open (LOOK,$ccds_tab);
     while(my $r = <LOOK>)
     {
         $r =~ /(.*?)\t(.*?)\n/;#hash of ccds id and fasta seq;
         $hash{$1} = $2;
     }
     
-    print STDERR  "Going through your file\n";
+    print "Going through your file\n";
     while(my $r = <F>)
     {
         my @a = split("\t",$r);
@@ -644,7 +522,7 @@ sub Syn
         # what are the two observed bases?
         my $aa;
         my $bb;
-        if( $a[3] =~ /([ACGT])\|([ACGT])/)
+        if ( $a[3] =~ /([ACGT])\|([ACGT])/)
         {
             $aa = $1;
             $bb = $2;
@@ -655,11 +533,11 @@ sub Syn
             next;
         }
         
-        if($aa eq '0')
+        if ($aa eq '0')
         {
             next;
         }
-        if($a[9] eq '-')
+        if ($a[9] eq '-')
         { 
             $aa =~ tr/ACGT/TGCA/; 
             $bb =~ tr/ACGT/TGCA/;
@@ -678,7 +556,7 @@ sub Syn
         #$a[9]:strand;
         #$a[14]:exon length;
         #$a[15]:exon start;
-        if(exists $hash{$a[7]})
+        if (exists $hash{$a[7]})
         {
             my($codon,$pos,$cc_start) = get_codon($a[1],$a[5],$a[6],$a[9],$a[14],$a[15],$hash{$a[7]});
             
@@ -695,7 +573,7 @@ sub Syn
             "\t", $can_aa, "\t", $new_aa, "\t", $severity,
             "\t",($cc_start/3+1), "\n";
             
-            if($can_aa eq $new_aa)
+            if ($can_aa eq $new_aa)
             {
                 $syn++;
             }
@@ -710,21 +588,21 @@ sub Syn
         }
     }
     
-    print STDERR "Total number of events: ", $nsyn + $syn, "\n";
-    print STDERR  "Synonymous substitutions: $syn\n";
-    print STDERR  "NonSynonymous substitutions: $nsyn\n";
-    if($syn == 0 && $nsyn == 0)
+    print "Total number of events: ", $nsyn + $syn, "\n";
+    print "Synonymous substitutions: $syn\n";
+    print "NonSynonymous substitutions: $nsyn\n";
+    if ($syn == 0 && $nsyn == 0)
     {
-        print STDERR  "Synonymous/NonSynonymous: 0\n";
+        print "Synonymous/NonSynonymous: 0\n";
     }
     else
     {
-       print STDERR  "Synonymous/NonSynonymous: ", sprintf "%0.*f", 2,$syn/$nsyn;
+       print "Synonymous/NonSynonymous: ", sprintf "%0.*f", 2,$syn/$nsyn;
        print "\n";
     }
     
     `rm ccds.input.out`;
-    close(SO);
+    close (SO);
 }
 
 #########################################end of Syn subs#######################################
@@ -743,7 +621,7 @@ sub get_codon
     
     for(my $i = 1;$i < scalar(@ss);$i++)
     {
-        if(($poss >= $ss[$i-1]) & ($poss < $ss[$i]))
+        if (($poss >= $ss[$i-1]) & ($poss < $ss[$i]))
         {
             #add up exon lenghts to here
             for(my $j = 0;$j < $i-1;$j++)
@@ -757,7 +635,7 @@ sub get_codon
     } #end for
     
     # if orient backwards, invert start
-    if($orient eq '-')
+    if ($orient eq '-')
     {
         my $txlen = 0;
         for(my $i = 0;$i < scalar(@ll);$i++)
@@ -788,11 +666,11 @@ sub getPosFromPos
     $x =~ /([0-9]+)\.*(.*)/;
     my $start = $1*3;
     my $duss = $2;
-    if($duss eq '')
+    if ($duss eq '')
     {
         return($start,0);
     }#perfect matching the end of ABC;
-    elsif($duss =~ /3/)
+    elsif ($duss =~ /3/)
     {
         return($start,1);
     }#matching the nt after ABCa;
@@ -801,79 +679,6 @@ sub getPosFromPos
         return($start,2);
     }#matching the second nt after ABCab;
 }
-
-sub get_bases
-{
-    #Not used in Syn.pl;
-
-    my($line) = @_;
-    $line =~ s/\|/\,/g;
-    my @ll = split(",",$line);
-    
-    my @y = ($ll[5],$ll[6],$ll[7],$ll[8]);
-    @y = sort({$b <=> $a} @y);
-
-    my $canonicalBase = $ll[0];
-    my $altBase = '';
-    my $HighScore_base = '';
-    my $ratio = 0;
-    my $dominant_base = 'Canonical';
-    my $canonicalBase_score;
-    
-    # What is the score for the canonical base?  Use this to figure out the
-    # score ratio between canonical and non-canonical
-
-    if($canonicalBase =~ /A/) {$canonicalBase_score = $ll[5];}
-    if($canonicalBase =~ /C/) {$canonicalBase_score = $ll[6];}
-    if($canonicalBase =~ /G/) {$canonicalBase_score = $ll[7];}
-    if($canonicalBase =~ /T/) {$canonicalBase_score = $ll[8];}
-    # Print canonical base score:
-    print $canonicalBase_score, "\t";
-
-    # First determine if the highest scoring base is non-canonical base, if so,
-    # return the canonical base and the highest scoring base
-
-    if($y[0] == $ll[5]) {$HighScore_base = 'A';}
-    if($y[0] == $ll[6]) {$HighScore_base = 'C';}
-    if($y[0] == $ll[7]) {$HighScore_base = 'G';}
-    if($y[0] == $ll[8]) {$HighScore_base = 'T';}
-
-    unless($HighScore_base eq $canonicalBase)
-    {
-	$dominant_base = 'nonCanonical';
-	$ratio = ($canonicalBase_score/($y[0] + $y[1]));
-	return($canonicalBase,$HighScore_base,$dominant_base,$ratio,$canonicalBase_score);
-    }
-
-    # If the highest scoring base is the canonical base, find out what the next
-    # highest scoring base is and return the canonical base and the next highest
-    # scoring base
-    if($y[1] == $ll[5])
-    {
-        $altBase = 'A';
-    }
-    if($y[1] == $ll[6])
-    {
-        $altBase = 'C';
-    }
-    if($y[1] == $ll[7])
-    {
-        $altBase = 'G';
-    }
-    if($y[1] == $ll[8])
-    {
-        $altBase = 'T';
-    }
-
-    
-    unless($HighScore_base eq $canonicalBase)
-    {
-	$dominant_base = 'Canonical';
-	$ratio = ($canonicalBase_score/($y[0] + $y[1]));
-	return($canonicalBase,$HighScore_base);
-    }
-    return(0,0);
-} 
 
 sub codon
 {
@@ -955,11 +760,11 @@ sub severity
 {
     my($can_aa,$new_aa) = @_;
     
-    if($can_aa eq $new_aa)
+    if ($can_aa eq $new_aa)
     {
         return 0;
     }
-    if($new_aa eq 'Stop')
+    if ($new_aa eq 'Stop')
     {
         return 3;
     }
@@ -971,19 +776,19 @@ sub severity
     
     # the rest of them are weird so a sub to these = missense 2
     
-    if(($hydrophobic =~ /$can_aa/)&($hydrophobic =~ /$new_aa/))
+    if (($hydrophobic =~ /$can_aa/)&($hydrophobic =~ /$new_aa/))
     {
         return 1;
     }
-    if(($polar =~ /$can_aa/)&($polar =~ /$new_aa/))
+    if (($polar =~ /$can_aa/)&($polar =~ /$new_aa/))
     {
         return 1;
     }
-    if(($positive =~ /$can_aa/)&($positive =~ /$new_aa/))
+    if (($positive =~ /$can_aa/)&($positive =~ /$new_aa/))
     {
         return 1;
     }
-    if(($negative =~ /$can_aa/)&($negative =~ /$new_aa/))
+    if (($negative =~ /$can_aa/)&($negative =~ /$new_aa/))
     {
         return 1;
     }
@@ -994,30 +799,30 @@ sub severity
 
 sub mk_uniq_label
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $subs_syn = shift; #syn file made from routine Syn
+    my $self = $subs_syn and $subs_syn = shift if ref $subs_syn;
+    my $subs_syn_out = shift; #file that will be written to
     
-    open(MULI,"$infile") or die "Can't open $infile: $!\n";
-    open(MULO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (MULI,"$subs_syn");
+    open (MULO,">$subs_syn_out");
     while(my $r = <MULI>)
     {
         chomp($r);
         my @a = split("\t",$r);
         print MULO $a[0]."-".$a[1], "\t", $r, "\n";
     }
-    close(MULI);
-    close(MULO);
+    close (MULI);
+    close (MULO);
 }
 
 sub process_syn
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $subs_syn_process = shift; #syn file that will be processed
+    my $self = $subs_syn_process and $subs_syn_process = shift if ref $subs_syn_process;
+    my $subs_process_out = shift; #file that will have written results
     
-    open(PSI,"$infile") or die "Can't open $infile: $!\n";
-    open(PSO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (PSI,"$subs_syn_process");
+    open (PSO,">$subs_process_out");
     while(my $r = <PSI>)
     {
         chomp($r);
@@ -1025,18 +830,18 @@ sub process_syn
         print PSO $a[0]."-".$a[1], "\t", $a[9].$a[12].$a[10],
         "\t", $a[11], "\n";
     }
-    close(PSI);
-    close(PSO);
+    close (PSI);
+    close (PSO);
 }
 
 sub process_shifts
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $overlap_input = shift; #file with results from overlapSelect command
+    my $self = $overlap_input and $overlap_input = shift if ref $overlap_input;
+    my $shifts_append = shift; #file that will have results appended to
     
-    open(PRSI,"$infile") or die "Can't open $infile: $!\n";
-    open(PRSO,">>$outfile") or die "Can't open $outfile: $!\n";
+    open (PRSI,"$overlap_input");
+    open (PRSO,">>$shifts_append");
     while(my $r = <PRSI>)
     {
         chomp($r);
@@ -1044,11 +849,11 @@ sub process_shifts
         $a[3] =~ s/\|/,/;
         my @w=split(",",$a[3]);
         my $t = $w[1];
-        if($t eq 'frameshift')
+        if ($t eq 'frameshift')
         {
             print PRSO $a[0]."-".$a[1], "\t", 'frameshift', "\t", 3, "\n";
         }
-        elsif($t eq 'triplet_shift')
+        elsif ($t eq 'triplet_shift')
         {
             print PRSO $a[0]."-".$a[1], "\t", 'triplet_shift', "\t", 2, "\n";
         }
@@ -1058,18 +863,18 @@ sub process_shifts
             next;
         }
     }
-    close(PRSI);
-    close(PRSO);
+    close (PRSI);
+    close (PRSO);
 }
 
 sub pt
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $rowlabels = shift; #rowlabels file from matricize routine in the Parsing_Routines module
+    my $self = $rowlabels and $rowlabels = shift if ref $rowlabels;
+    my $rowlabels_out = shift; #file that will have results written to it
     
-    open(PTI,"$infile") or die "Can't open $infile: $!\n";
-    open(PTO,">$outfile") or die "Can't open $outfile: $!\n";
+    open (PTI,"$rowlabels");
+    open (PTO,">$rowlabels_out");
     while(my $r = <PTI>)
     {
         chomp($r);
@@ -1080,8 +885,8 @@ sub pt
         
         print PTO $1."-".$xx, "\t", $r, "\n";
     }
-    close(PTI);
-    close(PTO);
+    close (PTI);
+    close (PTO);
 }
 
 1;

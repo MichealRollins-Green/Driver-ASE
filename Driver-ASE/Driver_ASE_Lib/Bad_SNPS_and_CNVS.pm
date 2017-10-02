@@ -7,6 +7,8 @@ use warnings;
 use lib "$Bin/";
 use MCE::Map;
 use Parsing_Routines;
+use autodie;
+no warnings 'once';
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -42,12 +44,12 @@ sub new
 ##############################################subs#############################
 sub pull_bed
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $annot_csv_file = shift; #file that was created from GenomeWideSNP_6.cn.na35.annot.csv.zip
+    my $self = $annot_csv_file and $annot_csv_file = shift if ref $annot_csv_file;
+    my $outfile = shift; #file where data will be outputted
     
-    open(PB,$infile) or die("Can't open file for input: $!\n");
-    open(PBO,">$outfile") or die("Can't open file for output: $!\n");
+    open (PB,$annot_csv_file);
+    open (PBO,">$outfile");
     while(my $r = <PB>)
     {
         if($r=~/^\#/)
@@ -59,39 +61,18 @@ sub pull_bed
         my @a = split(",",$r);
         print PBO "chr".$a[1], "\t", $a[2], "\t", $a[3], "\t", $a[0], "\n";
     }
-    close(PB);
-    close(PBO);
-}
-
-sub mv_bcode
-{
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
-    
-    open(MVB, $infile) or die("Can't open file for input: $!");
-    open(MVBO, ">$outfile") or die("Can't open file for output: $!");
-    while(my $r = <MVB>)
-    {
-        chomp($r);
-        my $TCGA_ID = $r;
-        my $sample = [split("-",$TCGA_ID)]->[-1];#get sample type
-        $TCGA_ID =~ s/-[0-9]+[a-zA-Z].[a-zA-Z]+$//;#Get rid of sample and .bed extension
-        $sample =~ s/[a-zA-Z].[a-zA-Z]+$//;#Get rid of sample letter and .bed extension
-        print MVBO $r, "\t", $TCGA_ID, "\t", $sample, "\n";
-    }
-    close(MVB);
-    close(MVBO);
+    close (PB);
+    close (PBO);
 }
 
 sub pull_normal
 {
-    my $infile = shift;
-    my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $cnv_file_list = shift; #file that has the list of the downloaded Copy number estimate files downloaded in 0_Download_SNPArray_From_GDC.pl script
+    my $self = $cnv_file_list and $cnv_file_list = shift if ref $cnv_file_list;
+    my $normal_cnv = shift; #outfile for normal cnvs
     
-    open(PN,$infile) or die("Can't open file for input: $!\n");
-    open(PNO,">$outfile") or die("Can't open file for output: $!\n");
+    open (PN,$cnv_file_list);
+    open (PNO,">$normal_cnv");
 
     while(my $r = <PN>)
     {
@@ -105,8 +86,29 @@ sub pull_normal
             print PNO $r, "\t", $tcga, "\t", $tumor_type, "\n";
         }
     }
-    close(PN);
-    close(PNO);
+    close (PN);
+    close (PNO);
+}
+
+sub mv_bcode
+{
+    my $cds_sorted_list = shift; #file that contains list of sorted cds bed files
+    my $self = $cds_sorted_list and $cds_sorted_list = shift if ref $cds_sorted_list;
+    my $cds_seperated = shift; #out file that breaks up the bed file name
+    
+    open (MVB, $cds_sorted_list);
+    open (MVBO, ">$cds_seperated");
+    while(my $r = <MVB>)
+    {
+        chomp($r);
+        my $TCGA_ID = $r;
+        my $sample = [split("-",$TCGA_ID)]->[-1];#get sample type
+        $TCGA_ID =~ s/-[0-9]+[a-zA-Z].[a-zA-Z]+$//;#Get rid of sample and .bed extension
+        $sample =~ s/[a-zA-Z].[a-zA-Z]+$//;#Get rid of sample letter and .bed extension
+        print MVBO $r, "\t", $TCGA_ID, "\t", $sample, "\n";
+    }
+    close (MVB);
+    close (MVBO);
 }
 
 sub hv_cd
@@ -115,8 +117,8 @@ sub hv_cd
     my $self = $infile and $infile = shift if ref $infile;
     my $outfile = shift;
     
-    open(HVC,$infile) or die("Can't open file for input: $!\n");
-    open (HVCO,">$outfile") or die("Can't open file for output: $!\n");
+    open (HVC,$infile);
+    open (HVCO,">$outfile");
     while(my $r = <HVC>)
     {
         chomp($r);
@@ -126,8 +128,8 @@ sub hv_cd
             print HVCO $r, "\n";
         }
     }
-    close(HVC);
-    close(HVCO);
+    close (HVC);
+    close (HVCO);
 }
 
 sub dump_non_01_10_11
@@ -136,8 +138,8 @@ sub dump_non_01_10_11
     my $self = $infile and $infile = shift if ref $infile;
     my $outfile = shift;
     
-    open(DNI,$infile) or die("Can't open file for input\n");
-    open(DNO,">$outfile") or die("Can't open file for output\n");
+    open (DNI,$infile);
+    open (DNO,">$outfile");
     while(my $r = <DNI>)
     {
         chomp($r);
@@ -148,21 +150,21 @@ sub dump_non_01_10_11
         }
         print DNO $r, "\n";
     }
-    close(DNI);
-    close(DNO);
+    close (DNI);
+    close (DNO);
 }
 
 sub mk_tn_tables
 {
-    my $snp_raw_files_dir = shift;
+    my $snp_raw_files_dir = shift; #directory where Genotype/Copy number estimate data was downloaded
     my $self = $snp_raw_files_dir and $snp_raw_files_dir = shift if ref $snp_raw_files_dir;
-    my $raw_file_name = shift;
+    my $raw_file_name = shift; #raw file name(same as directory name but will be used for files)
     
     `ls "$snp_raw_files_dir" > "$raw_file_name"\_raw_files`;
 
-    open(HC,"$raw_file_name\_raw_files") or die "Can't open file: $!\n";
-    open(HCT,">$raw_file_name\_T") or die "Can't open file: $!\n";
-    open(HCN,">$raw_file_name\_N") or die "Can't open file: $!\n";
+    open (HC,"$raw_file_name\_raw_files");
+    open (HCT,">$raw_file_name\_T");
+    open (HCN,">$raw_file_name\_N");
     
     while(my $r = <HC>)
     {
@@ -182,20 +184,19 @@ sub mk_tn_tables
         }
         else
         {
-            print "Something is wrong with $tumor_type\n";
+            print STDERR "Something is wrong with $tumor_type!\n";
             exit;
         }
     }
-    close(HCN);
-    close(HCT);
+    close (HCN);
+    close (HCT);
 }
 
 sub run_snps
 {
-    my $raw_snp_dir = shift;
+    my $raw_snp_dir = shift; #Genotypes and Copy number estimate directory
     my $self = $raw_snp_dir and $raw_snp_dir = shift if ref $raw_snp_dir;
-    my $infile = shift;
-    my $RNA_Path = shift;
+    my ($cnv_geno_tn_file,$RNA_Path) = @_; #file with tn cnvs/genos, path to RNA analysis data
     
     my ($bird,$copy) = split(",",$raw_snp_dir);
     $bird =~ s/\/$//;
@@ -204,7 +205,7 @@ sub run_snps
     {
         chomp($_);
         my @a = split("\t",$_);
-        print STDERR "The job was submitted: $a[0]\n";# ? $a[3] is TCGA ID;
+        print "The job for $a[0] was submitted.\n";# ? $a[3] is TCGA ID;
         my $tmp = $parsing->temp_filename();
         if (-f "$bird/$a[1]" and -f "$bird/$a[2]")
         {
@@ -221,17 +222,17 @@ sub run_snps
             print "SNP array data not available for $a[1].\n";
         }
         `rm -f $tmp.txt`;
-    }$infile; 
+    }$cnv_geno_tn_file; 
 }
 
 sub flag_snps
 {
-    my $infile = shift;
+    my $infile = shift; #tmp file
     my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
+    my $outfile = shift; #path to output file
     
-    open(FSI,$infile) or die("Can't open file for input: $!\n");
-    open(FSO,">$outfile") or die("Can't open file for output: $!\n");
+    open (FSI,$infile);
+    open (FSO,">$outfile");
     #Remove two unuseful lines;
     my $r = <FSI>;
     $r = <FSI>;
@@ -245,28 +246,27 @@ sub flag_snps
             print FSO $a[0], "\n";
         } 
     }
-    close(FSI);
-    close(FSO);
+    close (FSI);
+    close (FSO);
 }
 
 sub get_cd_bed
 {
-    my $affy_cd = shift;
-    my $self = $affy_cd and $affy_cd = shift if ref $affy_cd;
-    my $bad_snps_bed = shift;
-    my $bad_snps = shift;
+    my $snp6_cd_file = shift; #Path to snp6.cd.txt
+    my $self = $snp6_cd_file and $snp6_cd_file = shift if ref $snp6_cd_file;
+    my ($bad_snps_bed,$bad_snps) = @_; #bad snps bed directory, bad snps directory
     
-    opendir(DD,"$bad_snps") or die "no $bad_snps: $!\n";
+    opendir (DD,"$bad_snps");
     my @dd = readdir(DD);
-    closedir(DD);
+    closedir (DD);
     @dd = grep{!/^\./ && -f "$bad_snps/$_"}@dd;#gets rid off . and ..
     mce_map
     {
-      print STDERR "working on $_\n";
+        print "Working on $_\n";
         
-      my $tmp = $parsing->temp_filename();
+        my $tmp = $parsing->temp_filename();
        `sort -u -k 1,1 $bad_snps/$_ > $bad_snps/$_.uniq`;
-       $parsing->vlookup("$bad_snps/$_.uniq",1,"$affy_cd",4,"1,2,3","y","$bad_snps/$tmp.1.txt");
+       $parsing->vlookup("$bad_snps/$_.uniq",1,"$snp6_cd_file",4,"1,2,3","y","$bad_snps/$tmp.1.txt");
        `grep NaN -v $bad_snps/$tmp.1.txt > $bad_snps/$tmp.2.txt`;
        $parsing->pull_column("$bad_snps/$tmp.2.txt","2,3,4","$bad_snps/$tmp.3.txt");
        `sort -k 1,1 -k 2,2n $bad_snps/$tmp.3.txt > $bad_snps_bed/$_`;
@@ -278,20 +278,16 @@ sub run_cnv
 {
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $copy = shift;#directory where SNP_Array data for copynumber data is
-    my $bird = shift;#directory where SNP-Array data for birdiseed is
-    my $cnv_bed = shift;#./affy6/cnv.hg19.bed
-    my $RNA_Path_cnvs = shift;
-    my $temp_dir = shift;
+    my ($copy,$bird,$cnv_bed,$RNA_Path_cnvs,$temp_dir) = @_; #cnv directory, genotypes directory, cnv.hg19.bed file, path to directory where bad cnvs with be written to, temp directory
 
-    open(my $CIN,"$infile") or die "Can't open $infile: $!\n";
+    open (my $CIN,"$infile");
     my @CNVS = <$CIN>;
 
     mce_map
     {
         chomp($_);
         my @a = split("\t",$_);
-        print STDERR "The job was submitted: $a[0]\n";
+        print "The job for $a[0] was submitted.\n";
         
         my $rr = rand();
         $rr = substr($rr,2,6);
@@ -316,7 +312,7 @@ sub smooth
     my $self = $infile and $infile = shift if ref $infile;
     my $outfile = shift;
     
-    open(CHR,"$infile") or die "Can't open $infile: $!\n";
+    open (CHR,"$infile");
     
     # first split into chromosomes
     my $r = <CHR>;
@@ -358,7 +354,7 @@ sub dumpit
 {
     my @A = $_[0];
     my $outfile = $_[1];
-    open(CHRO,">>$outfile") or die "Can't open $outfile: $!\n";
+    open (CHRO,">>$outfile");
     
     my $ref = $A[0];
     my @de_ref = @$ref; 
@@ -417,17 +413,16 @@ sub avg
         return($sum / $ll);
     }
 }
-########################################################################
+##########################################end of smooth subs##################################
 
 sub delin_cnv
 {
     my $infile = shift;
     my $self = $infile and $infile = shift if ref $infile;
-    my $outfile = shift;
-    my $cut = shift;
+    my ($outfile,$cut) = @_;
     
-    open(DCI,"$infile") or die "Can't open $infile: $!\n";
-    open(DCO,">>$outfile") or die "Can't open $outfile: $!\n";
+    open (DCI,"$infile");
+    open (DCO,">>$outfile");
     # first split into chromosomes
     my $r = <DCI>;
     my $in = 0;
