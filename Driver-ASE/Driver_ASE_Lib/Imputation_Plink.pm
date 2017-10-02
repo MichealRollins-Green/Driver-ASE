@@ -54,7 +54,7 @@ sub ParseAnnoAffxSNP6
     
     open (GEN,$GenoWideSNP);
     open (ANNO,">$snp6_anno_file");
-    while(my $r = <GEN> )
+    while (my $r = <GEN> )
     {
         if ($r =~ /^\#/)
         {
@@ -101,7 +101,7 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
     my $OUT = "$affy6_path/$snp6_cd_file";
     my %AFFX_SNPs;
     open (AFFX, "$AffxInput");
-    while(<AFFX>)
+    while (<AFFX>)
     {
         my $line = $_;
         chomp($line);
@@ -133,7 +133,7 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
             }
         }
     }
-    close AFFX;
+    close (AFFX);
     
     my %IntersectSNPs;
     
@@ -152,7 +152,7 @@ sub PrepareAffxAlleleAccording2ImputationAlleles
                 open (ONEKG,"zcat $OneKG_legend_Path/ALL.chr$k.integrated_phase1_v3.20101123.snps_indels_svs.genotypes.$hap_tag.legend.gz |");	
             }
            
-            while(<ONEKG>)
+            while (<ONEKG>)
             {
                 chomp($_);
                 if ($. > 1)
@@ -318,7 +318,7 @@ sub mk_genos
     
     open (MK,$infile);
     open (GEN,">$outfile");
-    while(my $r = <MK>)
+    while (my $r = <MK>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -357,7 +357,7 @@ sub mk_map
     $o[0] =~ s/chr//;
     open (OUT,">$RNA_map_path/$o[0].map");
     
-    while(my $r = <MKM>) 
+    while (my $r = <MKM>) 
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -365,7 +365,7 @@ sub mk_map
         print OUT $o[0], "\t", $o[2], "\t0\t", $o[1], "\n";
         if ($o[0] ne $a[0])
         {
-            close OUT;
+            close (OUT);
             open (OUT,">$RNA_map_path/$a[0].map");
         }
         @o = @a;
@@ -387,12 +387,12 @@ sub mk_ped_list_4_plink
     my $outfile = FileHandle->new(">$pedlist");
     my @samples = $parsing->get_only_files_in_dir("$bases_dir");
     @samples = grep{!/^\.$/}@samples;
-    foreach my $r(@chrs) 
+    foreach my $r (@chrs) 
     {
         chomp($r);
         my $chr = $r;
         $chr =~ s/\.map//;
-        for(my $i = 0;$i < scalar(@samples);$i++)
+        for (my $i = 0;$i < scalar(@samples);$i++)
         {
             print "Working on chr$chr for sample $samples[$i].\n";
             print $outfile "$chr\t$samples[$i]\t$i\t$RNA_Path\n";
@@ -437,7 +437,7 @@ sub ped_it_4_plink
         open (P4P,">$sample_map_ped");
         print P4P "FAM".$fam, "\t", $sample, "\t", 0, "\t", 0, "\t", 2, "\t", 0;
        
-        while(my $r = <$fh>)
+        while (my $r = <$fh>)
         {
             chomp($r);
             my @a = split("\t",$r);
@@ -470,7 +470,7 @@ sub submit_shapeit
     
     $Ref_Hap_Path =~ s/\/$//;
     
-    for(my $i = 1;$i < 23;$i++)
+    for (my $i = 1;$i < 23;$i++)
     {
         print "Running shapeit for $i.\n";
         push @cmds,"$shapeit --input-ped $rna_path/$ped_dir/$i.ped $rna_path/$map_dir/$i.map --input-map $Ref_Hap_Path/genetic_map_chr$i\_combined_b37.txt --output-max $phased/$i.phased.haps $phased/$i.phased.sample --output-log $rna_path/$logs/$i.shapeit_log";
@@ -492,7 +492,7 @@ sub submit_all
     
     open (SA,$chr_sizes_file);
     
-    while(my $r = <SA>) 
+    while (my $r = <SA>) 
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -528,7 +528,7 @@ sub submit_impute_chr
     my $i = 1;
     my @cmds;
         
-    for( $i = 1;$i < ($chr_len - $ww);$i += $ww)
+    for ( $i = 1;$i < ($chr_len - $ww);$i += $ww)
     {
         my $ss = $i;
         my $ee = $i + $ww - 1;
@@ -548,18 +548,18 @@ sub impute_2_out
 {
     my $Impute2out = shift; #path to output processed data from submit_impute_chr
     my $self = $Impute2out and $Impute2out = shift if ref $Impute2out;
-    my ($RNA_Path,$infile,$phased,$imputation,$plink) = @_; #path to RNA analysis data, file that contains a list of files from the directory where data was processed from the submit_impute_chr routine, directory where data will be written, plink command
+    my ($RNA_Path,$infile,$phased,$imputation,$plink,$phased_sample) = @_; #path to RNA analysis data, file that contains a list of files from the directory where data was processed from the submit_impute_chr routine, directory where data will be written, plink command
     
     open (IM2O,$infile);
     my @cmds;
 
-    while(<IM2O>)
+    while (<IM2O>)
     {
         chomp;
         $_ =~ s/_haps//;
         my $id = $_;
         my ($chr) = $id =~ /chr(\d+)\./;
-        system("cp $phased/21.phased.sample $imputation/$id.sample");
+        system("cp $phased/$phased_sample $imputation/$id.sample");
         push @cmds,"$plink --oxford-single-chr $chr --hard-call-threshold 0.05 --gen $Impute2out/$id --sample $imputation/$id.sample --make-bed --out $imputation/$id";
     }
     close (IM2O);
@@ -635,17 +635,17 @@ sub Append_snplist_chrs
         $a cmp $b
     }@files;#Important for downstream analysis, keep the order!;                 
     
-    foreach my $file(@filenames)
+    foreach my $file (@filenames)
     {
         open (IN, "$file");
-        while(my $l = <IN>)
+        while (my $l = <IN>)
         {
             chomp($l);
             print OUT $l,"\n" unless $l=~/^\s+$/;#remove empty line!;
         }
-        close IN;
+        close (IN);
     }
-    close OUT;
+    close (OUT);
 }
 
 sub merge_tcga_snplist
@@ -653,7 +653,7 @@ sub merge_tcga_snplist
     my $RNA_cds_plink_path = shift; # path to directory where plink files are
     my $self = $RNA_cds_plink_path and $RNA_cds_plink_path = shift if ref $RNA_cds_plink_path;
 
-    for(my $chr = 1;$chr < 24;$chr++)
+    for (my $chr = 1;$chr < 24;$chr++)
     {
         Get_Uniq_SNPS_From_SNPlists( "$RNA_cds_plink_path","chr$chr.snplist","Chr$chr\_ALL_SNPLIST.txt");
     }
@@ -676,7 +676,7 @@ sub Get_Uniq_SNPS_From_SNPlists
     foreach my $f (@files)
     {
         my $FH=FileHandle->new("$cds_plink/$f");
-        while(my $l = <$FH>)
+        while (my $l = <$FH>)
         {
             chomp($l);
             if (($l !~ /^\s*$/) and (!defined($Uniq_line{$l})))
@@ -687,7 +687,7 @@ sub Get_Uniq_SNPS_From_SNPlists
         }
         $FH->close;
     }
-    close OUT;
+    close (OUT);
 }
 
 sub Snplist_Query_Haps_for_Beds
@@ -701,7 +701,7 @@ sub Snplist_Query_Haps_for_Beds
     open (SNPList,"$SNPList");
     my %SNPList_info;
     #Load SNPList into hash;
-    while(my $l=<SNPList>)
+    while (my $l=<SNPList>)
     {
         chomp($l);
         my @ln = split("\t| ",$l);
@@ -720,7 +720,7 @@ sub Snplist_Query_Haps_for_Beds
     $r = <SS>;
     #remove first two lines;
     my $cc = 0;
-    while($r = <SS>)
+    while ($r = <SS>)
     {
         chomp($r);
         my @a = split("\t| ",$r);
@@ -736,11 +736,11 @@ sub Snplist_Query_Haps_for_Beds
     my $Out_FH = FileHandle->new(">$out_bed.chr$chr.bed");
     print $Out_FH "Chr\tSt\tEnd\trsID\t",join("\t",@ss),"\n";
     # go through haps and geno_probs
-    foreach my $hap(@HapFiles)
+    foreach my $hap (@HapFiles)
     {
         open (H,"$Impute2out/$hap");
         my ($chrom) = $hap =~ /(chr\w+)\.chunk\.\d+_haps/i;
-        while(my $hh = <H>)
+        while (my $hh = <H>)
         {
             chomp($hh);
             my @h = split("\ ",$hh);
@@ -763,7 +763,7 @@ sub Snplist_Query_Haps_for_Beds
                 my $st = $ppos - 1;
                 my $out = join("\t",$chrom,$st,$ppos,$rsid);
                 print $Out_FH $out;
-                for(my $ii = 5;$ii < @h;$ii += 2)
+                for (my $ii = 5;$ii < @h;$ii += 2)
                 {
                     my $a_pos = $h[$ii];
                     my $b_pos = $h[$ii+1];               
@@ -794,7 +794,7 @@ sub Split_Bed_Haps_for_individuals
     my $self = $RNA_cdsplink_path and $RNA_cdsplink_path = shift if ref $RNA_cdsplink_path;
     
     my @cmds;
-    for(my $chr = 1;$chr < 24;$chr++)
+    for (my $chr = 1;$chr < 24;$chr++)
     { 
         #Sort bed according to chr and pos, which is important for downstream analysis!
         #Because the header is started with "Chr", it will be keeped at the top even after sorting!
@@ -821,23 +821,23 @@ sub Split_BedHaps
     
     my $fn;
     
-    for($fn = 1;$fn <= $opened_files_num;$fn++)
+    for ($fn = 1;$fn <= $opened_files_num;$fn++)
     {
         my $BEDFH = FileHandle->new("$Bed_Haps");
         <$BEDFH>;
         my @FHs;
-        for(my $i = ($fn - 1) * $filehandle_num;$i < $filehandle_num + ($fn - 1) * $filehandle_num;$i++)
+        for (my $i = ($fn - 1) * $filehandle_num;$i < $filehandle_num + ($fn - 1) * $filehandle_num;$i++)
         {
             my $H = FileHandle->new(">$cds_sorted/$Hds[$i+4].chr$chr.bed");
             push @FHs,$H;
         }
        
-       while(my $l = <$BEDFH>)
+       while (my $l = <$BEDFH>)
         {
             chomp($l);
             my @as = split("\t",$l);
             my $chr_pos = join("\t",@as[0..2]);
-            for(my $ii = ($fn - 1) * $filehandle_num;$ii < $filehandle_num + ($fn - 1) * $filehandle_num;$ii++)
+            for (my $ii = ($fn - 1) * $filehandle_num;$ii < $filehandle_num + ($fn - 1) * $filehandle_num;$ii++)
             {
                 my $hi = $ii - ($fn - 1) * $filehandle_num;
                 if (defined($FHs[$hi]))
@@ -854,7 +854,7 @@ sub Split_BedHaps
             }
         }
        $BEDFH->close;
-       for(my $fi = 0;$fi < @FHs;$fi++)
+       for (my $fi = 0;$fi < @FHs;$fi++)
         {
             my $FH = $FHs[$fi];
             $FH->close;
@@ -864,18 +864,18 @@ sub Split_BedHaps
     my $BEDFH1 = FileHandle->new("$Bed_Haps");
     <$BEDFH1>;
     my @LeftFHs;
-    for(my $li = ($fn - 1) * $filehandle_num;$li < @Hds - 4;$li++)
+    for (my $li = ($fn - 1) * $filehandle_num;$li < @Hds - 4;$li++)
     {
         my $HH = FileHandle->new(">$cds_sorted/$Hds[$li+4].chr$chr.bed");
         push @LeftFHs,$HH;
     }
   
-    while(my $l = <$BEDFH1>)
+    while (my $l = <$BEDFH1>)
     {
         chomp($l);
         my @as=split("\t",$l);
         my $chr_pos = join("\t",@as[0..2]);
-        for(my $x = ($fn - 1) * $filehandle_num;$x < @as - 4;$x++)
+        for (my $x = ($fn - 1) * $filehandle_num;$x < @as - 4;$x++)
         {
             my $pi = $x - ($fn - 1) * $filehandle_num;
             if (defined($LeftFHs[$pi]))
@@ -892,7 +892,7 @@ sub Split_BedHaps
         }
     }
     
-    for(my $lfi = 0;$lfi < @LeftFHs;$lfi++)
+    for (my $lfi = 0;$lfi < @LeftFHs;$lfi++)
     {
         my $LeftFH = $LeftFHs[$lfi];
         $LeftFH->close;
@@ -930,7 +930,7 @@ sub Append_Beds
     #Import snplist of TCGAID to remove SNPs with geno probability >0.95;
     my $SNPLIST=FileHandle->new("$cds_plink/$ID.snplist");
     my %SNPs;
-    while(my $snp = <$SNPLIST>)
+    while (my $snp = <$SNPLIST>)
     {
         chomp($snp);
         $SNPs{$snp} = 1;   
@@ -942,11 +942,11 @@ sub Append_Beds
     {
         $a cmp $b
     }@files;                                   
-    foreach my $file(@filenames)
+    foreach my $file (@filenames)
     {
         open (IN, "$file");
         my $i = 0;
-        while(my $l = <IN>)
+        while (my $l = <IN>)
         {
             chomp($l);
             my @as = split("\t| ",$l);
@@ -975,7 +975,7 @@ sub Change_CD_ChrInfo_for_Mpileup
     
     open (COUT,">$bed_file");
     my $FH = FileHandle->new("$cd_sorted/$cd");
-    while(my $l = <$FH>)
+    while (my $l = <$FH>)
     {
         chomp($l);
         $l =~ s/^chr23/X/i;

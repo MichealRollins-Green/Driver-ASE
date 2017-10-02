@@ -58,7 +58,7 @@ sub gdc_parser
     
     my @cancer = split(" ",$cancer_type);
     
-    foreach my $cancer_type(@cancer)
+    foreach my $cancer_type (@cancer)
     {
         #Go to this web to change hex into ASCII;
         #https://en.wikipedia.org/wiki/ASCII;
@@ -139,11 +139,11 @@ sub parse_patient_id
     my $datatable_file = shift; #output data to a datatable file
     open (my $in, $metadata_file); #open input_file
     chomp(my @data = <$in>);
-    close $in;
+    close ($in);
     open (PID,">$datatable_file");
     shift @data;  #remove headers
     
-    foreach my $lines(@data)
+    foreach my $lines (@data)
     {
         my @split_line = split("\t",$lines);
         my $Patient_ID_column = $split_line[1];
@@ -203,15 +203,15 @@ sub parse_meta_id
     
     open (UUIDS, "$UUID_list");
     chomp(my @all_bam_uuids = <UUIDS>);
-    close UUIDS;
+    close (UUIDS);
     
     open (my $fh,"$meta_table");
     chomp(my @table = <$fh>);
-    close $fh;
+    close ($fh);
     open (PMI,">$meta_ids");
     shift @table; #remove headers
     
-    foreach my $line(@table)
+    foreach my $line (@table)
     {
         my @split_line = split("\t", $line);
         my @ids = grep{!/\.xml/}@split_line;
@@ -219,7 +219,7 @@ sub parse_meta_id
         map
         {
             my $id = $_;
-            foreach my $i(@all_bam_uuids)
+            foreach my $i (@all_bam_uuids)
             {
                 $bam_uuid = $id if ($id eq $i);
             }
@@ -272,7 +272,7 @@ sub ref_parse
     my @ref_txts = grep{!/^\./ && -f "$ref_tmp/$_"} readdir(REF);
     closedir (REF);
     
-    foreach my $txt(@ref_txts)
+    foreach my $txt (@ref_txts)
     {
         my($RID,$UID) = split("\\.",$txt);
         $/ = undef;
@@ -284,11 +284,11 @@ sub ref_parse
             \/>
             /ismx);#STANDARD short_name=\"(.*)\"
         $refs{$UID} = $ref_info if defined($ref_info);
-        close JSON;
+        close (JSON);
         $/ = "\n";
     }
     `rm -rf $ref_tmp`;
-    foreach my $key(keys %refs)
+    foreach my $key (keys %refs)
     {
         print RP "$key\t$refs{$key}\n";
     }
@@ -346,7 +346,7 @@ sub pull_matched_tn_GDC
     close (MI);    
     open (MO,">$final_downloadtable");
     my @all_keys = keys %ID_ref_platfm;
-    foreach my $k(keys %uniq_ID_ref_platfm)
+    foreach my $k (keys %uniq_ID_ref_platfm)
     {
         my @targets = grep{/$k/i;}@all_keys;
        if (@targets > 1)
@@ -359,11 +359,11 @@ sub pull_matched_tn_GDC
                 my $v = pop @xs;
                 [$t,$v];
             }@targets;
-            foreach my $vv(@tmp)
+            foreach my $vv (@tmp)
             {
                if ($vv->[1] < 10)
                 {
-                    foreach my $xx(@tmp)
+                    foreach my $xx (@tmp)
                     {
                        if ($xx->[1] > 9)
                         {
@@ -472,7 +472,7 @@ sub Dwld_WGSBam_and_do_mpileup
         
         #Going to do downloading and do mpileups for these bams.
         
-        foreach my $f(sort @fs)
+        foreach my $f (sort @fs)
         {
             print "Now start to download bams in the file $f!\n";
             #dwnld_wgs_or_rna(bamlist,key directory,bam output directory)
@@ -504,7 +504,7 @@ sub mk_files_for_wgs
     
     $wgs_bam_dir =~ s/\/$//;
     my @rst;
-    while(my $r = <FFW>)
+    while (my $r = <FFW>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -534,7 +534,7 @@ sub mk_files_for_wgs
             }
         }
     }
-    close FFW;
+    close (FFW);
     return @rst;
 }
 
@@ -547,7 +547,7 @@ sub launch_wgs_mpileup_and_VarScan
     my $tumor;
     my $normal;
     my $done_wgs; #file that will be written to when WGS bams have finish mpileups
-    foreach my $tn_bam(@$bam_fullpaths_ref)
+    foreach my $tn_bam (@$bam_fullpaths_ref)
     {
     	if (-e "$tables/already_done_WGS.txt")
     	{
@@ -667,7 +667,7 @@ sub Bam_Ref_Checker
         my $ls=`$samtools view -H $Bam`;
         #print $ls,"\n";
         my @as = split("\n",$ls);
-        foreach my $chr_ref(@as)
+        foreach my $chr_ref (@as)
         {
             my $a = $chr_ref;
             ($tag) = $a =~ /\bSN:(\S+)\s/;
@@ -713,7 +713,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             `ls $cds_sorted_path > cds_beds.txt`;
             open (CDS,"cds_beds.txt");
             open (CDO,">cds_beds_out.txt");
-            while(my $r = <CDS>)
+            while (my $r = <CDS>)
             {
                 chomp($r);
                 $r = substr($r,0,12);
@@ -733,7 +733,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
             @already_done = grep{chomp;-s "$mpileup_outdir/$_";}@already_done;
             my %already_done = map{my($k,$v) = $_ =~ /([^\.]+)\.([^\.]+)/;$k=>$v}@already_done;
             open (my $NBAMs,">$bamlist.new");
-            while(my $b = <$BAMs>)
+            while (my $b = <$BAMs>)
             {
                 chomp($b);
                 my @es = split("\t",$b);
@@ -761,7 +761,7 @@ sub Dwld_RNASeq_Bam_and_do_mpileup
         my @fs = grep{/^x[a-z]{2}$/} readdir(CURR);
         closedir (CURR);
         
-        foreach my $f(sort @fs)
+        foreach my $f (sort @fs)
         {
             print "Download starting for bams in the file $f!\n";
             #dwnld_wgs_or_rna(bamlist,ker directory,bam output directory)
@@ -791,7 +791,7 @@ sub launch_RNA_Seq_pileup
     
     open (LPI,"$bam_file");
 
-    while(my $r = <LPI>)
+    while (my $r = <LPI>)
     {
         chomp($r);
         my @a = split("\t",$r);      
@@ -805,9 +805,9 @@ sub launch_RNA_Seq_pileup
             opendir (DIR_FH,$cds_dir);
             my @cds = readdir DIR_FH;
             @cds = grep{/$a[1]/}@cds;
-            closedir(DIR_FH);
+            closedir (DIR_FH);
             #Runs a foreach loop because there may be TCGA IDs that are the same but with different sample types.
-            foreach my $cd(@cds)
+            foreach my $cd (@cds)
             {
                 chomp($cd);
                 $cd =~ s/\/$//;
@@ -868,7 +868,7 @@ sub dwnld_wgs_or_rna
     my $token = ImportAlldataIntoVar("$key_dir/gdc.key");
     my @cmds;
     my $cmd;
-    while(my $r = <DW>)
+    while (my $r = <DW>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -941,7 +941,7 @@ sub download_files_from_gdc
     my $token = ImportAlldataIntoVar("$key_dir/gdc.key");
     my @cmds;
     
-    while(my $r = <DW>)
+    while (my $r = <DW>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -996,7 +996,7 @@ sub Delete_Files_Recursively
     
     my @files2delete;
 
-    foreach my $item(@all)
+    foreach my $item (@all)
     { 	
         push(@files2delete,$item) if $item =~ /$rgx/i;
     }
@@ -1030,7 +1030,7 @@ sub dir
     my @both = glob("*");
 
     my @folders;
-    foreach my $item(@both)
+    foreach my $item (@both)
     {
 	if (-d $item)
         {
@@ -1044,7 +1044,7 @@ sub dir
 	}
     }
 
-    foreach my $this_folder(@folders)
+    foreach my $this_folder (@folders)
     {
 	#Add the directory name to the return list - comment the next line if you don't want this feature.
 	push(@all,"$this_folder/");
@@ -1053,7 +1053,7 @@ sub dir
 	my $full_path = "$current_folder/$this_folder";
         
 	my @deep_items = dir($full_path); # :RECURSION:
-	foreach my $item(@deep_items)
+	foreach my $item (@deep_items)
         {
 	    push(@all,"$this_folder/$item");
 	}
@@ -1068,7 +1068,7 @@ sub ImportAlldataIntoVar
     my $file = shift;
     open (FH, "$file");
     my $all = <FH>;
-    close FH;
+    close (FH);
     $/ = "\n";
     return $all;
 }

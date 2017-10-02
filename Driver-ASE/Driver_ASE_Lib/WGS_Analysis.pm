@@ -40,7 +40,28 @@ sub new
     return($self);
 }
 
-###############################subs#############################
+###############################subs#############################\
+
+sub filter_not_done_somatic
+{
+    my $self = shift;
+    my ($not_done,$lookup_file,$compare_file,$WGS_Path,$somatic) = @_;
+    
+    $parsing->vlookup("$lookup_file",2,"$compare_file",1,1,"y","$WGS_Path/$somatic\_look.txt");
+    my @filter_done = `cat $WGS_Path/$somatic\_look.txt`;
+    
+    open (SO,">$not_done");
+    for my $sl (@filter_done)
+    {
+        if ($sl =~ /\tNaN+$/i)
+        {
+            chomp($sl);
+            my $mp = [split("\t",$sl)]->[0];
+            print SO $mp,"\n";
+        }
+    }
+    close (SO);
+}
 
 sub Varscan_filter
 {
@@ -81,26 +102,13 @@ sub Varscan_filter
     #22: normal_reads2_minus      0
     my @dd;
     #directory or file will be passed to routine based on if user wants to overlap data or not
-    if (-d $wgs_mpileups)
-    {
-        opendir (DD,$wgs_mpileups);
-        @dd = grep{!/^\./ && -f "$wgs_mpileups/$_"} readdir(DD);
-        closedir (DD);
-    }
-    elsif (-f $wgs_mpileups)
-    {
-        @dd = `cat $wgs_mpileups`;
-    }
-    else
-    {
-        print STDERR "$wgs_mpileups is not a file or directory!\n";
-        exit;
-    }
+
+    @dd = `cat $wgs_mpileups`;
     
-    for(my $i = 0;$i < scalar(@dd);$i++)
+    for (my $i = 0;$i < scalar(@dd);$i++)
     {
+        chomp ($dd[$i]);
         my $newfile = $dd[$i];
-        chomp($newfile);
         if ($newfile =~ /\//)
         {
             $newfile = [split("/",$newfile)]->[-1];
@@ -108,15 +116,7 @@ sub Varscan_filter
         $newfile =~ s/\.(snp|indel)//;
         $newfile =~ s/\.varscan//;
         
-        my $V;
-        if (-d $wgs_mpileups)
-        {
-            open ($V,"$wgs_mpileups/$dd[$i]");
-        }
-        else
-        {
-            open ($V,"$dd[$i]");
-        }
+        open (my $V,"$dd[$i]");
         
         open (SOM,">>$somatic/$newfile");
         while (my $l = <$V>)
@@ -176,18 +176,36 @@ sub VarscanTable2Simple
 
 sub mk_files_for_wgs
 {
-    my $somatic = shift; #path to directory where somatic data is stored, file that will list somatic data files
+    my $somatic = shift; 
     my $self = $somatic and $somatic = shift if ref $somatic;
     my $somatic_list = shift;
     
-    opendir (DD,$somatic);
-    my @dd = grep{!/^\./ && -f "$somatic/$_"} readdir(DD);
-    closedir (DD);
+    my @dd;
+    if (-d $somatic)
+    {
+        opendir (DD,$somatic);
+        @dd = grep{!/^\./ && -f "$somatic/$_"} readdir(DD);
+        closedir (DD);
+    }
+    elsif (-f $somatic)
+    {
+        @dd = `cat $somatic`;
+    }
+    
     open (MFO,">$somatic_list");
    
-    for(my $i = 0;$i < scalar(@dd);$i++)
-    {  
-        print MFO $somatic."/".$dd[$i], "\t", $dd[$i], "\n";
+    for (my $i = 0;$i < scalar(@dd);$i++)
+    {
+        chomp($dd[$i]);
+        if (-d $somatic)
+        {
+            print MFO $somatic."/".$dd[$i], "\t", $dd[$i], "\n";
+        }
+        elsif (-f $somatic)
+        {
+            my $somatic_file = [split("/",$dd[$i])]->[-1];
+            print MFO $dd[$i],"\t",$somatic_file,"\n";
+        }
     }
     close (MFO);
 }
@@ -200,7 +218,7 @@ sub var_ID_to_bed
     
     open (VTBI,"$rowlabels");
     open (VTBO,">$varsbed");
-    while(my $r = <VTBI>)
+    while (my $r = <VTBI>)
     {
         chomp($r);
         my @a = split("\-",$r);
@@ -219,7 +237,7 @@ sub simpl
     
     open (SI,"$reg_file");
     open (SO,">$output_bed");
-    while(my $r = <SI>)
+    while (my $r = <SI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -237,7 +255,7 @@ sub up_down_tss
     
     open (UDTI,"$bed_file");
     open (UDTO,">$output_bed");
-    while(my $r = <UDTI>)
+    while (my $r = <UDTI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -278,7 +296,7 @@ sub print_1
     
     open (PRI,"$upstream_bed");
     open (PRO,">$output_bed");
-    while(my $r = <PRI>)
+    while (my $r = <PRI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -296,7 +314,7 @@ sub up_tss_gene
     
     open (UTGI,"$upstream_bed");
     open (UTGO,">$output_bed");
-    while(my $r = <UTGI>)
+    while (my $r = <UTGI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -336,7 +354,7 @@ sub vlookem_all
     
     open (COL,">collabels.txt");
     
-    for(my $i = 0;$i < scalar(@dd);$i++)
+    for (my $i = 0;$i < scalar(@dd);$i++)
     {
         my $cc2 = $cc + 1;
         
@@ -358,7 +376,7 @@ sub my_up_down_tss
     
     open (MUDTI,"$refseq_hg9_bed");
     open (MUDTO,">$refseq_hg9_output");
-    while(my $r = <MUDTI>)
+    while (my $r = <MUDTI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -402,7 +420,7 @@ sub mk_coding
     open (MCI,"$var_bed");
     open (MCO,">$var_bed_output");
     
-    while(my $r = <MCI>) 
+    while (my $r = <MCI>) 
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -508,14 +526,14 @@ sub Syn
     print "Making sequence lookup table\n";
     my %hash = ();
     open (LOOK,$ccds_tab);
-    while(my $r = <LOOK>)
+    while (my $r = <LOOK>)
     {
         $r =~ /(.*?)\t(.*?)\n/;#hash of ccds id and fasta seq;
         $hash{$1} = $2;
     }
     
     print "Going through your file\n";
-    while(my $r = <F>)
+    while (my $r = <F>)
     {
         my @a = split("\t",$r);
         
@@ -619,12 +637,12 @@ sub get_codon
     push(@ss,$e - $s);
     my $txs = 0;
     
-    for(my $i = 1;$i < scalar(@ss);$i++)
+    for (my $i = 1;$i < scalar(@ss);$i++)
     {
         if (($poss >= $ss[$i-1]) & ($poss < $ss[$i]))
         {
             #add up exon lenghts to here
-            for(my $j = 0;$j < $i-1;$j++)
+            for (my $j = 0;$j < $i-1;$j++)
             {
                 $txs += $ll[$j];
             }
@@ -638,7 +656,7 @@ sub get_codon
     if ($orient eq '-')
     {
         my $txlen = 0;
-        for(my $i = 0;$i < scalar(@ll);$i++)
+        for (my $i = 0;$i < scalar(@ll);$i++)
         {
             $txlen += $ll[$i];#Get the total length of exons;
         } #end for
@@ -805,7 +823,7 @@ sub mk_uniq_label
     
     open (MULI,"$subs_syn");
     open (MULO,">$subs_syn_out");
-    while(my $r = <MULI>)
+    while (my $r = <MULI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -823,7 +841,7 @@ sub process_syn
     
     open (PSI,"$subs_syn_process");
     open (PSO,">$subs_process_out");
-    while(my $r = <PSI>)
+    while (my $r = <PSI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -842,7 +860,7 @@ sub process_shifts
     
     open (PRSI,"$overlap_input");
     open (PRSO,">>$shifts_append");
-    while(my $r = <PRSI>)
+    while (my $r = <PRSI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -875,7 +893,7 @@ sub pt
     
     open (PTI,"$rowlabels");
     open (PTO,">$rowlabels_out");
-    while(my $r = <PTI>)
+    while (my $r = <PTI>)
     {
         chomp($r);
         my @a = split("\t",$r);

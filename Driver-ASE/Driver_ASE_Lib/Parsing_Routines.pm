@@ -49,12 +49,12 @@ sub usage
     my $script = shift;
     my $self = $script and $script = shift if ref $script;
     
-    if(!defined $script)
+    if (!defined $script)
     {
         $script = "";
     }
     
-    if($script eq "0")
+    if ($script eq "0")
     {
         print "usage: program [--cancer|-c cancer_type (e.g. PRAD)] [--Expstrategy|-E Experimental strategy (Genotyping array)] [--arraytype|-a array data type (e.g. Genotypes or “Copy number estimate”)] [--download|-d curl or aria2c] [--key|-k path to gdc key] [--help|-h]\n";
         
@@ -64,7 +64,7 @@ sub usage
         Copy number estimate
         Genotypes', "\n";
     }
-    elsif($script eq "0_table")
+    elsif ($script eq "0_table")
     {
         print "usage: program [--cancer|-c cancer_type (e.g. PRAD)] [--Expstrategy|-E Experimental strategy (Genotyping array)] [--arraytype|-a array data type (e.g. Genotypes or “Copy number estimate”)] [--help|-h]\n";
         
@@ -74,39 +74,39 @@ sub usage
         Copy number estimate
         Genotypes', "\n";
     }
-    elsif($script eq "1.1")
+    elsif ($script eq "1.1")
     {
 	print "usage: script [--cancer|-c cancer_type (e.g. PRAD)] [--plink|-p path to plink] [--sampletype|-s 0(normal)|1(tumor)|2(normal/tumor)] [--help|-h]\n";
     }
-    elsif($script eq "1.2")
+    elsif ($script eq "1.2")
     {
 	print "usage: script [--cancer|-c cancer_type (e.g. PRAD)] [--shapeit|-s path to shapeit] [--impute|-i path to impute2] [--help|-h]\n";
     }
-    elsif($script eq "1.3")
+    elsif ($script eq "1.3")
     {
 	print "usage: script [--cancer|-c cancer_type (e.g. PRAD)] [--plink|-p path to plink] [--help|-h]\n";
     }
-    elsif($script eq "3.0")
+    elsif ($script eq "3.0")
     {
         print "usage: program [--cancer|-c cancer_type (e.g. PRAD)] [--Expstrategy|-E Experimental strategy (e.g. WGS/RNA-Seq)] [--option|-o all, download or mpileups] [--intersect|-i (y|yes|n|no)] [--number|-n number of bams to download for RNA-Seq and number of bam pairs for WGS] [--download|-d curl or aria2c] [--samtools|-s path to samtools] [--VarScan|-V path to the VarScan jar file (Enter if -E is WGS)] [--key|-k path to gdc key] [--help|-h]\n";
     }
-    elsif($script eq "3.0_table")
+    elsif ($script eq "3.0_table")
     {
         print "usage: program [--cancer|-c cancer_type (e.g. PRAD)] [--Expstrategy|-E Experimental strategy (e.g. WGS/RNA-Seq)] [--download|-d curl or aria2c] [--overlap|-o (n|no|y|yes)] [--key|-k path to gdc key] [--help|-h]\n";
     }
-    elsif($script eq "3.1")
+    elsif ($script eq "3.1")
     {
 	print "usage: script [--cancer|-c cancer_type (e.g. PRAD)] [--overlapSelect|-S path to overlapSelect] [--overlap|-o (y|yes|n|no)] [--help|-h]\n";
     }
-    elsif($script eq "3.2")
+    elsif ($script eq "3.2")
     {
 	print "usage: script [--cancer|-c cancer_type (e.g. PRAD)] [--overlapSelect|-S path to overlapSelect] [--badsnpcnvs|-b (y|yes|n|no)] [--overlap|-o (y|yes|n|no)] [--duplicates|-d (y|yes|n|no)] [--remfiles|-r (y|yes|n|no)] [--archive|-a (y|yes|n|no)] [--help|-h]\n";
     }
-    elsif($script eq "4.0")
+    elsif ($script eq "4.0")
     {
 	print "usage: program [--cancer|-c (e.g. PRAD)] [--readcutoff|-r read cutoff (e.g. 20)] [--tfreq|-t tumor alt frequency (e.g. 0.1)] [--nfreq|-n normal alt frequency (e.g. 0.1)] [--overlap|-o (y|yes|n|no)] [--help|-h]\n"
     }
-    elsif($script eq "4.1")
+    elsif ($script eq "4.1")
     {
 	print "usage: script [--cancer|-c cancer_type (e.g. PRAD)] [--overlap|-o (y|yes|n|no)] [--remfiles|-r (y|yes|n|no)] [--archive|-a (y|yes|n|no)] [--overlapSelect|-S path to overlapSelect] [--help|-h]\n"
     }
@@ -162,7 +162,7 @@ sub check_directory_existence
     my @directories = @_; #directories and/or files to search for
     my @msg;
     my $cnt = 0;
-    foreach my $dir(@directories)
+    foreach my $dir (@directories)
     {
 	if (!(-d $dir) and !(-f $dir))
 	{
@@ -327,18 +327,18 @@ sub QueryBase
     open (Q,$Qfile);
     open (RES,">$outfile");
     my %hash;
-    while(my $l = <Q>)
+    while (my $l = <Q>)
     {
     	chomp($l);
     	my @line1;
-    	if($l =~ /^\s*$/)
+    	if ($l =~ /^\s*$/)
         {
             next;
 	}
         else
         {
 	    @line1 = split("\t",$l);
-            if($KeepAllColsinQeryFile eq 1)
+            if ($KeepAllColsinQeryFile eq 1)
             {
                 push @{$hash{$line1[$queryCol]}},$l unless $line1[$queryCol] eq "";
             }
@@ -348,26 +348,26 @@ sub QueryBase
             }
         }
     } 
-    close Q;
+    close (Q);
     
     chomp(my @temp_array = <BASE>);
     close (BASE);
     my @headers = split("\t",$temp_array[0]);
-    foreach my $q(keys %hash)
+    foreach my $q (keys %hash)
     {
         foreach my $b (@temp_array)
         {
 	    my @tmp = split("\t",$b);
             my $match_idx = get_element_position_in_array($q,\@tmp);
             my $rgx_match_idx = get_rgx_matched_position_in_array($returnCols_rgx,\@tmp);
-            if($match_idx >= 0 and $rgx_match_idx >= 0)
+            if ($match_idx >= 0 and $rgx_match_idx >= 0)
             {
 		foreach my $v (@{$hash{$q}})
                 {
                     print RES $v,"\t",$tmp[$rgx_match_idx],"\n";
 		}
             }
-            elsif($match_idx >= 0)
+            elsif ($match_idx >= 0)
             {
 		foreach my $v (@{$hash{$q}})
                 {
@@ -386,7 +386,7 @@ sub get_element_position_in_array
     my $target_array_ref = shift;
     my ($index) = grep {$$target_array_ref[$_] eq $search_for}0..$#$target_array_ref;
     
-    if(defined($index))
+    if (defined($index))
     {
         return $index;
     }
@@ -403,7 +403,7 @@ sub get_rgx_matched_position_in_array
     my $target_array_ref = shift;
     my ($index) = grep { $$target_array_ref[$_] =~ /$search_for/i } 0..$#$target_array_ref;
     
-    if(defined($index))
+    if (defined($index))
     {
         return $index;
     }
@@ -426,17 +426,17 @@ sub vlookup
     my $col = $lookupCol;
     $col -= 1;
     my $nan = '';
-    for(my $i = 0;$i < scalar(@cols);$i++)
+    for (my $i = 0;$i < scalar(@cols);$i++)
     {
         $cols[$i] -= 1; $nan = $nan."\t"."NaN"
     }
     $nan =~ s/^\t//;
     
     my %look = ();
-    while(my $r = <L>)
+    while (my $r = <L>)
     {
         chomp($r);
-        if($r eq "")
+        if ($r eq "")
         {
             next;
         }
@@ -450,17 +450,17 @@ sub vlookup
     
     # parse through sourceFile and print, appending if $append eq y
     open (S,$lookupfile);
-    while(my $r = <S>)
+    while (my $r = <S>)
     {
         chomp($r);
-        if($r eq '')
+        if ($r eq '')
         {
             next;
         }
         my @a = split("\t",$r);
-        if(exists($look{$a[$queryCol-1]}))
+        if (exists($look{$a[$queryCol-1]}))
         { 
-           if($append eq 'y')
+           if ($append eq 'y')
             {
                 print VO $r, "\t", $look{$a[$queryCol-1]}, "\n";
             }
@@ -472,7 +472,7 @@ sub vlookup
         else
         {
             #not in sourceFile
-            if($append eq 'y')
+            if ($append eq 'y')
             {
                 print VO $r, "\t", $nan, "\n";
             }
@@ -495,12 +495,12 @@ sub pull_column
     
     open (P,$infile);
     open (C,">$outfile");
-    for(my $i=0;$i < scalar(@cols);$i++)
+    for (my $i=0;$i < scalar(@cols);$i++)
     {
         $cols[$i]-=1;
     }
     
-    while(my $r = <P>) 
+    while (my $r = <P>) 
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -521,19 +521,19 @@ sub strip_head
     
     open (S,$infile);
     open (H,">$outfile");
-    for(my $i = 0;$i < $num_lines;$i++)
+    for (my $i = 0;$i < $num_lines;$i++)
     {
         my $r = <S>;
     }
-    while(my $r = <S>)
+    while (my $r = <S>)
     {
-        if(defined $col_nums)
+        if (defined $col_nums)
         {
             my @tmps;
             chomp($r);
             @tmps = split("\t",$r);
             @tmps = split("$sep",$r) if defined $sep;
-            if(defined $sep)
+            if (defined $sep)
             {
                 print H join("$sep",$tmps[$col_nums]),"\n"; 
             }
@@ -601,9 +601,9 @@ sub matricize
         close (FF);
        
         # append to out
-        for(my $i = 0;$i < scalar(@ids);$i++)
+        for (my $i = 0;$i < scalar(@ids);$i++)
         {
-            if(exists($hash{$ids[$i]}))
+            if (exists($hash{$ids[$i]}))
             {
                 $out[$j][$i] = $hash{$ids[$i]};
             }
@@ -626,10 +626,10 @@ sub matricize
     print ROW join("\n",@ids), "\n";
     close (ROW);
     open (MAT,">$dirpath/matrix.tab");
-    for(my $i = 0;$i < scalar(@ids);$i++)
+    for (my $i = 0;$i < scalar(@ids);$i++)
     {
         my $lineout = '';
-        for(my $k = 0;$k < $j;$k++)
+        for (my $k = 0;$k < $j;$k++)
         {
             $lineout .= $out[$k][$i]."\t";
         }
@@ -692,9 +692,9 @@ sub matricize_version_two
         close (FF);
         
         # append to out
-        for(my $i = 0;$i < scalar(@ids);$i++)
+        for (my $i = 0;$i < scalar(@ids);$i++)
         {
-            if(exists($hash{$ids[$i]}))
+            if (exists($hash{$ids[$i]}))
             {
                 $out[$j][$i] = $hash{$ids[$i]};
             }
@@ -716,17 +716,17 @@ sub matricize_version_two
     print OUT join("\n",@ids), "\n";
     close (OUT);
     open (OUT,">matrix.tab");
-    for(my $i = 0;$i < scalar(@ids);$i++)
+    for (my $i = 0;$i < scalar(@ids);$i++)
     {
         my $lineout = '';
-        for(my $k = 0;$k < $j;$k++)
+        for (my $k = 0;$k < $j;$k++)
         {
             $lineout .= $out[$k][$i]."\t";
         }
         $lineout =~ s/\t$/\n/;
         print OUT $lineout;
     }
-    close OUT;
+    close (OUT);
 }
 
 ############matricize and matricize.v2 sub####################
@@ -894,7 +894,7 @@ sub Intersect_Files
 	    my @new_array = split("\t",$line);
 	    push @AllItems,$Letters_hash{$f}."_".$new_array[$col];              
 	}
-	close $fileHandle; 
+	close ($fileHandle); 
     }0..$#filename;
     
     foreach my $key (@AllItems)
@@ -931,7 +931,7 @@ sub Intersect_Files
 	@ls = grep{!$uniq{$_}++}@ls;
 	
 	#Long format data for other software;
-	foreach my $e(@unique_items)
+	foreach my $e (@unique_items)
 	{	
 	    print INF $inv_key,"\t";
 	    print INF join("|",@filename_hash{sort @ls}),"\t",$e,"\n";
@@ -961,7 +961,7 @@ sub archive_files
     for (my $i = 0;$i < scalar(@files_to_archive);$i++)
     {
 	my @file_list = `cat $files_to_archive[$i]`;
-	foreach my $files(@file_list)
+	foreach my $files (@file_list)
 	{
 	    chomp($files);
 	    if ($files =~ /\t/)

@@ -100,7 +100,7 @@ sub pileup_at_cd
     open (MP,"$mpileupfile");
     open (CD,"$cd_sorted_file");
     open (ASEC,">$ase_count");
-    while(my $r = <CD>)
+    while (my $r = <CD>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -108,7 +108,7 @@ sub pileup_at_cd
     }
     close (CD);
     
-    while(my $r = <MP>)
+    while (my $r = <MP>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -119,7 +119,7 @@ sub pileup_at_cd
 	}
         my $cd = $CD{$a[0]."-".$a[1]};
             my($a_counts,$b_counts) = get_counts($cd,$a[4]);
-            if( ($a_counts == 0) && ($b_counts == 0))
+            if (($a_counts == 0) && ($b_counts == 0))
 	    {
 		next;
 	    }    
@@ -127,7 +127,7 @@ sub pileup_at_cd
             #Which is important for later calculation of gene level ase.
             #As the bed file will be intersected with the annotation bed
             $a[0]="chr".$a[0] if $a[0] =~ /^\d+/i;
-            $a[0]="chrX" if ( ($a[0] =~ /^x/i) or ($a[0] =~ /23/));
+            $a[0]="chrX" if (($a[0] =~ /^x/i) or ($a[0] =~ /23/));
             print ASEC $a[0], "-", $a[1]-1, "\t", $a[0], "\t", $a[1]-1, "\t", $a[1], "\t", $cd, "\t", $a_counts, "\t", $b_counts, "\n";
     }
     close (MP);
@@ -153,11 +153,11 @@ sub get_counts
         
         for (my $i = 0;$i < scalar(@ST);$i++)
         {
-	    if($ST[$i] eq $w[0])
+	    if ($ST[$i] eq $w[0])
 	    {
 	        $aa++;
 	    }
-	    elsif($ST[$i] eq $w[1])
+	    elsif ($ST[$i] eq $w[1])
 	    {
 	        $bb++;
 	    }
@@ -244,16 +244,16 @@ sub pull_TN
     my $bad_snp = 0;
     my $bad_cnv = 0;
     
-    if(-e $bad_cnv_dir."/".$old[1].".bed")
+    if (-e $bad_cnv_dir."/".$old[1].".bed")
     {
         $bad_cnv = 1;
     }
-    if(-e $bad_snp_bed_dir."/".$old[1].".bed")
+    if (-e $bad_snp_bed_dir."/".$old[1].".bed")
     {
         $bad_snp = 1;
     }
     
-    while($r = <PTNI>)
+    while ($r = <PTNI>)
     {
         chomp($r);
         @a = split("\t",$r);
@@ -359,11 +359,11 @@ sub have_cnv_snp
     open (HCSI,"$cnv_snps_file");
     open (HCSO,">$cnv_snps_sort_file");
     
-    while(my $r = <HCSI>)
+    while (my $r = <HCSI>)
     {
         chomp($r);
         my @a = split("\t",$r);
-        if( ($a[3] == 1) && ($a[4] == 1))
+        if (($a[3] == 1) && ($a[4] == 1))
         {
             print HCSO $r, "\n";
         }
@@ -382,7 +382,7 @@ sub mk_files_snps_cnvs
     open (N,">normal_ff");
     open (T,">tumor_ff");
     
-    while(my $r = <MKFI>)
+    while (my $r = <MKFI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -413,13 +413,13 @@ sub mk_files_tum_norm
     open (N,">normal_ff");
     open (T,">tumor_ff");
     
-    while(my $r = <MKFI>)
+    while (my $r = <MKFI>)
     {
         chomp($r);
         my @a = split("\t",$r);
 	#$a[1] =~ s/-[0-9]+[a-zA-Z]\.[a-zA-Z]+$//;
         
-        if($a[4] < 10)#prints if sample is normal
+        if ($a[4] < 10)#prints if sample is normal
         {
 	    if (lc $duplicates eq "y" || lc $duplicates eq "yes")
 	    {
@@ -457,7 +457,7 @@ sub run_problem_cnvs
     
     mkdir "$ase_path/$problem_cnvs" unless(-d "$ase_path/$problem_cnvs");
     system("rm -f $ase_path/$problem_cnvs/*");
-    while(my $r = <RPCI>)
+    while (my $r = <RPCI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -485,7 +485,7 @@ sub run_problem_snps
     
     open (PPSI,"$snps_tn_file");
     
-    while(my $r = <PPSI>)
+    while (my $r = <PPSI>)
     {
 	chomp($r);
 	my @a = split("\t",$r);
@@ -506,7 +506,7 @@ sub pull_problems
     
     open (PPI,"$snps_cnvs_pull_file");
     open (PPO,">$snps_cnvs_outdir");
-    while(my $r = <PPI>)
+    while (my $r = <PPI>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -529,8 +529,8 @@ sub Make4colBed
         print STDERR "The bed file $sorted_bed_file contains less than 6 cols!\n" and exit if @as<4;
         print $out join("\t",@as[0..3]),"\n";          
    }
-   close $F;
-   close $out;
+   close ($F);
+   close ($out);
    unlink $sorted_bed_file;
    rename "$sorted_bed_file.4col","$sorted_bed_file",;
 }
@@ -571,8 +571,8 @@ sub convert2mm
       
         print $OUT $out,"\n";
     }(<$FH>);
-   close $FH;
-   close $OUT;
+   close ($FH);
+   close ($OUT);
 }
 
 sub TallyOverDefBed
@@ -604,7 +604,7 @@ sub TallyOverDefBed
         exit;
     }
     
-    if($sr == 1)
+    if ($sr == 1)
     {
         #split file
         my $PFH = "P".rand();
@@ -614,9 +614,9 @@ sub TallyOverDefBed
         open ($PFH,">$ase_path/plus.$rr.bed");
         open ($MFH,">$ase_path/minus.$rr.bed");
         open ($FFH,$snp);
-        while(my $r = <$FFH>)
+        while (my $r = <$FFH>)
         {
-            if($r =~ /\t\+[\s]/)
+            if ($r =~ /\t\+[\s]/)
             {
                 print $PFH $r;
             }
@@ -625,21 +625,21 @@ sub TallyOverDefBed
                 print $MFH $r;
             }
         }
-       	close $FFH;
-       	close $MFH;
-        close $PFH;
+       	close ($FFH);
+       	close ($MFH);
+        close ($PFH);
     }
     
     # overlap with def.bed
     
-    if($sr == 1)
+    if ($sr == 1)
     {
         `$overlapSelect $def $ase_path/plus.$rr.bed -mergeOutput $ase_path/tmp.$rr.plus.out`;
         `$overlapSelect $def $ase_path/minus.$rr.bed -mergeOutput $ase_path/tmp.$rr.minus.out`;
         my $F_FH = "F_FH".rand();
         open ($F_FH,"$ase_path/tmp.$rr.plus.out");
         
-        while(my $r = <$F_FH>)
+        while (my $r = <$F_FH>)
         {    
             chomp($r);
             my @aa = split("\t",$r);
@@ -676,7 +676,7 @@ sub TallyOverDefBed
             my $ccan = eval("\$c$perl[0]");
             my $calt = eval("\$c$perl[1]");
            
-       	    if($phred > 0)
+       	    if ($phred > 0)
             {
                 #want a phred cut
        		
@@ -720,13 +720,13 @@ sub TallyOverDefBed
                	print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t+\n";
        	    }
         } #while plus
-        close $F_FH;
+        close ($F_FH);
         `rm $ase_path/tmp.$rr.plus.out`;
         
         my $FH = "FH".rand();
         open ($FH,"$ase_path/tmp.$rr.minus.out");
         
-        while(my $r = <$FH>)
+        while (my $r = <$FH>)
         {    
             chomp($r);
             my @aa = split("\t",$r);
@@ -763,7 +763,7 @@ sub TallyOverDefBed
             my $ccan = eval("\$c$perl[0]");
             my $calt = eval("\$c$perl[1]");
                	
-            if($phred > 0)
+            if ($phred > 0)
             {
                 #want a phred cut
        		
@@ -807,7 +807,7 @@ sub TallyOverDefBed
                	print $OUT_FH join("\t",@aa[0..2]), "\t", $aa[9]."\|".$can."\|".$alt."\|".$qcan."\|".$qalt."\|".$ccan."\|".$calt, "\t0\t-\n";
        	    }
         }
-       	close $FH;
+       	close ($FH);
        	unlink("$ase_path/tmp.$rr.minus.out");
     }
     else
@@ -817,7 +817,7 @@ sub TallyOverDefBed
         my $FH_= "FH_".rand();
         open ($FH_,"$ase_path/tmp.$rr.all.out");
      
-        while(my $r = <$FH_>)
+        while (my $r = <$FH_>)
         {    
             chomp($r);
             my @aa = split("\t",$r);
@@ -854,7 +854,7 @@ sub TallyOverDefBed
             my $ccan = eval("\$c$perl[0]");
             my $calt = eval("\$c$perl[1]");
 	    
-       	    if($phred > 0)
+       	    if ($phred > 0)
             {
                 #want a phred cut
        		
@@ -900,7 +900,7 @@ sub TallyOverDefBed
        	    }
        	    
         }
-        close $FH_;
+        close ($FH_);
        	unlink("$ase_path/tmp.$rr.all.out");
     }
 }
@@ -1012,10 +1012,10 @@ sub AlleleCount2bed
     unless($counts[2] == $counts[3])
     {
         
-	if(($counts[2] + $counts[3]) > 4)
+	if (($counts[2] + $counts[3]) > 4)
         {
 	    $informative_snps++;
-	    if($counts[2] > $counts[3])
+	    if ($counts[2] > $counts[3])
             {
 	        $aa_dir++;
 	    }
@@ -1026,7 +1026,7 @@ sub AlleleCount2bed
 	}
     }
     
-    while($r = <$BEDFH>)
+    while ($r = <$BEDFH>)
     {
         chomp($r);
         @x = split("\t",$r);
@@ -1048,10 +1048,10 @@ sub AlleleCount2bed
 	    $print_cd_out = $print_cd_out.",".$tt1[0]."|".$tt1[1];
             unless($counts[2] == $counts[3])
             {
-		if(($counts[2] + $counts[3]) > 4)
+		if (($counts[2] + $counts[3]) > 4)
                 {
 		    $informative_snps++;
-		    if($counts[2] > $counts[3])
+		    if ($counts[2] > $counts[3])
                     {
 			$aa_dir++;
 		    }
@@ -1065,7 +1065,7 @@ sub AlleleCount2bed
         else
         {
             my $ppp = get_p($can,$var,"$ase_path");
-            if($can < $var)
+            if ($can < $var)
             {
 		$ppp = $ppp*(-1);
 	    }	
@@ -1078,34 +1078,34 @@ sub AlleleCount2bed
 	    "\t", $var, "\t", $ppp, "\t", $logr, "\t", $orient;
             
             #if corodBed file has exon coordinates, print them
-            if($snps eq 'y')
+            if ($snps eq 'y')
             {
                 print $OUTFH "\t", $snps_out;
             }
             
-            if($agree eq 'y')
+            if ($agree eq 'y')
             {
                 my $agree_out = agree($aa_dir,$bb_dir);
                 my $num_snps = num($snps_out);
                 print $OUTFH "\t", $agree_out, "\t", $informative_snps;
 	    }
             
-            if($highest_b eq 'y')
+            if ($highest_b eq 'y')
             {
 		print $OUTFH "\t", highest_b($snps_out,"$ase_path");
 	    }
             
-            if($snp_ids eq 'y')
+            if ($snp_ids eq 'y')
             {
 		print $OUTFH "\t", $snp_ids_out;
 	    }
             
-            if($print_cd eq 'y')
+            if ($print_cd eq 'y')
             {
 		print $OUTFH "\t", $print_cd_out;
 	    }
             
-            if( (scalar(@pr) <= 18)|($sr eq '-selectRange'))
+            if ((scalar(@pr) <= 18)|($sr eq '-selectRange'))
             {
 		print $OUTFH "\n";
 	    }
@@ -1131,10 +1131,10 @@ sub AlleleCount2bed
     	    
             unless($counts[2] == $counts[3])
             {
-		if(($counts[2] + $counts[3]) > 4)
+		if (($counts[2] + $counts[3]) > 4)
                 {
 		    $informative_snps++;
-		    if($counts[2] > $counts[3])
+		    if ($counts[2] > $counts[3])
                     {
 			$aa_dir++;
 		    }
@@ -1159,7 +1159,7 @@ sub AlleleCount2bed
    
     # print last entry
     my $ppp = get_p($can,$var,"$ase_path");
-    if($can < $var)
+    if ($can < $var)
     {
         $ppp = $ppp*(-1);
     }	
@@ -1173,34 +1173,34 @@ sub AlleleCount2bed
     print $OUTFH $chr, "\t", $start, "\t", $end, "\t", $old, "\t", $can, "\t", $var, "\t", $ppp, "\t", $logr, "\t", $orient;
 
     #if corodBed file has exon coordinates, print them
-    if($snps eq 'y')
+    if ($snps eq 'y')
     {
         print $OUTFH "\t", $snps_out;
     }
     
-    if($agree eq 'y')
+    if ($agree eq 'y')
     {
 	my $agree_out = agree($aa_dir,$bb_dir);
 	my $num_snps = num($snps_out);
 	print $OUTFH "\t", $agree_out, "\t", $informative_snps;
     }
 
-    if($highest_b eq 'y')
+    if ($highest_b eq 'y')
     {
 	print $OUTFH "\t", highest_b($snps_out,"$ase_path");
     }
 
-    if($snp_ids eq 'y')
+    if ($snp_ids eq 'y')
     {
 	print $OUTFH "\t", $snp_ids_out;
     }
     
-    if($print_cd eq 'y')
+    if ($print_cd eq 'y')
     {
         print $OUTFH "\t", $print_cd_out;
     }
 
-    if( (scalar(@pr) <= 18)|($sr eq '-selectRange'))
+    if ((scalar(@pr) <= 18)|($sr eq '-selectRange'))
     {
 	print $OUTFH "\n";
     }
@@ -1257,11 +1257,11 @@ sub get_p
     my $total = $s + $t;
     my $out = 0;
     
-    if( ($s == 0) & ($t == 0))
+    if (($s == 0) & ($t == 0))
     {
         return 0;
     }
-    elsif($s < $t)
+    elsif ($s < $t)
     {
 	if (defined &pbinom)
         {
@@ -1287,7 +1287,7 @@ sub get_p
         
     }
     
-    if($out == 0)
+    if ($out == 0)
     {
         return 500;
     }
@@ -1301,7 +1301,7 @@ sub agree
 {
     my($aa,$bb) = @_;
     
-    if(($aa+$bb) == 0)
+    if (($aa+$bb) == 0)
     {
         return 0;
     }
@@ -1312,7 +1312,7 @@ sub max
 {
     my($aa,$bb) = @_;
 
-    if($aa > $bb)
+    if ($aa > $bb)
     {
         return($aa);
     }
@@ -1326,7 +1326,7 @@ sub min
 {
     my($aa,$bb) = @_;
 
-    if($aa > $bb)
+    if ($aa > $bb)
     {
         return($bb);
     }
@@ -1355,25 +1355,25 @@ sub highest_b
     
     my $b = min($1,$2);
     my $p_out = get_p($1,$2,"$RNA_ASE");
-    if($1 < $2)
+    if ($1 < $2)
     {
         $p_out = $p_out*-1;
     }
     
     $out =~ s/\|/\t/;
-    for(my $i = 1;$i < scalar(@w);$i++)
+    for (my $i = 1;$i < scalar(@w);$i++)
     {
         $w[$i] =~ /^([0-9]+)\|([0-9]+)/;
         my $ss = $1;
         my $tt = $2;
         $out =~ s/\|/\t/;
 	my $mm = min($ss,$tt);
-        if($mm > $b)
+        if ($mm > $b)
         {
             $out = $ss."\t".$tt;
 	    $b = $mm;
 	    $p_out = get_p($ss,$tt,"$RNA_ASE");
-	    if($ss < $tt)
+	    if ($ss < $tt)
             {
 		$p_out = $p_out*-1;
 	    }
@@ -1388,7 +1388,7 @@ sub ase_filter_overlap
     my $self = shift;
     my ($filter_names,$RNA_table_file,$output_names_file) = @_;
 
-    open(RMP,">lookup_file.txt");
+    open (RMP,">lookup_file.txt");
     foreach my $rnamp (@$filter_names)
     {
         chomp($rnamp);
@@ -1402,7 +1402,7 @@ sub ase_filter_overlap
     $parsing->vlookup("lookup_file.txt",3,"$RNA_table_file",2,2,"y","lookup_NaN.txt"); #new $RNA_table file contains only overlap IDs and matches those IDs to the IDs in the rna_look.txt file
 
     my @filt_mpileups = `cat lookup_NaN.txt`;
-    open(MPO,"> $output_names_file");
+    open (MPO,"> $output_names_file");
     foreach my $mpm (@filt_mpileups)
     {
         chomp($mpm);
@@ -1413,7 +1413,7 @@ sub ase_filter_overlap
             print MPO "$joined_mp","\n"; #prints the path to the mpileup file
         }
     }
-    close(MPO);      
+    close (MPO);      
 }
 
 sub print_ase_gene_level_path
@@ -1439,7 +1439,7 @@ sub print_ase_gene_level_path
     {
         print CGA "$ase\t$list_dir/$asea";
     }
-    close(CGA);
+    close (CGA);
 }
 
 1;

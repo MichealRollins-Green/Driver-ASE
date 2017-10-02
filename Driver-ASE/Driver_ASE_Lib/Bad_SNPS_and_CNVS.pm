@@ -50,9 +50,9 @@ sub pull_bed
     
     open (PB,$annot_csv_file);
     open (PBO,">$outfile");
-    while(my $r = <PB>)
+    while (my $r = <PB>)
     {
-        if($r=~/^\#/)
+        if ($r=~/^\#/)
         {
             next;
         }
@@ -74,14 +74,14 @@ sub pull_normal
     open (PN,$cnv_file_list);
     open (PNO,">$normal_cnv");
 
-    while(my $r = <PN>)
+    while (my $r = <PN>)
     {
         chomp($r);
         my $tcga = [split("\\.",$r)]->[-1];#Get TCGA ID
         my $tumor_type = [split("-",$tcga)]->[-1];#Get tumor/normal sample type
         $tumor_type =~ s/[a-zA-Z]$//;
         $tcga =~ s/-[0-9]+[a-zA-Z]$//;
-        if($tumor_type > 9)
+        if ($tumor_type > 9)
         {
             print PNO $r, "\t", $tcga, "\t", $tumor_type, "\n";
         }
@@ -98,7 +98,7 @@ sub mv_bcode
     
     open (MVB, $cds_sorted_list);
     open (MVBO, ">$cds_seperated");
-    while(my $r = <MVB>)
+    while (my $r = <MVB>)
     {
         chomp($r);
         my $TCGA_ID = $r;
@@ -119,7 +119,7 @@ sub hv_cd
     
     open (HVC,$infile);
     open (HVCO,">$outfile");
-    while(my $r = <HVC>)
+    while (my $r = <HVC>)
     {
         chomp($r);
         my @a = split("\t",$r);
@@ -140,11 +140,11 @@ sub dump_non_01_10_11
     
     open (DNI,$infile);
     open (DNO,">$outfile");
-    while(my $r = <DNI>)
+    while (my $r = <DNI>)
     {
         chomp($r);
         my @a = split("\t",$r);
-        if($a[3] eq '06')
+        if ($a[3] eq '06')
         {
             next;
         }
@@ -166,7 +166,7 @@ sub mk_tn_tables
     open (HCT,">$raw_file_name\_T");
     open (HCN,">$raw_file_name\_N");
     
-    while(my $r = <HC>)
+    while (my $r = <HC>)
     {
         chomp($r);
         my ($UUID,$TCGA) = split("\\.",$r);
@@ -178,7 +178,7 @@ sub mk_tn_tables
         {
             print HCN $TCGA, "\t", $r, "\t", $tcga_id, "\t", $tumor_type, "\n"; 
         }
-        elsif($tumor_type <= 9)
+        elsif ($tumor_type <= 9)
         {
             print HCT $TCGA, "\t", $r, "\t", $tcga_id, "\t", $tumor_type, "\n";   
         }
@@ -212,7 +212,7 @@ sub run_snps
             $parsing->vlookup("$bird/$a[2]",1,"$bird/$a[1]",1,2,"y","$tmp.txt");
             flag_snps("$tmp.txt","$RNA_Path/$a[0]");
         }
-        elsif(-f "$copy/$a[1]" and -f "$copy/$a[2]")
+        elsif (-f "$copy/$a[1]" and -f "$copy/$a[2]")
         {
             $parsing->vlookup("$copy/$a[2]",1,"$copy/$a[1]",1,2,"y","$tmp.txt");
             flag_snps("$tmp.txt","$RNA_Path/$a[0]"); 
@@ -237,11 +237,11 @@ sub flag_snps
     my $r = <FSI>;
     $r = <FSI>;
     
-    while($r = <FSI>)
+    while ($r = <FSI>)
     {
         chomp($r);
         my @a = split("\t",$r);
-        if($a[1] ne $a[3])
+        if ($a[1] ne $a[3])
         {
             print FSO $a[0], "\n";
         } 
@@ -325,15 +325,15 @@ sub smooth
     $CC[$i][2] = $a[4]+($a[5]-$a[4])/2;
     my $old_chr = $a[3];
     $i++;
-    while($r = <CHR>) 
+    while ($r = <CHR>) 
     {
         chomp($r);
-        if($r =~ /NA/)
+        if ($r =~ /NA/)
         {
             next;
         }
         @a = split("\t",$r);
-        if($a[3] ne $old_chr)
+        if ($a[3] ne $old_chr)
         {
             dumpit(\@CC,"$outfile");
             @CC = ();
@@ -346,7 +346,7 @@ sub smooth
         $i++;
     }
     dumpit(\@CC,"$outfile");
-    close CHR;
+    close (CHR);
 }
 
 ##########################################smooth subs##################################
@@ -363,22 +363,22 @@ sub dumpit
     my @diff = ();
     
     # make diff array
-    for(my $i = 0;$i < $ll;$i++)
+    for (my $i = 0;$i < $ll;$i++)
     {
         push(@diff,$de_ref[$i][1]);
     }
     
     # smooth
-    for(my $i = 0;$i < $ll;$i++)
+    for (my $i = 0;$i < $ll;$i++)
     {
         my $ss = $i - 250;
         my $ee = $i + 250;
         
-        if($ss < 0)
+        if ($ss < 0)
         {
             $ss = 0;
         }
-        if($ee > ($ll - 1))
+        if ($ee > ($ll - 1))
         {
             $ee = $ll - 1;
         }
@@ -387,7 +387,7 @@ sub dumpit
         
         print CHRO $de_ref[$i][0], "\t", $de_ref[$i][2], "\t", $mm, "\n";
     }
-    close CHRO;
+    close (CHRO);
 }
 
 sub avg
@@ -396,9 +396,9 @@ sub avg
     my $ll = 0;
     my $sum = 0;
     
-    for(my $i = 0;$i < scalar(@B);$i++)
+    for (my $i = 0;$i < scalar(@B);$i++)
     {
-        if($B[$i] =~ /^[\-\.0-9]+$/)
+        if ($B[$i] =~ /^[\-\.0-9]+$/)
         {
             $sum += $B[$i];
             $ll++;
@@ -432,27 +432,27 @@ sub delin_cnv
     my $old_chr = $a[0];
     my $old_pos = $a[1];
     my $ss=0;
-    if(abs($a[2]) >= $cut)
+    if (abs($a[2]) >= $cut)
     {
         $in = 1;
         $ss = $old_pos;
     }
     
-    while($r = <DCI>) 
+    while ($r = <DCI>) 
     {
         chomp($r);
         @a = split("\t",$r);
         $a[1] =~ s/\.5$//;
-        if(($a[0] ne $old_chr) & ($in == 1))
+        if (($a[0] ne $old_chr) & ($in == 1))
         {
             print DCO $old_chr, "\t", $ss, "\t", $old_pos, "\n"; $in=0; $ss=0;
         }
         
-        if(($in == 1) & (abs($a[2]) < $cut))
+        if (($in == 1) & (abs($a[2]) < $cut))
         { # leaving zone
             print DCO $old_chr, "\t", $ss, "\t", $old_pos, "\n"; $in=0;
         }
-        if((abs($a[2]) >= $cut) & ($in == 0))
+        if ((abs($a[2]) >= $cut) & ($in == 0))
         {
             $in = 1;
             $ss = $a[1];
@@ -460,8 +460,8 @@ sub delin_cnv
         $old_chr = $a[0];
         $old_pos = $a[1];
     }
-    close DCI;
-    close DCO;
+    close (DCI);
+    close (DCO);
 }
 
 1;
