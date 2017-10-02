@@ -23,111 +23,92 @@ my $dwnld = Driver_ASE_Lib::Dwnld_WGS_RNA->new;
 
 #the different oprions for this script. The out_dir and ase_dir are optional.
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'exp_strat|e=s' => \my $Exp_Strategy,#e.g. WGS RNA-Seq
-    'option|o=s' => \my $option,#either all, download or mpileups
-    'number|n=i' => \my $number,#the number of bams to download
-    'command|c=s' => \my $dwnld_cmd,#curl or aria2c (if aria or aria2 is entered, it changes them to aria2c as that is the command)
-    'var_path|v=s' => \my $VarScan_Path,#path to the VarScan.jar file
-    'key|k=s'=> \my $key,#path to the gdc key file
+    'cancer|c=s' => \my $cancer_type, #e.g. OV
+    'Expstrategy|E=s' => \my $Exp_Strategy, #e.g. WGS RNA-Seq
+    'option|o=s' => \my $option, #either all, download or mpileups
+    'intersect|i=s' => \my $overlap, #choice to overlap IDs
+    'number|n=i' => \my $number, #the number of bams to download
+    'download|d=s' => \my $dwnld_cmd, #curl or aria2c (if aria or aria2 is entered, it changes them to aria2c as that is the command)
+    'samtools|s=s' => \my $samtools, #path to samtools
+    'VarScan|V=s' => \my $VarScan_Path, #path to the VarScan jar file
+    'key|k=s'=> \my $key, #path to the gdc key file
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.0");
 
 #If -h was specified on the command line then the usage of the program will be printed.
-if($help)
+if ($help)
 {
     $parsing->usage("3.0");
 }
 
 #If the disease abbr or file type was not specified then an error will be printed and the usage of the program will be shown.
-if(!defined $disease_abbr || !defined $Exp_Strategy)
+if (!defined $cancer_type || !defined $Exp_Strategy)
 {
-    print "disease type and/or experimental strategy was not entered!\n";
+    print STDERR "Cancer type and/or experimental strategy was not entered!\n";
     $parsing->usage("3.0");
 }
 
 if ($Exp_Strategy ne "RNA-Seq" and $Exp_Strategy ne "WGS")
 {
-    print STDERR "The the experimental strategy entered must be RNA-Seq or WGS as these are what this pipeline deals with\n";
-    exit;
+    print STDERR "The experimental strategy entered is incorrect for this pipeline!\n";
+    $parsing->usage("3.0");
+}
+
+if (!defined $samtools)
+{
+    $samtools = "samtools";
 }
 
 my $Driver_ASE_Dir = realpath("../../");
 my $rna_dwnlds = "rna_dwnlds";
 my $wgs_dwnlds = "wgs_dwnlds";
-my $tables = "$disease_abbr\_tables";
+my $tables = "$cancer_type\_tables";
 my $cds_sorted = "cds_sorted";
 my $rna_mpileups = "rna_mpileups";
 my $wgs_mpileups = "wgs_mpileups";
 my $database_path = "$Driver_ASE_Dir/Database";
-
-#Check if the Database directory does not exist
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
-
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
+#Directory where all analysis data will be going in.
+my $Analysispath = realpath("../../Analysis");
+my $RNA_Path = "$Analysispath/$cancer_type/RNA_Seq_Analysis";
+my $ase = "$RNA_Path/ase";
+my $Intersect = "$cancer_type\_RNA_WGS_Geno.txt";
+my $downloadtable = "final_downloadtable_$cancer_type";
+my $RNA_table = "$downloadtable\_RNA-Seq.txt";
+my $WGS_table = "$downloadtable\_WGS.txt";
+my $Genotypes_table = "$cancer_type.Genotypes.id2uuid.txt";
+my $reference_file = "$cancer_type\_reference.txt";
+my $GRCh37_file = "GRCh37-lite.fa";
+my $hg19_file = "hg19.fa";
 
 #If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.
-if(!defined $key or (!(-f $key)))
+if (!defined $key)
 {
-    print "gdc key fullpath was not entered or the fullpath to it was not correct!\n";
-    print $key,"\n";
+    print STDERR "GDC key fullpath was not entered or the fullpath to it was not correct!\n";
     $parsing->usage("3.0");
 }
 
-if($Exp_Strategy eq "WGS")
+$parsing->check_directory_existence("$database_path","$key"); #check if directories or files exist
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
+
+if ($Exp_Strategy eq "WGS")
 {
-	if(!defined $VarScan_Path)
-	{
-		print STDERR "The VarScan path was not entered in\n";
-		$parsing->usage("3.0");
-	}
-	elsif(!(-e $VarScan_Path))
-	{
-		print STDERR "$VarScan_Path does not exist, enter in the correct path\n";
-	}
+    if (!defined $VarScan_Path)
+    {
+	print STDERR "The VarScan path was not entered!\n";
+	$parsing->usage("3.0");
+    }
+    else
+    {
+	$parsing->CheckSoftware("$VarScan_Path");
+    }
 }
 
 #The default choice will be to do download and mpileup if no option was specified
 #mpileups will only work if there are bams that have been downloaded and indexed
 $option = "all" unless defined $option;
-if($option ne "all" and $option ne "download" and $option ne "mpileups")
+if ($option ne "all" and $option ne "download" and $option ne "mpileups")
 {
-    print "The choice must be either all, download or mpileups.\n";
+    print STDERR "The choice must be either all, download or mpileups!\n";
     $parsing->usage("3.0");
 }
 
@@ -135,110 +116,104 @@ if($option ne "all" and $option ne "download" and $option ne "mpileups")
 if (!defined $dwnld_cmd)
 {
     $dwnld_cmd = "curl";
-    print "No download command specified, defaulting to $dwnld_cmd\n";
+    print "No download command specified! defaulting to $dwnld_cmd.\n";
 }
 elsif ($dwnld_cmd eq "curl" or $dwnld_cmd eq "aria2c")
 {
     print "Using $dwnld_cmd as the download command.\n";
 }
-elsif($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
+elsif ($dwnld_cmd eq "aria" or $dwnld_cmd eq "aria2")
 {
     print "$dwnld_cmd entered, converting to aria2c.\n";
     $dwnld_cmd = "aria2c";
 }
 else
 {
-    print "The download command must be either curl or aria2c.\n";
-    exit;
+    print STDERR "The download command must be either curl or aria2c!\n";
+    $parsing->usage("3.0")
 }
 
-mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
-#Directory where all analysis data will be going in.
-my $Analysispath = realpath("../../Analysis");
+$parsing->CheckSoftware("$samtools","$dwnld_cmd");
 
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
-my $ase = "$RNA_Path/ase";
+mkdir "$Driver_ASE_Dir/Analysis" unless (-d "$Driver_ASE_Dir/Analysis");
 
 if ($Exp_Strategy eq "RNA-Seq")
-{   
-    if(-d $RNA_Path)
-    {
-        if (!(-d "$RNA_Path/$cds_sorted"))
-        {
-            print STDERR "$RNA_Path/$cds_sorted does not exist, only downloads will be performed!\n";
-	    $option = "download";
-        } 
-    }
-    else
-    {
-        print STDERR "$RNA_Path does not exist, only downloads will be performed!\n";
-        $option = "download";
-    }
+{
+    $option = $parsing->determine_option("$RNA_Path","$cds_sorted","$option");
 }
 
-if($Exp_Strategy eq "RNA-Seq")
+if ($Exp_Strategy eq "RNA-Seq")
 {
     $number = 45 unless defined $number;
 }
-elsif($Exp_Strategy eq "WGS")
+elsif ($Exp_Strategy eq "WGS")
 {
-    if(!defined $number)
+    if (!defined $number)
     {
         $number = 2;
     }
-    elsif(0 != $number % 2)
+    elsif (0 != $number % 2)
     {
-        print STDERR "$Exp_Strategy are downloaded in pairs, enter an even number for the -n option";
+        print STDERR "$Exp_Strategy are downloaded in pairs! Enter an even number for the -n option";
         exit;
     }
 }
 
+if (!defined $overlap)
+{
+    $overlap = "no";
+}
+elsif (lc $overlap ne "n" and lc $overlap ne "no" and lc $overlap ne "y" and lc $overlap ne "yes")
+{
+    print STDERR "Incorrect option entered! options are n|no|y|yes.\n";
+    print $parsing->usage("3.0");
+}
+
 #Makes the directory where all of the results will be processed and stored.
-`mkdir -p $Analysispath/$disease_abbr` unless(-d "$Analysispath/$disease_abbr");
-chdir "$Analysispath/$disease_abbr";
+`mkdir -p $Analysispath/$cancer_type` unless (-d "$Analysispath/$cancer_type");
+chdir "$Analysispath/$cancer_type";
 
 my $OUT_DIR;
 #defaults to a directory if no output directory was specified in the command line.
 
-if($Exp_Strategy eq "RNA-Seq")
+if ($Exp_Strategy eq "RNA-Seq")
 {
-    $OUT_DIR = "$Analysispath/$disease_abbr/$rna_dwnlds/bams";
+    $OUT_DIR = "$Analysispath/$cancer_type/$rna_dwnlds/bams";
 }
-elsif($Exp_Strategy eq "WGS")
+elsif ($Exp_Strategy eq "WGS")
 {
-    $OUT_DIR = "$Analysispath/$disease_abbr/$wgs_dwnlds/bams";
+    $OUT_DIR = "$Analysispath/$cancer_type/$wgs_dwnlds/bams";
 }
 else
 {
-    print STDERR "Experimental Strategy must be either RNA-Seq or WGS.\n";
-    exit;
+    print STDERR "Experimental strategy is incorrect for this pipeline!\n";
+    $parsing->usage("3.0");
 }
 
 `mkdir -p "$OUT_DIR"`;
 
 $OUT_DIR =~ s/\/$//;
-`mkdir -p "$OUT_DIR"` unless(-d "$OUT_DIR");
+`mkdir -p "$OUT_DIR"` unless (-d "$OUT_DIR");
     
 #If the entered was mpileups then it will check if the directory where the bams were downloaded exists.
-if($option eq "mpileups")
+if ($option eq "mpileups")
 {   
-    if($Exp_Strategy eq "WGS" or $Exp_Strategy eq "RNA-Seq")
+    if ($Exp_Strategy eq "WGS" or $Exp_Strategy eq "RNA-Seq")
     {
-        if(!(-d "$OUT_DIR"))
+        if (!(-d "$OUT_DIR"))
         {
-            print "$OUT_DIR does not exist meaning that there were no downloads performed.\n";
-            print "Can't run mpileups on files that do not exits.\n";
+            print STDERR "$OUT_DIR does not exist! No downloads will be performed.\n";
+            print STDERR "Can't run mpileups on files that do not exits!\n";
             exit;
         }
     }  
 }
 
 my $rna_wgs_dir = dirname($OUT_DIR);
-chdir "$rna_wgs_dir" or die "Can't change to directory $rna_wgs_dir: $!\n";
-
+chdir "$rna_wgs_dir";
 
 #Gets the full path to the directory if the path was not set to the default directory.
-unless($OUT_DIR eq "$Analysispath/$disease_abbr/$rna_dwnlds/bams" or $OUT_DIR eq "$Analysispath/$disease_abbr/$wgs_dwnlds/bams")
+unless ($OUT_DIR eq "$Analysispath/$cancer_type/$rna_dwnlds/bams" or $OUT_DIR eq "$Analysispath/$cancer_type/$wgs_dwnlds/bams")
 {
     $rna_wgs_dir = realpath("../$rna_wgs_dir");
     $OUT_DIR = realpath("../$OUT_DIR");
@@ -249,32 +224,32 @@ unless($OUT_DIR eq "$Analysispath/$disease_abbr/$rna_dwnlds/bams" or $OUT_DIR eq
 $parsing->copyfile2newfullpath("$key","$rna_wgs_dir/gdc.key");
 
 #Checks if a table file does not exist in the tables directory of the cancer type.
-if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt"))
+if (($Exp_Strategy eq "RNA-Seq" and !(-f "$Analysispath/$cancer_type/$tables/$RNA_table")) or ($Exp_Strategy eq "WGS" and !(-f "$Analysispath/$cancer_type/$tables/$WGS_table")))
 {   
     #parses the gdc website manifest of the specified cancer type and prints to a results file.
-    #gdc_parser(cancer type(e.g. OV),type of data(RNA-Seq or WGS))
-    $dwnld->gdc_parser($disease_abbr,$Exp_Strategy);
+    #gdc_parser($cancer_type(e.g. OV),$Exp_Strategy (RNA-Seq or WGS))
+    $dwnld->gdc_parser($cancer_type,$Exp_Strategy);
     
     #Gets the metadata data of the file and places the UUID in a Payload.txt file.
     #metadata_collect(.result.txt file from gdc_parser,output file)
-    $dwnld->metadata_collect("$disease_abbr.result.txt","Payload.txt");
+    $dwnld->metadata_collect("$cancer_type.result.txt","Payload.txt");
     
     #Gets metadata files for each UUID and prints to a metadata file.
-    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $disease_abbr\_metadata.txt`;
+    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $cancer_type\_metadata.txt`;
     
     #Uses the metadata file to get data(i.e. UUID, TCGA ID) an prints the data for the UUIDs to a datatable file.
     #parse_patient_id(_metadata.txt file created from curl,output file)
-    $dwnld->parse_patient_id("$disease_abbr\_metadata.txt","$disease_abbr.datatable.txt");
+    $dwnld->parse_patient_id("$cancer_type\_metadata.txt","$cancer_type.datatable.txt");
     
-    #metadata_ids(.result.txt,output file)
-    $dwnld->metadata_ids("$disease_abbr.result.txt","Payload.txt");
+    #metadata_ids(.result.txt created from gdc_parser,output file)
+    $dwnld->metadata_ids("$cancer_type.result.txt","Payload.txt");
     
-    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $disease_abbr\_metadata.txt`;
+    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $cancer_type\_metadata.txt`;
     
-    open(my $meta,"$disease_abbr\_metadata.txt") or die "Can't open file $disease_abbr\_metadata.txt for input: $!";
-    open(ME,">$disease_abbr.edit.metadata.txt") or die "Can't open file $disease_abbr.edit.metadata.txt for output: $!";
+    open (my $meta,"$cancer_type\_metadata.txt");
+    open (ME,">$cancer_type.edit.metadata.txt");
     chomp(my @metaedit = <$meta>);
-    close($meta);
+    close ($meta);
     for(my $i = 0;$i < scalar(@metaedit);$i++)
     {
         $metaedit[$i] =~ s/\r//g;
@@ -284,25 +259,25 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
     {
         print ME "$_\n";
     }
-    close(ME);
+    close (ME);
     
     #pulls the UUIDs from the edit metadata file
-    #pull_column(.edit.metadata.txt,column(s) to pull,output file)
-    $parsing->pull_column("$disease_abbr.edit.metadata.txt","2","temp.UUID");
+    #pull_column(.edit.metadata.txt file,column(s) to pull,output file)
+    $parsing->pull_column("$cancer_type.edit.metadata.txt","8","temp.UUID");
     
     #Strips the headers in the file.
     #strip_head(file to strip headers,output file)
-    $parsing->strip_head("temp.UUID","$disease_abbr.UUID.txt");
+    $parsing->strip_head("temp.UUID","$cancer_type.UUID.txt");
     `rm temp.UUID`;
     
-    #parse_meta_id(.edit.metadata.txt,output file from strip_head,output file)
-    $dwnld->parse_meta_id("$disease_abbr.edit.metadata.txt","$disease_abbr.UUID.txt","meta_ids.txt");
+    #parse_meta_id(.edit.metadata.txt file,output file from strip_head,output file)
+    $dwnld->parse_meta_id("$cancer_type.edit.metadata.txt","$cancer_type.UUID.txt","meta_ids.txt");
     
-    #ref_parse(output file from parse_meta_id,key directory,output file)
-    $dwnld->ref_parse("meta_ids.txt","$rna_wgs_dir","reference.txt",$dwnld_cmd);
+    #ref_parse(output file from parse_meta_id,$rna_wgs_dir (directory where gdc key is located),output file)
+    $dwnld->ref_parse("meta_ids.txt","$rna_wgs_dir","$reference_file",$dwnld_cmd);
     
-    #index_ids(.result.txt,output file)
-    $dwnld->index_ids("$disease_abbr.result.txt","Payload.txt");
+    #index_ids(.result.txt file from gdc_parser,output file)
+    $dwnld->index_ids("$cancer_type.result.txt","Payload.txt");
     
     `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > index_file_ids.txt`;
     
@@ -313,20 +288,28 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
     #Will search each column 3 entry of lookupfile within column 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
 
     #N.B. only works on tab-delimited files
-    $parsing->vlookup("$disease_abbr.datatable.txt","1","reference.txt","1","2","y","temp");
-    $parsing->vlookup("temp","1","index_file_ids.txt","2","3","y","final_downloadtable_$disease_abbr.txt");
+    $parsing->vlookup("$cancer_type.datatable.txt","1","$reference_file","1","2","y","temp");
     
-    `mkdir $Analysispath/$disease_abbr/$tables` unless(-d "$Analysispath/$disease_abbr/$tables");
- 
-    if($Exp_Strategy eq "WGS")
+    if ($Exp_Strategy eq "RNA-Seq")
     {
-        `sort -k2,2 -k3,3 -k6,6 final_downloadtable_$disease_abbr.txt > final_downloadtable_$disease_abbr\_sorted.txt`;
+        $parsing->vlookup("temp","1","index_file_ids.txt","3","2","y","$downloadtable.txt");
+    }
+    else
+    {
+        $parsing->vlookup("temp","1","index_file_ids.txt","3","1","y","$downloadtable.txt");
+    }
+    
+    `mkdir $Analysispath/$cancer_type/$tables` unless (-d "$Analysispath/$cancer_type/$tables");
+ 
+    if ($Exp_Strategy eq "WGS")
+    {
+        `sort -k2,2 -k3,3 -k6,6 $downloadtable.txt > $downloadtable\_sorted.txt`;
         #No header in the output, thus no need to strip head!
-        #pull_matched_tn_GDC(sorted bamlist,output file)
-        $dwnld->pull_matched_tn_GDC("final_downloadtable_$disease_abbr\_sorted.txt","final_downloadtable_$disease_abbr\_$Exp_Strategy.txt");
-	$parsing->vlookup("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt",1,"$disease_abbr.result.txt",1,4,"y","final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt");
-        open(SIZE,"final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt") or die "can't open file final_downloadtable_$disease_abbr\_$Exp_Strategy\_size.txt: $!\n";
-        open(SO,">final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt") or die "Can't open file: $!\n";
+        #pull_matched_tn_GDC($downloadtable_sorted.txt file,output file)
+        $dwnld->pull_matched_tn_GDC("$downloadtable\_sorted.txt","$downloadtable\_$Exp_Strategy.txt");
+	$parsing->vlookup("$downloadtable\_$Exp_Strategy.txt",1,"$cancer_type.result.txt",1,4,"y","$downloadtable\_$Exp_Strategy\_size.txt");
+        open (SIZE,"$downloadtable\_$Exp_Strategy\_size.txt");
+        open (SO,">$downloadtable\_$Exp_Strategy\_convert.txt");
         #convert the size of the WGS bams to gigabytes.
         while (my $r = <SIZE>)
         {
@@ -337,89 +320,65 @@ if(!(-f "$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_
             $vert = eval sprintf('%.2f',$vert);
             push(@con,$vert);
             my $size_wgs = join("\t",@con);
+	    $size_wgs =~ s/\r//;
             print SO $size_wgs,"\n";
         }
-        close(SIZE);
-        close(SO);
+        close (SIZE);
+        close (SO);
 	
         #filter table and remove bams aligning to NCBI36 or HG18;
-        `cat final_downloadtable_$disease_abbr\_$Exp_Strategy\_convert.txt | grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-        copy("final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
-        #Downloads WGS BAMs and runs mpileups on them.
-        #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split,"table directory")
-        mkdir "$rna_wgs_dir/$wgs_mpileups" unless(-d "$rna_wgs_dir/$wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables",$dwnld_cmd);
-        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables")
+        `cat $downloadtable\_$Exp_Strategy\_convert.txt | grep NCBI36 -v | grep -v HG18 > WGS_tmp.txt;mv WGS_tmp.txt $downloadtable\_$Exp_Strategy.txt`;
+	copy("$downloadtable\_$Exp_Strategy.txt","$Analysispath/$cancer_type/$tables");
     }
-    elsif($Exp_Strategy eq "RNA-Seq")
+    elsif ($Exp_Strategy eq "RNA-Seq")
     {
         #filter table and remove bams that may be aligned to HG18, HG19_Broad_variant, GRChr37-lite, NCBI36 or non aligned bams;
-        `cat final_downloadtable_$disease_abbr.txt|grep NCBI36 -v|grep -v HG18 |grep -v HG19_Broad_variant |grep -v GRCh37-lite |grep -v NaN > final_downloadtable_$disease_abbr\_$Exp_Strategy.txt`;
-	
-	if ($option ne "download")
-	{
-	    if(!(-d "$RNA_Path/$cds_sorted"))
-	    {
-		print STDERR "The directory $RNA_Path/$cds_sorted does not exist. It was moved, renamed or deleted\n";
-		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
-		exit;
-	    }
-	    
-	    chdir $RNA_Path;
-	    
-	    `mkdir $ase` unless(-d "$ase");
-	    
-	    chdir "$ase";
-	    
-	    mkdir "$rna_mpileups" unless(-d "$rna_mpileups");
-	    
-	    chdir "$rna_wgs_dir";
-        }
-            
-        #Downloads RNA BAMs and runs mpileups on them.
-        #Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-        $dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd);
-        copy("$rna_wgs_dir/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$Analysispath/$disease_abbr/$tables");
+        `cat $downloadtable.txt|grep NCBI36 -v|grep -v HG18 |grep -v HG19_Broad_variant |grep -v GRCh37-lite > $downloadtable\_$Exp_Strategy.txt`;
+        copy("$rna_wgs_dir/$downloadtable\_$Exp_Strategy.txt","$Analysispath/$cancer_type/$tables");
     }
 }
 else
 {
-    print "It seems that there is a table in the table directory already:\n","$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt\n";
-    
-    #Check gdc key and mv it to db first!
-    #copyfile2newfullpath(path to gdc key,path where gdc key will be copied)
-    $parsing->copyfile2newfullpath("$key","$rna_wgs_dir/gdc.key");
-    
-    if($Exp_Strategy eq "WGS")
+    if ($Exp_Strategy eq "WGS")
     {
-        #Dwld_WGSBam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,user option(all,download or mpileups),line_num2split)
-        mkdir "$rna_wgs_dir/$wgs_mpileups" unless(-d "$rna_wgs_dir/$wgs_mpileups");
-        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$disease_abbr,"$database_path/hg19.fa","$Analysispath/$disease_abbr/$tables",$dwnld_cmd);
-        copy("already_done_WGS.txt","$Analysispath/$disease_abbr/$tables")
+        print "It seems that there is a table in the directory $Analysispath/$cancer_type/$tables. $WGS_table\n";
     }
-    elsif($Exp_Strategy eq "RNA-Seq")
+    else
+    {
+        print "It seems that there is a table in the directory $Analysispath/$cancer_type/$tables. $RNA_table\n";
+    }
+}
+
+if (lc $overlap eq "y" || lc $overlap eq "yes")
+{
+    $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$RNA_table","$Analysispath/$cancer_type/$tables/$WGS_table","$Analysispath/$cancer_type/$tables/$Genotypes_table"); #checks if RNA-Seq, WGS and Genotypes tables exist before overlapping them
+    if (!(-s "$Analysispath/$cancer_type/$tables/$RNA_table" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$WGS_table" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$Genotypes_table" == 0))
+    {
+        $parsing->Overlap_RNA_WGS_Geno("$Analysispath/$cancer_type/$tables","$RNA_table","$WGS_table","$Genotypes_table","$Intersect","$Exp_Strategy","$cancer_type");
+    }
+    else
+    {
+        print "Either $RNA_table, $WGS_table and/or $Genotypes_table is empty!\n";
+        exit;
+    }
+}
+
+ if ($Exp_Strategy eq "WGS")
+    {
+        #Dwld_WGSBam_and_do_mpileup($Analysispath/$cancer_type/$tables/$downloadtable\_$Exp_Strategy.txt,$rna_wgs_dir (path to gdc key),$OUT_DIR (path to output directory),$database_path/$GRCh37_file (path to GRCh37-lite fa file),$rna_wgs_dir/$wgs_mpileups (path to directory where wgs mpileups will be stored),$option (all,download or mpileups),$number (pairs to split),$VarScan_Path (path to VarScan jar file),$cancer_type (e.g. OV),$database_path/$hg19_file (path to hg19 fa file),$Analysispath/$cancer_type/$tables (path to the table directory of the cancer type),$dwnld_cmd (download command (curl aria2c)),$samtools (path/command for samtools))
+        mkdir "$rna_wgs_dir/$wgs_mpileups" unless (-d "$rna_wgs_dir/$wgs_mpileups");
+        $dwnld->Dwld_WGSBam_and_do_mpileup("$Analysispath/$cancer_type/$tables/$downloadtable\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/$GRCh37_file","$rna_wgs_dir/$wgs_mpileups",$option,$number,$VarScan_Path,$cancer_type,"$database_path/$hg19_file","$Analysispath/$cancer_type/$tables",$dwnld_cmd,"$samtools");
+        copy("already_done_WGS.txt","$Analysispath/$cancer_type/$tables");
+    }
+    elsif ($Exp_Strategy eq "RNA-Seq")
     {
 	if ($option ne "download")
 	{
-	    if(!(-d "$RNA_Path/$cds_sorted"))
-	    {
-		print STDERR "The directory $RNA_Path/$cds_sorted does not exist. It was moved, renamed or deleted\n";
-		print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
-		exit;
-	    }
-	    
-	    chdir $RNA_Path;
-	    
-	    `mkdir $ase` unless(-d "$ase");
-	    
-	    mkdir "$ase/$rna_mpileups" unless(-d "$ase/$rna_mpileups");
-	    
-	    chdir "$rna_wgs_dir";
+	    `mkdir -p $ase/$rna_mpileups` unless (-d "$ase/$rna_mpileups");
 	}
-	#Dwld_RNASeq_Bam_and_do_mpileup(BamListfile,key directory,bam output directory,ref_fullpath,mpileup_outdir,path to cds_sorted directory,user option(all,download or mpileups),line_num2split)
-	$dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$disease_abbr/$tables/final_downloadtable_$disease_abbr\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/GRCh37-lite.fa","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd); 
+	#Dwld_RNASeq_Bam_and_do_mpileup($Analysispath/$cancer_type/$tables/$downloadtable\_$Exp_Strategy.txt,$rna_wgs_dir (path to gdc key),$OUT_DIR (path to output directory),$database_path/$GRCh37_file (path to GRCh37-lite fa file),$ase/$rna_mpileups (path to the directory where rna mpileups will be stored),$cds_sorted (path to directory where cds sorted files are stored),$option (all,download or mpileups),$option (all,download or mpileups),$number(number of base to split into files),$dwnld_cmd (curl or aria2c),$samtools (path/command for samtools))
+	$dwnld->Dwld_RNASeq_Bam_and_do_mpileup("$Analysispath/$cancer_type/$tables/$downloadtable\_$Exp_Strategy.txt","$rna_wgs_dir","$OUT_DIR","$database_path/$GRCh37_file","$ase/$rna_mpileups","$RNA_Path/$cds_sorted",$option,$number,$dwnld_cmd,"$samtools"); 
     }
-}
 
 chdir "$rna_wgs_dir";
 
@@ -432,7 +391,7 @@ for(my $i = 0;$i < scalar(@del_files);$i++)
 
 `rm -rf tmp*`;
 
-print "All jobs have finished for $disease_abbr.\n";
+print "All jobs have finished for $cancer_type.\n";
 
 $time = localtime;
 print "Script finished on $time.\n";

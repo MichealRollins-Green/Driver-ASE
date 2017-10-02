@@ -8,6 +8,8 @@ use Cwd "realpath";
 use Getopt::Long;
 use MCE::Map;
 use strict;
+use autodie;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started on $time.\n";
@@ -19,218 +21,214 @@ my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 my $wgs_analysis = Driver_ASE_Lib::WGS_Analysis->new;
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'cancer|c=s' => \my $cancer_type,#e.g. OV
+    'overlap|o=s' => \my $overlap_data, #overlap option. only enter in if option was y|yes in script 4.0
+    'remfiles|r=s' => \my $rem_files, #option to remove files
+    'archive|a=s' => \my $archive, #option to archive data
+    'overlapSelect|S=s' => \my $overlapSelect,#path to overlapSelect
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage;
+) or die "Incorrect options!\n",$parsing->usage("4.1");
 
 if($help)
 {
-    $parsing->usage;
+    $parsing->usage("4.1");
 }
 
-if(!defined $disease_abbr)
+if(!defined $cancer_type)
 {
-    print "disease type was not entered!\n";
-    $parsing->usage;
+    print STDERR "Cancer type was not entered!\n";
+    $parsing->usage("4.1");
 }
+
+#default to no if option to overlap ids was not specified in the command line
+if (!defined $overlap_data)
+{
+    $overlap_data = "no";
+}
+elsif (lc $overlap_data ne "y" and lc $overlap_data ne "yes" and lc $overlap_data ne "n" and lc $overlap_data ne "no")
+{
+    print STDERR "$overlap_data is an incorrect option! Must be yes|y|no|n.\n";
+    $parsing->usage("4.1");
+}
+
+if (!defined $rem_files)
+{
+    $rem_files = "no";
+}
+elsif (lc $rem_files ne "y" and lc $rem_files ne "yes" and lc $rem_files ne "n" and lc $rem_files ne "no")
+{
+    print STDERR "$rem_files is an incorrect option! Must be yes|y|no|n.\n";
+    $parsing->usage("4.1");   
+}
+
+if (!defined $archive)
+{
+    $archive = "no";
+}
+elsif (lc $archive ne "y" and lc $archive ne "yes" and lc $archive ne "n" and lc $archive ne "no")
+{
+    print STDERR "$archive is an incorrect option! Must be yes|y|no|n.\n";
+    $parsing->usage("4.1");   
+}
+
+if (!defined $overlapSelect)
+{
+    $overlapSelect = "overlapSelect";
+}
+
+$parsing->CheckSoftware("$overlapSelect");
 
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
-my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
-my $somatic = "somatic_variants";
-my $annotate_vars = "annotate_vars";
-my $finished_WGS = "$disease_abbr\_finished_analysis_WGS";
+my $WGS_Path = "$Analysispath/$cancer_type/WGS_Analysis";
+my ($wgs_dwnlds,$wgs_mpileups,$somatic,$annotate_vars) = ("wgs_dwnlds","wgs_mpileups","somatic_variants","annotate_vars");
+my $finished_WGS = "$cancer_type\_finished_analysis_WGS";
 my $overlap = "overlap";
 my $reg = "reg";
+my $tables = "$cancer_type\_tables";
+my ($WGS_table_file,$WGS_table_overlap) = ("final_downloadtable_$cancer_type\_WGS.txt","final_downloadtable_$cancer_type\_WGS_overlap.txt");
+my ($refseq_hg9_bed,$vars_bed,$ccds_bed,$ccds_tab,$stream_data) = ("refseq.ucsc.ensembl.mrna.hg9.nr.bed","vars.bed","ccds.hg19.bed","ccds.hg19.tab","stream_data");
+my ($wgs_mpileup_archive,$somatic_archive,$annotations_archive) = ("$wgs_mpileups\_varscan_to_archive.txt","$somatic\_to_archive.txt","$annotate_vars\_to_archive.txt");
+my ($WGS_Mpileups_Full,$WGS_Mpileups_Overlapped) = ("WGS_Mpileups_Full.txt","WGS_Mpileups_Overlap.txt");
+my $WGS_compress_file = "$cancer_type\_WGS_Analysis";
 
-#Check if there is not Database directory
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
-
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
-
-#Checks if there is not Analysis directory.
-if (!(-d "$Analysispath"))
-{
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-elsif(!(-d "$Analysispath/$disease_abbr"))
-{
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-
-if(-d "$Analysispath/$disease_abbr/$disease_abbr\_tables")
-{
-   if (!(-e "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt"))
-    {
-        print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt does not exist. It was either moved, renamed or deleted.\n";
-        print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-        exit;
-    } 
-}
-else
-{
-    print STDERR "$Analysispath/$disease_abbr/$disease_abbr\_tables does not exist. It was either moved, renamed or deleted,\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-
-if(!(-d $WGS_Path))
-{
-    print STDERR "$WGS_Path does not exits, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 4.0_Somatic_Variants.pl.\n";
-    exit;
-}
+$parsing->check_directory_existence("$database_path","$Analysispath","$Analysispath/$cancer_type","$Analysispath/$cancer_type/$tables","$Analysispath/$cancer_type/$tables/$WGS_table_file","$WGS_Path","$WGS_Path/$somatic"); #check if directories or files exist
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
 
 chdir "$WGS_Path";
 
-if (!(-d "$WGS_Path/$somatic"))
+`mkdir -p $WGS_Path/$annotate_vars` unless(-d "$WGS_Path/$annotate_vars");
+`rm -rf $WGS_Path/$annotate_vars/*`;
+
+if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
 {
-    print STDERR "$WGS_Path/$somatic does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 4.0_Somatic_Variants.pl.\n";
-    exit;
+    open(SOMO,">$WGS_Path/somatic_look.txt");
+    my @get_som = `ls $WGS_Path/$somatic`;
+    for my $som (@get_som)
+    {
+        chomp($som);
+        my @sp_som = split("\\.",$som);
+        print SOMO $sp_som[0],"\t",$sp_som[1],"\n";
+    }
+    close (SOMO);
+
+    $parsing->vlookup("$WGS_Path/somatic_look.txt",1,"$Analysispath/$cancer_type/$tables/$WGS_table_overlap",1,1,"y","$WGS_Path/somatic_overlap_nan.txt");
+
+    my @som_nan = `cat $WGS_Path/somatic_overlap_nan.txt`;
+    open(SOML,">$WGS_Path/somatic_overlap_list.txt");
+    foreach my $somo (@som_nan)
+    {
+        chomp($somo);
+        if ($somo !~ /\tNaN+$/)
+        {
+            my @sp_som = split("\t",$somo);
+            my $som_file_path = join(".",$sp_som[0],$sp_som[1]);
+            print SOML "$WGS_Path/$somatic/$som_file_path","\n";
+        }
+    }
+    close (SOML);
+
+    #mk_files_for_wgs($WGS_Path/$somatic (directory that holds somatic variant files), output file)
+    $wgs_analysis->mk_files_for_wgs("$WGS_Path/somatic_overlap_list.txt","$WGS_Path/somatic_list");
+}
+else
+{
+    #mk_files_for_wgs($WGS_Path/$somatic (directory that holds somatic variant files), output file)
+    $wgs_analysis->mk_files_for_wgs("$WGS_Path/$somatic","$WGS_Path/somatic_list"); 
 }
 
-`mkdir -p $WGS_Path/$annotate_vars` unless(-d "$WGS_Path/$annotate_vars");
+$parsing->matricize("$WGS_Path/somatic_list","$WGS_Path/somatic_list",1,6,"$WGS_Path");
 
-#mk_files_for_wgs(somatic_variants directory,output file)
-$wgs_analysis->mk_files_for_wgs("$WGS_Path/$somatic","$WGS_Path/ff");
-
-$parsing->matricize("$WGS_Path/ff","$WGS_Path/ff",1,6,"$WGS_Path");
-
-`tar -zcvf $disease_abbr\_mutations.tar.gz matrix.tab rowlabels.txt collabels.txt`;
-
-mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless(-d "$finished_WGS");
-`mv $WGS_Path/$disease_abbr\_mutations.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
-
-#var_ID_to_bed(rowlabels.txt file created from matricize,output file)
-$wgs_analysis->var_ID_to_bed("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/vars.bed");
+#var_ID_to_bed(rowlabels.txt file created from matricize, output file)
+$wgs_analysis->var_ID_to_bed("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/$vars_bed");
 
 chdir "$WGS_Path/$annotate_vars";
 
-mkdir "$WGS_Path/$annotate_vars/$overlap";
-opendir(DD,"$database_path/$reg") or die "Can't open $database_path/$reg: $!\n";
-my @zcat = readdir(DD);
-closedir(DD);
+mkdir "$WGS_Path/$annotate_vars/$overlap" unless(-d "$WGS_Path/$annotate_vars/$overlap");
+opendir (DD,"$database_path/$reg");
+my @zcat = readdir (DD);
+closedir (DD);
 @zcat = grep{!/\.$/}@zcat;
 my $bed;
 mce_map
 {
-    $bed = "$_";
-    $bed =~ s/\.gz//;
-    #simpl(files from the reg directory in the Database directory,output file)
-    $wgs_analysis->simpl("zcat $database_path/$reg/$_ |","$WGS_Path/$annotate_vars/$overlap/$bed");
+   $bed = "$_";
+   $bed =~ s/\.gz//;
+   #simpl(files from the $reg directory in the $database_path directory,output file)
+   $wgs_analysis->simpl("zcat $database_path/$reg/$_ |","$WGS_Path/$annotate_vars/$overlap/$bed");
 }@zcat;
 
-#up_down_tss(the refseq.ucsc.ensembl.mrna.hg9.nr.bed file from the Database directory,upstream_of_tss_len,downstream_of_tss_len,output file)
-$wgs_analysis->up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",100,100,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_100");
-#print1(output file created from up_down_tss,output file directed to the overlap directory)
+#up_down_tss(the $refseq_hg9_bed file from the $database_path directory, upstream_of_tss_len, downstream_of_tss_len, output file)
+$wgs_analysis->up_down_tss("$database_path/$refseq_hg9_bed",100,100,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_100");
+#print1(output file created from up_down_tss, output file directed to the overlap directory)
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_100","$WGS_Path/$annotate_vars/$overlap/100.100.bed");
 
-$wgs_analysis->up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",500,500,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_500");
+$wgs_analysis->up_down_tss("$database_path/$refseq_hg9_bed",500,500,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_500");
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_500","$WGS_Path/$annotate_vars/$overlap/500.500.bed");
 
-$wgs_analysis->up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",1000,1000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_1kb");
+$wgs_analysis->up_down_tss("$database_path/$refseq_hg9_bed",1000,1000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_1kb");
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_1kb","$WGS_Path/$annotate_vars/$overlap/1kb.1kb.bed");
 
-$wgs_analysis->up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",5000,1000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_5kb");
+$wgs_analysis->up_down_tss("$database_path/$refseq_hg9_bed",5000,1000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_5kb");
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_5kb","$WGS_Path/$annotate_vars/$overlap/5kb.1kb.bed");
 
-$wgs_analysis->up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",10000,10000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10kb");
+$wgs_analysis->up_down_tss("$database_path/$refseq_hg9_bed",10000,10000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10kb");
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10kb","$WGS_Path/$annotate_vars/$overlap/10kb.1kb.bed");
 
-$wgs_analysis->up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",50000,1000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_50kb");
+$wgs_analysis->up_down_tss("$database_path/$refseq_hg9_bed",50000,1000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_50kb");
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_50kb","$WGS_Path/$annotate_vars/$overlap/50kb.1kb.bed");
 
-$wgs_analysis->up_tss_gene("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",10000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000");
+$wgs_analysis->up_tss_gene("$database_path/$refseq_hg9_bed",10000,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000");
 $wgs_analysis->print_1("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000","$WGS_Path/$annotate_vars/$overlap/10kb.gene.bed");
 
-$parsing->pull_column("$WGS_Path/$annotate_vars/vars.bed",4,"$WGS_Path/$annotate_vars/tt1");
+$parsing->pull_column("$WGS_Path/$annotate_vars/$vars_bed",4,"$WGS_Path/$annotate_vars/$stream_data"."1");
 
-#vlookem_all(input files from the overlap directory,vars.bed file,path to the user defined directory from command line or default)
-$wgs_analysis->vlookem_all("$WGS_Path/$annotate_vars/$overlap","$WGS_Path/$annotate_vars/vars.bed","$WGS_Path/$annotate_vars");
+#vlookem_all($WGS_Path/$annotate_vars/$overlap (directory that stores files created from simpl routine, $WGS_Path/$annotate_vars/$vars_bed (path to $vars_bed file), $WGS_Path/$annotate_vars (path to directory that holds annotation data), $overlapSelect (overlapSelect command), $stream_data (name of input file))
+$wgs_analysis->vlookem_all("$WGS_Path/$annotate_vars/$overlap","$WGS_Path/$annotate_vars/$vars_bed","$WGS_Path/$annotate_vars","$overlapSelect","$stream_data");
 
-opendir(DD,"$WGS_Path/$annotate_vars") or die "Can't open $WGS_Path/$annotate_vars: $!\n";
-my @dd = readdir(DD);
-@dd = grep{/^tt*/}@dd;
-closedir(DD);
-my $tt_num;
-my $highest_tt = 0;
+opendir (DD,"$WGS_Path/$annotate_vars");
+my @dd = readdir (DD);
+@dd = grep{/^$stream_data*/}@dd;
+closedir (DD);
+my $sdata_num;
+my $highest_sdata_num = 0;
 my @a;
 for(my $i = 0;$i < scalar(@dd);$i++)
 {
-    @a = unpack("(a2)*",$dd[$i]);
-    $tt_num = $a[1];
-    if($highest_tt < $tt_num)
-    { 
-        $highest_tt = $tt_num;
-    }
+   @a = split (/(\d+)/,$dd[$i]);
+   $sdata_num = $a[1];
+   if($highest_sdata_num < $sdata_num)
+   { 
+       $highest_sdata_num = $sdata_num;
+   }
 }
 
-my $tt = $a[0] . $highest_tt;
+my $sdata = $a[0] . $highest_sdata_num;
 
-$parsing->pull_column("$WGS_Path/$annotate_vars/$tt",1,"$WGS_Path/$annotate_vars/rowlabels.txt");
-$parsing->pull_column("$WGS_Path/$annotate_vars/$tt","2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19","$WGS_Path/$annotate_vars/matrix.tab");
+$parsing->pull_column("$WGS_Path/$annotate_vars/$sdata",1,"$WGS_Path/$annotate_vars/rowlabels.txt");
+$parsing->pull_column("$WGS_Path/$annotate_vars/$sdata","2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19","$WGS_Path/$annotate_vars/matrix.tab");
 
-#my_up_down_tss(refseq.ucsc.ensembl.mrna.hg9.nr.bed file from the Database directory,upstream_of_tss_len,downstream_of_tss_len,output file)
-$wgs_analysis->my_up_down_tss("$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed",10000,0,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000_0_pull");
+#my_up_down_tss($database_path/$refseq_hg9_bed ($refseq_hg9_bed file from the $database_path directory), upstream_of_tss_len, downstream_of_tss_len, output file)
+$wgs_analysis->my_up_down_tss("$database_path/$refseq_hg9_bed",10000,0,"$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000_0_pull");
 $parsing->pull_column("$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000_0_pull","1,2,3,4","$WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000_0_sort");
 `sort -k 1,1 -k 2,2n $WGS_Path/$annotate_vars/mrna.hg9.nr.bed_10000_0_sort > $WGS_Path/$annotate_vars/gene.bed`;
-`overlapSelect $WGS_Path/$annotate_vars/vars.bed $WGS_Path/$annotate_vars/gene.bed -idOutput $WGS_Path/$annotate_vars/out`;
+`$overlapSelect $WGS_Path/$annotate_vars/$vars_bed $WGS_Path/$annotate_vars/gene.bed -idOutput $WGS_Path/$annotate_vars/vars_gene_out`;
 
-$parsing->strip_head("$WGS_Path/$annotate_vars/out","$WGS_Path/$annotate_vars/out_pull");
-$parsing->pull_column("$WGS_Path/$annotate_vars/out_pull","2,1","$WGS_Path/$annotate_vars/out_sort");
-`sort -k 1,1 $WGS_Path/$annotate_vars/out_sort > $WGS_Path/$annotate_vars/var2gene.tab`;
+$parsing->strip_head("$WGS_Path/$annotate_vars/vars_gene_out","$WGS_Path/$annotate_vars/vars_gene_out_pull");
+$parsing->pull_column("$WGS_Path/$annotate_vars/vars_gene_out_pull","2,1","$WGS_Path/$annotate_vars/vars_gene_out_sort");
+`sort -k 1,1 $WGS_Path/$annotate_vars/vars_gene_out_sort > $WGS_Path/$annotate_vars/var2gene.tab`;
 
-#mk_coding(vars.bed file,output file)
-$wgs_analysis->mk_coding("$WGS_Path/$annotate_vars/vars.bed","$WGS_Path/$annotate_vars/vars_grep");
+#mk_coding($WGS_Path/$annotate_vars/$vars_bed ($vars_bed file), output file)
+$wgs_analysis->mk_coding("$WGS_Path/$annotate_vars/$vars_bed","$WGS_Path/$annotate_vars/vars_grep");
 `cat $WGS_Path/$annotate_vars/vars_grep | grep shift > $WGS_Path/$annotate_vars/vars_sort.txt`;
 `sort -k 1,1 -k 2,2n $WGS_Path/$annotate_vars/vars_sort.txt > $WGS_Path/$annotate_vars/shifts.bed`;
-$wgs_analysis->mk_coding("$WGS_Path/$annotate_vars/vars.bed","$WGS_Path/$annotate_vars/vars_grep");
+$wgs_analysis->mk_coding("$WGS_Path/$annotate_vars/$vars_bed","$WGS_Path/$annotate_vars/vars_grep");
 `cat $WGS_Path/$annotate_vars/vars_grep | grep -v shift > $WGS_Path/$annotate_vars/vars_sort.txt`;
 `sort -k 1,1 -k 2,2n $WGS_Path/$annotate_vars/vars_sort.txt > $WGS_Path/$annotate_vars/subs.bed`;
 
-#Syn(subs.ved file,genome,output file,path to the Database directory)
-$wgs_analysis->Syn("$WGS_Path/$annotate_vars/subs.bed","hg19","$WGS_Path/$annotate_vars/subs.syn","$database_path");
+#Syn($WGS_Path/$annotate_vars/subs.bed (subs bed file), genome, output file , path to the $database_path directory, $overlapSelect (overlapSelect command), $ccds_bed (ccds bed file in $database_path directory), $ccds_tab (ccds tab file in $database_path directory))
+$wgs_analysis->Syn("$WGS_Path/$annotate_vars/subs.bed","hg19","$WGS_Path/$annotate_vars/subs.syn","$database_path","$overlapSelect","$ccds_bed","$ccds_tab");
 #mk_uniq_label(output file from Syn,output file)
 $wgs_analysis->mk_uniq_label("$WGS_Path/$annotate_vars/subs.syn","$WGS_Path/$annotate_vars/subs.syn_sort");
 `sort -k 1,1 -k 12,12n $WGS_Path/$annotate_vars/subs.syn_sort > $WGS_Path/$annotate_vars/subs.syn_sort2`;
@@ -239,54 +237,117 @@ $wgs_analysis->mk_uniq_label("$WGS_Path/$annotate_vars/subs.syn","$WGS_Path/$ann
 $parsing->pull_column("$WGS_Path/$annotate_vars/subs.syn2","2,3,4,5,6,7,8,9,10,11,12,13,14","$WGS_Path/$annotate_vars/subs.syn2_process");
 
 #process_syn(output file from pull_column,output file)
-$wgs_analysis->process_syn("$WGS_Path/$annotate_vars/subs.syn2_process","$WGS_Path/$annotate_vars/t1");
+$wgs_analysis->process_syn("$WGS_Path/$annotate_vars/subs.syn2_process","$WGS_Path/$annotate_vars/subs.syn2_processed");
 
-`overlapSelect $database_path/ccds.hg19.bed $WGS_Path/$annotate_vars/shifts.bed $WGS_Path/$annotate_vars/o`;
+`$overlapSelect $database_path/$ccds_bed $WGS_Path/$annotate_vars/shifts.bed $WGS_Path/$annotate_vars/overlap_output`;
 
 #process_shifts(output file from overlapSelect,output file)
-$wgs_analysis->process_shifts("$WGS_Path/$annotate_vars/o","$WGS_Path/$annotate_vars/t1");
+$wgs_analysis->process_shifts("$WGS_Path/$annotate_vars/overlap_output","$WGS_Path/$annotate_vars/subs.syn2_processed");
 
 #pt(the rowlabels.txt file created from matricize in script 4.1,output file)
-$wgs_analysis->pt("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/t2");
+$wgs_analysis->pt("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/rowlabels_processed.txt");
 
-$parsing->vlookup("$WGS_Path/$annotate_vars/t2",1,"$WGS_Path/$annotate_vars/t1",1,"2,3","y","$WGS_Path/$annotate_vars/syn_pull");
+$parsing->vlookup("$WGS_Path/$annotate_vars/rowlabels_processed.txt",1,"$WGS_Path/$annotate_vars/subs.syn2_processed",1,"2,3","y","$WGS_Path/$annotate_vars/syn_pull");
 
 $parsing->pull_column("$WGS_Path/$annotate_vars/syn_pull","2,3,4","$WGS_Path/$annotate_vars/syn.tab");
 
-`tar zcvf $disease_abbr\_annotations.tar.gz matrix.tab rowlabels.txt collabels.txt syn.tab`;
-mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless(-d "$Analysispath/$disease_abbr/$finished_WGS");
-`mv $WGS_Path/$annotate_vars/$disease_abbr\_annotations.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
-`overlapSelect $database_path/ccds.hg19.bed $WGS_Path/$annotate_vars/vars.bed $WGS_Path/$annotate_vars/o.bed`;
-`overlapSelect $WGS_Path/$annotate_vars/o.bed $database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed -idOutput $WGS_Path/$annotate_vars/out`;
+`$overlapSelect $database_path/$ccds_bed $WGS_Path/$annotate_vars/$vars_bed $WGS_Path/$annotate_vars/vars_ccds.bed`;
+`$overlapSelect $WGS_Path/$annotate_vars/vars_ccds.bed $database_path/$refseq_hg9_bed -idOutput $WGS_Path/$annotate_vars/vars_refseq_bed`;
 
-$parsing->strip_head("$WGS_Path/$annotate_vars/out","$WGS_Path/$annotate_vars/out_pull");
-$parsing->pull_column("$WGS_Path/$annotate_vars/out_pull","2,1","$WGS_Path/$annotate_vars/var2gene.coding.tab");
+$parsing->strip_head("$WGS_Path/$annotate_vars/vars_refseq_bed","$WGS_Path/$annotate_vars/vars_refseq_bed_pull");
+$parsing->pull_column("$WGS_Path/$annotate_vars/vars_refseq_bed_pull","2,1","$WGS_Path/$annotate_vars/var2gene.coding.tab");
 
-$parsing->pull_column("$Analysispath/$disease_abbr/$disease_abbr\_tables/final_downloadtable_$disease_abbr\_WGS.txt","1,2","$WGS_Path/$annotate_vars/look.tab");
+if (lc $overlap eq "y" or lc $overlap eq "yes")
+{
+    $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$WGS_table_overlap");
+    $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_overlap","1,2","$WGS_Path/$annotate_vars/look.tab");
+}
+else
+{
+    $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_file","1,2","$WGS_Path/$annotate_vars/look.tab");     
+}
 
 #two files: mut_ase_look.txt and coding_genes.tab are pre-created
 `cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars`;
 `cp $database_path/coding_genes.tab $WGS_Path/$annotate_vars`;
-`tar -zcvf $disease_abbr\_somatic_calls.tar.gz look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
-`mv $WGS_Path/$annotate_vars/$disease_abbr\_somatic_calls.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
 
-chdir "$WGS_Path";
-my @del_files = $parsing->get_only_files_in_dir("$WGS_Path");
-#Removes all files after the processes have finished.
-for(my $i = 0;$i < scalar(@del_files);$i++)
+if (lc $rem_files eq "y" or lc $rem_files eq "yes")
 {
-    `rm "$del_files[$i]"`;
-}
-undef @del_files;
-chdir "$WGS_Path/$annotate_vars";
-@del_files = $parsing->get_only_files_in_dir("$WGS_Path/$annotate_vars");
-for(my $i = 0;$i < scalar(@del_files);$i++)
-{
-    `rm "$del_files[$i]"`;
+    chdir "$WGS_Path";
+    my @del_files = $parsing->get_only_files_in_dir("$WGS_Path");
+    #Removes all files after the processes have finished.
+    for(my $i = 0;$i < scalar(@del_files);$i++)
+    {
+        `rm "$del_files[$i]"`;
+    }
+    undef @del_files;
+    chdir "$WGS_Path/$annotate_vars";
+    @del_files = $parsing->get_only_files_in_dir("$WGS_Path/$annotate_vars");
+    for(my $i = 0;$i < scalar(@del_files);$i++)
+    {
+        `rm "$del_files[$i]"`;
+    }
 }
 
-print "All jobs have finished for $disease_abbr.\n";
+if (lc $archive eq "y" or lc $archive eq "yes")
+{
+    chdir $WGS_Path;
+    my @wgs_mps;
+    if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
+    {
+        $WGS_compress_file .= "_overlap.tar.gz";
+        open(WMO,">$WGS_Path/$wgs_mpileup_archive");
+        @wgs_mps = `cat $WGS_Path/$WGS_Mpileups_Overlapped`;
+    }
+    else
+    {
+        open(WMO,">$WGS_Path/$wgs_mpileup_archive");
+        $WGS_compress_file .= ".tar.gz";
+        @wgs_mps = `cat $WGS_Path/$WGS_Mpileups_Full`;
+    }
+    
+    print "Making archive $WGS_compress_file.\n";
+    
+    open(WSO,">$somatic_archive");
+    my $prev_som = "";
+    foreach my $wgs_lists (@wgs_mps)
+    {
+        chomp($wgs_lists);
+        my ($mpileups,$somatic_files,$file_path,$wgs_filename) = split("\t",$wgs_lists);
+        print WMO "$file_path\t$wgs_filename\n";
+        $file_path =~ s/$file_path/$WGS_Path/;
+        #Only print if the currnet file name is not the same as the previous one
+        if ($somatic_files ne $prev_som)
+        {
+            print WSO "$file_path\t$somatic/$somatic_files\n";
+            $prev_som = $somatic_files;
+        }
+    }
+    close (WMO);
+    close (WSO);
+    
+    open(AO,">$WGS_Path/$annotations_archive");
+    
+    chdir "$WGS_Path/$annotate_vars";
+    
+    my @annotate_files = `ls matrix.tab rowlabels.txt collabels.txt syn.tab look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
+    
+    foreach my $ann_list (@annotate_files)
+    {
+        print AO "$WGS_Path\t$annotate_vars/$ann_list";
+    }
+    close(AO);
+    chdir $WGS_Path;
+    $parsing->archive_files("$WGS_Path/$wgs_mpileup_archive","$WGS_Path/$somatic_archive","$WGS_Path/$annotations_archive","$WGS_compress_file");
+    
+    mkdir "$Analysispath/$cancer_type/$finished_WGS" unless (-d "$Analysispath/$cancer_type/$finished_WGS");
+
+
+    `mv $WGS_Path/$WGS_compress_file $Analysispath/$cancer_type/$finished_WGS`;
+}
+
+print "All jobs have finished for $cancer_type.\n";
 
 $time = localtime;
 print "Script finished on $time.\n";

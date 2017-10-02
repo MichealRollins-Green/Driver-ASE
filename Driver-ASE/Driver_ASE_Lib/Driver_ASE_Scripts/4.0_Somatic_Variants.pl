@@ -8,6 +8,8 @@ use Cwd "realpath";
 use File::Copy;
 use Getopt::Long;
 use strict;
+use autodie;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started on $time.\n";
@@ -19,21 +21,33 @@ my $wgs_analysis = Driver_ASE_Lib::WGS_Analysis->new;
 my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
-    'readcutoff|r=i' => \my $read_cutoff,#e.g. 20
-    'tfreq|t=i' => \my $tumor_freq,#e.g. 0.1
+    'cancer|c=s' => \my $cancer_type, #e.g. OV
+    'readcutoff|r=i' => \my $read_cutoff, #e.g. 20
+    'tfreq|t=i' => \my $tumor_freq, #e.g. 0.1
     'nfreq|n=i' => \my $normal_freq,
+    'overlap|o=s' => \my $overlap,
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage;
+) or die "Incorrect options!\n",$parsing->usage("4.0");
 
-if($help)
+if ($help)
 {
     $parsing->usage("4.0");
 }
 
-if(!defined $disease_abbr)
+if (!defined $cancer_type)
 {
-    print "disease type was not entered!\n";
+    print STDERR "Cancer type was not entered!\n";
+    $parsing->usage("4.0");
+}
+
+#default to no if option to overlap ids was not specified in the command line
+if (!defined $overlap)
+{
+    $overlap = "no";
+}
+elsif (lc $overlap ne "y" and lc $overlap ne "yes" and lc $overlap ne "n" and lc $overlap ne "no")
+{
+    print STDERR "Incorrect option specified! Must be yes|y|no|n.\n";
     $parsing->usage("4.0");
 }
 
@@ -55,158 +69,100 @@ if (!defined $normal_freq)
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
-my $wgs_dwnlds = "wgs_dwnlds";
-my $wgs_mpileups = "wgs_mpileups";
-my $WGS_Path = "$Analysispath/$disease_abbr/WGS_Analysis";
-my $ssoe_dir = "wgs_mpileups_ssoe_files";
-my $finished_WGS = "$disease_abbr\_finished_analysis_WGS";
-my $somatic = "somatic_variants";
+my ($wgs_dwnlds,$wgs_mpileups,$somatic) = ("wgs_dwnlds","wgs_mpileups","somatic_variants");
+my $WGS_Path = "$Analysispath/$cancer_type/WGS_Analysis";
+my ($RNA_table_file,$RNA_table_overlap) = ("final_downloadtable_$cancer_type\_RNA-Seq.txt","final_downloadtable_$cancer_type\_RNA-Seq_overlap.txt");
+my ($WGS_table_file,$WGS_table_overlap) = ("final_downloadtable_$cancer_type\_WGS.txt","final_downloadtable_$cancer_type\_WGS_overlap.txt");
+my ($Geno_table_file,$Geno_table_overlap) = ("$cancer_type.Genotypes.id2uuid.txt","$cancer_type.Genotypes.id2uuid_overlap.txt");
+my $Intersect = "$cancer_type\_RNA_WGS_Geno.txt";
+my $tables = "$cancer_type\_tables";
+my $Exp_Strategy = "WGS";
+my ($WGS_Mpileups,$WGS_Mpileups_Overlapped) = ("WGS_Mpileups_Full.txt","WGS_Mpileups_Overlap.txt");
+my $not_done = "$WGS_Path/not_done_somatic.txt";
 
-#Checks if there is no Database directory
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
+$parsing->check_directory_existence("$database_path","$Analysispath","$Analysispath/$cancer_type","$Analysispath/$cancer_type/$wgs_dwnlds","$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups"); #check if directories or files exist
 
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
-
-#Checks if there is not Analysis directory.
-if(!(-d "$Analysispath"))
-{
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-elsif(!(-d "$Analysispath/$disease_abbr"))
-{
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dwnlds"))
-{
-    print STDERR "$Analysispath/$disease_abbr/wgs_dwnlds does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-elsif (!(-d "$Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups"))
-{
-    print STDERR "$Analysispath/$disease_abbr/wgs_dwnlds/wgs_mpileups does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
 
 `mkdir -p "$WGS_Path"` unless(-d "$WGS_Path");
 
-my @ss = `ls $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/`;
-@ss = grep{/\.ss/}@ss;
-my @o = `ls $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/`;
-@o = grep{/\.o/}@o;
-my @e = `ls $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/`;
-@e = grep{/\.e/}@e;
+chdir "$WGS_Path";
 
-if (@ss or @o or @e)
+mkdir "$WGS_Path/$somatic" unless (-d "$WGS_Path/$somatic");
+
+#check if user wants to overlap RNA-Seq,WGS and Genotypes IDs
+if (lc $overlap eq "y" || lc $overlap eq "yes")
 {
-    `mkdir $WGS_Path/$ssoe_dir` unless(-d "$WGS_Path/$ssoe_dir");
-
-    if(@ss)
+    $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$Geno_table_file","$Analysispath/$cancer_type/$tables/$RNA_table_file","$Analysispath/$cancer_type/$tables/$WGS_table_file");
+    
+    if (!(-s "$Analysispath/$cancer_type/$tables/$RNA_table_file" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$WGS_table_file" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$Geno_table_file" == 0))
     {
-        foreach my $s(@ss)
+        #Overlap_RNA_WGS_Geno($Analysispath/$cancer_type/$tables (path to directory that holds the table files for RNA-Seq, WGS and Genotypes), $RNA_table_file (RNA-Seq table file), $WGS_table_file (WGS table file), $Geno_table_file (Genotypes table file), $Intersect (file that holds intersected data from RNA-Seq, WGS and Genotypes tables), $Exp_Strategy (Experimental Strategy (e.g. WGS)), $cancer_type (the cancer type (e.g. PRAD)))
+        $parsing->Overlap_RNA_WGS_Geno("$Analysispath/$cancer_type/$tables","$RNA_table_file","$WGS_table_file","$Geno_table_file","$RNA_table_overlap","$WGS_table_overlap","$Geno_table_overlap","$Intersect","$Exp_Strategy","$cancer_type");
+        chdir "$WGS_Path"; #changes back to this directory after overlapping as the Overlap_RNA_WGS_Geno routine changes to the $Analysispath/$cancer_type/$tables directory
+        `ls $Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups > wgs_mpileups.txt`;
+        
+        open(MPO,">wgs_look.txt");
+        my @mp = `cat wgs_mpileups.txt`;
+        foreach my $mps (@mp)
         {
-            chomp($s);
-            `mv $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/$s $WGS_Path/$ssoe_dir`;
+            chomp($mps);
+            my @mpsplit = split("\\.",$mps); #split file names by . (dot)
+            print MPO "$mpsplit[0]\t$mpsplit[1]\t$mpsplit[2]\t$mpsplit[3]\n";
         }
-    }
-
-    if(@o)
-    {
-        foreach my $out(@o)
+        close (MPO);
+        $parsing->vlookup("wgs_look.txt",2,"$Analysispath/$cancer_type/$tables/$WGS_table_overlap",2,2,"y","wgs_mpileups_NaN.txt"); #new $WGS_table file contains only overlap IDs and matches those IDs to the IDs in the wgs_look.txt file
+        my @filt_mpileups = `cat wgs_mpileups_NaN.txt`;
+        open(MPO,">$WGS_Mpileups_Overlapped");
+        foreach my $mpm (@filt_mpileups)
         {
-            chomp($out);
-            `mv $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/$out $WGS_Path/$ssoe_dir`;
-        }   
-    }
-   
-    if(@e)
-    {
-        foreach my $err(@e)
-        {
-            chomp($err);
-            `mv $Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups/$err $WGS_Path/$ssoe_dir`;   
+            chomp($mpm);
+            if ($mpm !~ /\tNaN+$/i)
+            {
+                my @new_mp = split("\t",$mpm);
+                pop @new_mp; #pops the last element as it is just the IDs that were matched and printed from the vlookup routine
+                my $joined_mp = join(".",$new_mp[0],$new_mp[1]); #re-joins the file name after being split and used in vlookup
+                print MPO "$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups/$mpm\t$joined_mp\t$Analysispath/$cancer_type/$wgs_dwnlds\t$wgs_mpileups/$mpm\n"; #prints the path to the mpileup file
+            }
         }
-    }
-}
-
-mkdir "$Analysispath/$disease_abbr/$finished_WGS" unless (-d "$Analysispath/$disease_abbr/$finished_WGS");
-
-chdir $WGS_Path;
-
-if (-d "$WGS_Path/$ssoe_dir")
-{
-    if (-e "$ssoe_dir.tar.gz")
-    {
-        `tar -zcvkf $disease_abbr\_$ssoe_dir.tar.gz $ssoe_dir`;
-        `mv $disease_abbr\_$ssoe_dir.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
+        close(MPO);      
     }
     else
     {
-        `tar -zcvf $disease_abbr\_$ssoe_dir.tar.gz $ssoe_dir`;
-        `mv $disease_abbr\_$ssoe_dir.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
+        print "Either $RNA_table_file, $WGS_table_file and/or $Geno_table_file is empty!\n";
+        exit;
     }
 }
 
-chdir "$Analysispath/$disease_abbr/$wgs_dwnlds";
+`ls $WGS_Path/$somatic > $WGS_Path/$somatic\_done.txt`;
 
-print "Compressing wgs_mpileups directory\n";
-`tar -zcvf $disease_abbr\_wgs_mpileups_varscan.tar.gz $wgs_mpileups`;
-`mv $Analysispath/$disease_abbr/$wgs_dwnlds/$disease_abbr\_wgs_mpileups_varscan.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
+print "Running Varscan_filter.\n";
+#Varscan_filter($Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups (path to ), $WGS_Path/$somatic (directory where somatic variant data will be stored), $read_cutoff (readcutoff e.g. 20),VarType(e.g. Somatic), $normal_freq (normal alternate frequency e.g. 0.1), $tumor_freq (tumor alternate frequency e.g. 0.1))
+if (lc $overlap eq "y" or lc $overlap eq "yes")
+{
+    $wgs_analysis->filter_not_done_somatic($not_done,"$WGS_Path/$WGS_Mpileups_Overlapped","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
+    $wgs_analysis->Varscan_filter("$not_done","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
+}
+else
+{
+    my @mpile = `ls $Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups`;
+    open(MPO,">$WGS_Mpileups");
+    
+    for my $mp (@mpile)
+    {
+        chomp($mp);
+        my @sp_mp = split("\\.",$mp);
+        my $join_mp = join(".",$sp_mp[0],$sp_mp[1]); #join UUID and TCGA ID
+        print MPO "$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups/$mp\t$join_mp\t$Analysispath/$cancer_type/$wgs_dwnlds\t$wgs_mpileups/$mp\n";
+    }
+    close MPO;
+    
+    $wgs_analysis->filter_not_done_somatic($not_done,"$WGS_Path/$WGS_Mpileups","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
+    
+    $wgs_analysis->Varscan_filter("$not_done","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
+}
 
-chdir "$WGS_Path";
-
-mkdir "$WGS_Path/$somatic";
-
-`rm -f $WGS_Path/$somatic/*`;
-
-#Varscan_filter(full path to wgs mpileups directory,full path to somatic_variants directory,readcutoff,VarType(e.g. Somatic),normal_alt_frq,tumor_alt_frq)
-$wgs_analysis->Varscan_filter("$Analysispath/$disease_abbr/$wgs_dwnlds/$wgs_mpileups","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
-
-print "Compressing somatic_variants\n";
-`tar -zcvf $disease_abbr\_$somatic.tar.gz $somatic`;
-`mv $WGS_Path/$disease_abbr\_$somatic.tar.gz $Analysispath/$disease_abbr/$finished_WGS`;
-
-print "All jobs have finished for $disease_abbr.\n";
+print "All jobs have finished for $cancer_type.\n";
 
 $time = localtime;
 print "Script finished on $time.\n";

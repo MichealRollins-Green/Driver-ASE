@@ -9,6 +9,8 @@ use Cwd;
 use MCE::Map;
 use Getopt::Long;
 use strict;
+use autodie;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started on $time.\n";
@@ -20,139 +22,138 @@ my $ase_analysis = Driver_ASE_Lib::Gene_Level_ASE_Analysis->new;
 my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'cancer|c=s' => \my $cancer_type,#e.g. OV
+    'overlap|o=s' => \my $overlap, #option to overlap RNA-Seq TCGA IDs with matching WGS IDs
+    'overlapSelect|S=s' => \my $overlapSelect,#path to overlapSelect
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage;
+) or die "Incorrect options!\n",$parsing->usage("3.1");
 
-if($help)
+if ($help)
 {
-    $parsing->usage;
+    $parsing->usage("3.1");
 }
 
-if(!defined $disease_abbr)
+if (!defined $cancer_type)
 {
-    print "disease type was not entered!\n";
-    $parsing->usage;
+    print STDERR "Cancer type was not entered!\n";
+    $parsing->usage("3.1");
 }
+
+#default to no if option to overlap ids was not specified in the command line
+if (!defined $overlap)
+{
+    $overlap = "no";
+}
+elsif (lc $overlap ne "y" and lc $overlap ne "yes" and lc $overlap ne "n" and lc $overlap ne "no")
+{
+    print STDERR "Incorrect option specified! Must be yes|y|no|n.\n";
+    $parsing->usage("3.1");
+}
+
+if (!defined $overlapSelect)
+{
+    $overlapSelect = "overlapSelect";
+}
+
+$parsing->CheckSoftware("$overlapSelect");
 
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $tables = "$cancer_type\_tables";
+my $RNA_Path = "$Analysispath/$cancer_type/RNA_Seq_Analysis";
 my $ase = "$RNA_Path/ase";
-my $mpileups_path = "$ase/rna_mpileups";
-my ($matrix,$logs,$ase_counts) = ("matrix","logs","ase_counts");
-my $cds_sorted = "cds_sorted";
-my $gene_level = "gene_level";
+my $mpileups_dir = "rna_mpileups";
+my ($logs,$ase_counts,$cds_sorted,$gene_level) = ("logs","ase_counts","cds_sorted","gene_level");
+my $refseq = "refseq.ucsc.ensembl.mrna.hg9.nr.bed";
+my ($RNA_CDS_Mpileups,$RNA_CDS_Mpileups_overlap) = ("RNA_CDS_mpileups.txt","RNA_CDS_mpileups_overlap.txt");
+my ($RNA_table_file,$WGS_table_file,$Geno_table_file) = ("final_downloadtable_$cancer_type\_RNA-Seq.txt","final_downloadtable_$cancer_type\_WGS.txt","$cancer_type.Genotypes.id2uuid.txt");
+my ($RNA_table_overlap,$WGS_table_overlap,$Geno_table_overlap) = ("final_downloadtable_$cancer_type\_RNA-Seq_overlap.txt","final_downloadtable_$cancer_type\_WGS_overlap.txt","$cancer_type.Genotypes.id2uuid_overlap.txt");
+my $Intersect = "$cancer_type\_RNA_WGS_Geno.txt";
+my $rna_mp_file = "rna_mpileups_overlap.txt";
+my $Exp_Strategy = "RNA-Seq";
+my $finished_RNA = "$cancer_type\_finished_analysis_RNA";
+my ($ase_counts_done,$gene_level_done) = ("$ase/ase_counts_done.txt","$ase/gene_level_done.txt");
 
-#Checks if there is no Database directory
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
+my @mfs;
 
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
+$parsing->check_directory_existence("$database_path","$Analysispath","$Analysispath/$cancer_type","$RNA_Path","$RNA_Path/$cds_sorted","$ase","$ase/$mpileups_dir"); #check if directories or files exist
 
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
-
-#Checks if there is no Analysis directory
-if(!(-d "$Analysispath"))
-{
-    print STDERR "$Analysispath does not exist, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-elsif(!(-d "$Analysispath/$disease_abbr"))
-{
-    print STDERR "$Analysispath/$disease_abbr does not exist, it was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
-
-if (!(-d $RNA_Path))
-{
-    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
-    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
-    exit;
-}
-
-if(!(-d "$ase"))
-{
-    print STDERR "The directory $ase does not exist. It was moved renamed or deleted.\n";
-    print STDERR "Please run script 3.0_Download_RNASeq_WGS_and_do_Mpileup.pl.\n";
-    exit;
-}
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
 
 chdir "$ase";
-
-if (!(-d "$RNA_Path/$cds_sorted"))
-{
-    print STDERR "The directory $RNA_Path/$cds_sorted does not exist. It was moved, renamed or deleted\n";
-    print STDERR "Please run script 1.3_Make_het_cds.pl.\n";
-    exit;
-}
 
 mkdir "$logs" unless(-d "$logs");
 mkdir "$ase_counts" unless(-d "$ase_counts");
 
-#Get mpileup files;
-opendir (MP, $mpileups_path) or die "can not open the directory $mpileups_path: $!\n";
-my @mfs = grep{!/^\./ && -f "$mpileups_path/$_"}readdir(MP);
-closedir(MP);
+my $cdsmp;
+#check if user wants to overlap RNA-Seq,WGS and Genotypes IDs
+if (lc $overlap eq "y" || lc $overlap eq "yes")
+{
+    $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$Geno_table_file","$Analysispath/$cancer_type/$tables/$RNA_table_file","$Analysispath/$cancer_type/$tables/$WGS_table_file");
+    
+    if (!(-s "$Analysispath/$cancer_type/$tables/$RNA_table_file" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$WGS_table_file" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$Geno_table_file" == 0))
+    {
+        $parsing->Overlap_RNA_WGS_Geno("$Analysispath/$cancer_type/$tables","$RNA_table_file","$WGS_table_file","$Geno_table_file","$RNA_table_overlap","$WGS_table_overlap","$Geno_table_overlap","$Intersect","$Exp_Strategy","$cancer_type");
+       
+        chdir "$ase"; #changes back to this directory as Overlap_RNA_WGS_Geno changes to the table directory for the cancer type
+     
+        my @rmp = `ls $ase/$mpileups_dir`;
+        
+        #fromat in files must be UUID.TCGA_ID
+        $ase_analysis->ase_filter_overlap(\@rmp,"$Analysispath/$cancer_type/$tables/$RNA_table_overlap",$rna_mp_file);
+        
+        @mfs = `cat $rna_mp_file`;
+        
+        #match cds with its corresponding mpileup file;
+        open ($cdsmp, ">$ase/$RNA_CDS_Mpileups_overlap");
+    }
+}
+else
+{
+    #Get mpileup files;
+    opendir (MP, "$ase/$mpileups_dir");
+    @mfs = grep{!/^\./ && -f "$ase/$mpileups_dir/$_"}readdir(MP);
+    closedir (MP);
+    
+    #match cds with its corresponding mpileup file;
+    open ($cdsmp, ">$ase/$RNA_CDS_Mpileups");
+}
 
 #Get cds files;
-opendir (CD, "$RNA_Path/$cds_sorted") or die "can not open the directory $RNA_Path/$cds_sorted: $!\n";
+opendir (CD, "$RNA_Path/$cds_sorted");
 my @cds= grep{!/^\./ && -f "$RNA_Path/$cds_sorted/$_"} readdir(CD);
-closedir(CD);
+closedir (CD);
 @cds = map{
-        s/\.bed//;$_;
-    }@cds;
+s/\.bed//;$_;
+}@cds;
 
-#match cds with its corresponding mpileup file;
-open(my $T, ">RNA_CDS_mpileups.txt") or die "can not write data into the file RNA_CDS_mpileups.txt: $!";
-for my $m (@mfs){
-    my ($uuid,$tcga)=split("\\.",$m);
+for my $m (@mfs)
+{
+    chomp($m);
+    my ($uuid,$tcga) = split("\\.",$m);
     if ($tcga~~\@cds)
     {
-        print $T $m,"\t",$tcga,"\t","$tcga.bed\n";   
-    }   
+        print $cdsmp $m,"\t",$tcga,"\t","$tcga.bed\n";
+    }
 }
-close $T;
+close ($cdsmp);
 
-#Only run these files absent in the ase_counts dir
-`ls $ase_counts > already_done.txt`;
+#Only run these files absent in the $ase_counts directory
+if (lc $overlap eq "y" or lc $overlap eq "yes")
+{
+    my @done_ase = `ls $ase_counts`;
+    
+    #fromat in files must be UUID.TCGA_ID
+    $ase_analysis->ase_filter_overlap(\@done_ase,"$Analysispath/$cancer_type/$tables/$RNA_table_overlap",$ase_counts_done);
+    $parsing->vlookup("$ase/$RNA_CDS_Mpileups_overlap",1,"$ase_counts_done",1,1,"y","left_ase_grep_NaN.txt");
+}
+else
+{
+    `ls $ase_counts > $ase_counts_done`;
+    $parsing->vlookup("$ase/$RNA_CDS_Mpileups",1,"$ase_counts_done",1,1,"y","left_ase_grep_NaN.txt");
+}
 
-$parsing->vlookup("$ase/RNA_CDS_mpileups.txt",1,"$ase/already_done.txt",1,1,"y","left_ase_grep_NaN.txt");
 `grep NaN left_ase_grep_NaN.txt > left_ase_pull_column.txt`;
 $parsing->pull_column("left_ase_pull_column.txt","1,2,3","RNA_seq_id_ase_no_tum_norm.txt");
 
@@ -175,50 +176,75 @@ $parsing->pull_column("left_ase_pull_column.txt","1,2,3","RNA_seq_id_ase_no_tum_
 
 # The final results containing the number of ase_counts will be saved in dir ase_counts
 # The ase_counts is CNV level count
-#compile_ase_no_tum_norm(file that conatins list of mpileups and associated bed files, cds_sorted directory)
 
-opendir (ASE, "$ase/$ase_counts") or die "Can't open directory $ase/$ase_counts: $!\n";
+opendir (ASE, "$ase/$ase_counts");
 my @asecount = grep{!/^\./ && -f "$ase/$ase_counts/$_"}readdir(ASE);
-closedir(ASE);
+closedir (ASE);
 
+#compile_ase_no_tum_norm(file that conatins list of mpileups and associated bed files, $RNA_Path/$cds_sorted (path to directory where cds sorted beds are stored), $mpileups_dir (path to the directory where RNA-Seq mpileups are strored), $ase_counts (path the the directory where ASE count data will be stored))
 #Checks if the file contains mpileups that do not have ase_counts
 if (-s "RNA_seq_id_ase_no_tum_norm.txt" != 0)
 {
-    $ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Path/$cds_sorted","$mpileups_path",$ase_counts);
+    $ase_analysis->compile_ase_no_tum_norm("RNA_seq_id_ase_no_tum_norm.txt","$RNA_Path/$cds_sorted","$ase/$mpileups_dir",$ase_counts);
 }
 #if the above file is empy, it then checks if the ase_counts directory is empty before running the process on all mpileups
-elsif(scalar(@asecount) == 0)
+elsif (scalar(@asecount) == 0)
 {
-    $ase_analysis->compile_ase_no_tum_norm("RNA_CDS_mpileups.txt","$RNA_Path/$cds_sorted","$mpileups_path",$ase_counts);
+    if (lc $overlap eq "y" or lc $overlap eq "yes")
+    {
+        $ase_analysis->compile_ase_no_tum_norm("$RNA_CDS_Mpileups_overlap","$RNA_Path/$cds_sorted","$ase/$mpileups_dir",$ase_counts);
+    }
+    else
+    {
+        $ase_analysis->compile_ase_no_tum_norm("$RNA_CDS_Mpileups","$RNA_Path/$cds_sorted","$ase/$mpileups_dir",$ase_counts);
+    }
 }
 
-#get gene level ase_counts
-
 mkdir "$ase/$gene_level" unless(-d "$ase/$gene_level");
-`ls $ase/$gene_level > already_done_genes.txt`;
-`ls $mpileups_path/ > mpileups.txt`;
 
-$parsing->vlookup("$ase/mpileups.txt",1,"$ase/already_done_genes.txt",1,1,"y","$ase/left_gene_grep_NaN.txt");
+#Only run these files absent in the $ase_counts directory
+if (lc $overlap eq "y" or lc $overlap eq "yes")
+{
+    my @done_gene = `ls $ase/$gene_level`;
+ 
+    #fromat in files must be UUID.TCGA_ID
+    $ase_analysis->ase_filter_overlap(\@done_gene,"$Analysispath/$cancer_type/$tables/$RNA_table_overlap","$gene_level_done");
+    #$parsing->vlookup("$ase/$RNA_CDS_Mpileups_overlap",1,"$gene_level_done",1,1,"y","left_ase_grep_NaN.txt");
+    $parsing->vlookup("$ase/$RNA_CDS_Mpileups_overlap",1,"$gene_level_done",1,1,"y","$ase/left_gene_grep_NaN.txt");
+}
+else
+{
+    `ls $ase/$gene_level > $gene_level_done`;
+    #$parsing->vlookup("$ase/mpileups.txt",1,"$gene_level_done",1,1,"y","$ase/left_gene_grep_NaN.txt");
+    $parsing->vlookup("$ase/$RNA_CDS_Mpileups",1,"$gene_level_done",1,1,"y","left_gene_grep_NaN.txt");
+}
+
 `grep NaN $ase/left_gene_grep_NaN.txt > $ase/left_gene_pull_collumn.txt`;
 $parsing->pull_column("$ase/left_gene_pull_collumn.txt",1,"$ase/left_gene_level_ase.txt");
 
-$parsing->vlookup("$ase/RNA_CDS_mpileups.txt",1,"$ase/left_gene_level_ase.txt",1,1,"y","$ase/RNA_seq_id_lookup_grep_non_NaN.txt");
+if (lc $overlap eq "y" or lc $overlap eq "yes")
+{
+    $parsing->vlookup("$ase/$RNA_CDS_Mpileups_overlap",1,"$ase/left_gene_level_ase.txt",1,1,"y","$ase/RNA_seq_id_lookup_grep_non_NaN.txt");
+}
+else
+{
+    $parsing->vlookup("$ase/$RNA_CDS_Mpileups",1,"$ase/left_gene_level_ase.txt",1,1,"y","$ase/RNA_seq_id_lookup_grep_non_NaN.txt");
+}
+
 `grep NaN -v $ase/RNA_seq_id_lookup_grep_non_NaN.txt > $ase/RNA_seq_id_lookup_pull_column.txt`;
 $parsing->pull_column("$ase/RNA_seq_id_lookup_pull_column.txt","1,2,3","$ase/RNA_seq_id_lookup_comp_gene_faster.txt");
 
 #copy the pbinom.R file
 `cp $database_path/pbinom.R $ase`;
 
-#compile_gene_ase_faster will use bed file saved in the directory cds_ase_sorted.
-#compile_gene_ase_faster(file that conatins list of ase_counts and associated bed files,cds_sorted_ase directory,path to the refseq.ucsc.ensembl.mrna.hg9.nr.bed file in the Database directory,user defined directory from the command line in script 3.0 or default ase)
+#compile_gene_ase_faster($ase/RNA_seq_id_lookup_comp_gene_faster.txt (file that conatins list of ASE count files and associated bed files), $RNA_Path/$cds_sorted (path the the directory that contains cds sorted files), $database_path/$refseq (path to the $refseq file in the $database_path directory), $ase (path to directory where ASE analysis  data is stored), $ase_counts (directory where ase count data was stored), $gene_level (directory where gene level ase data will be stored), $overlapSelect (overlapSelect command))
 
 if (-s "$ase/RNA_seq_id_lookup_comp_gene_faster.txt" != 0)
 {
-    $ase_analysis->compile_gene_ase_faster("$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$RNA_Path/$cds_sorted","$database_path/refseq.ucsc.ensembl.mrna.hg9.nr.bed","$ase","$ase_counts","$gene_level");
+    $ase_analysis->compile_gene_ase_faster("$ase/RNA_seq_id_lookup_comp_gene_faster.txt","$RNA_Path/$cds_sorted","$database_path/$refseq","$ase","$ase_counts","$gene_level","$overlapSelect");
 }
 
-
-print "All jobs have finished for $disease_abbr.\n";
+print "All jobs have finished for $cancer_type.\n";
 
 $time = localtime;
 print "Script finished on $time.\n";

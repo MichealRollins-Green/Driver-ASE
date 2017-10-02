@@ -8,6 +8,8 @@ use Imputation_Plink;
 use Cwd 'realpath';
 use Getopt::Long;
 use strict;
+use autodie;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started: $time.\n";
@@ -19,110 +21,57 @@ my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 my $impute_plink = Driver_ASE_Lib::Imputation_Plink->new;
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'cancer|c=s' => \my $cancer_type, #e.g. OV
+    'plink|p=s' => \my $plink, #path to plink
+    'sampletype|s=i' => \my $sampletype, #0(normal) 1(tumor) 2(normal/tumor)
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage;
+) or die "Incorrect options!\n",$parsing->usage("1.1");
 
 if($help)
 {
-    $parsing->usage;
+    $parsing->usage("1.1");
 }
 
-if(!defined $disease_abbr)
+if(!defined $cancer_type)
 {
-    print "disease type was not entered!\n";
-    $parsing->usage;
+    print STDERR "Cancer type was not entered!\n";
+    $parsing->usage("1.1");
 }
+
+if (defined $sampletype)
+{
+    if ($sampletype != 0 and $sampletype != 1 and $sampletype != 2)
+    {
+	print STDERR "Invalid input type! The input type must be 0|1|2.";
+	$parsing->usage("1.1");
+    }
+}
+
+if (!defined $plink)
+{
+    $plink = "plink";
+}
+
+$parsing->CheckSoftware("$plink");
 
 my $Driver_ASE_Dir = realpath("../../");
 my $Analysispath = realpath("../../Analysis");
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $RNA_Path = "$Analysispath/$cancer_type/RNA_Seq_Analysis";
 my $affy_dir = "affy6";
 my $bases_dir = "$RNA_Path/bases";
-my $SNP6_Raw_Files_Dir = "$Analysispath/$disease_abbr/SNP6/Genotypes";
+my $SNP6_Raw_Files_Dir = "$Analysispath/$cancer_type/SNP6/Genotypes";
 my $map_dir = "maps";
 my $ped_dir = "peds";
 my $database_path = "$Driver_ASE_Dir/Database";
+my $snp6_cd_file = "snp6.cd.txt";
 
-#Check if the Database directory does not exist
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
-
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
-
-#Checks if there is no Analysis directory
-if (!(-d "$Analysispath"))
-{
-    print STDERR "$Analysispath does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
-elsif(!(-d "$Analysispath/$disease_abbr"))
-{
-    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
-
-if (!(-d $RNA_Path))
-{
-    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
-    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
-    exit;
-}
-
-if(!(-d "$RNA_Path/$affy_dir"))
-{
-    print STDERR "The directory $RNA_Path/$affy_dir does not exist. It was moved, renamed or deleted.\n";
-    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
-    exit;
-}
+$parsing->check_directory_existence("$database_path","$Analysispath","$Analysispath/$cancer_type","$SNP6_Raw_Files_Dir","$RNA_Path","$RNA_Path/$affy_dir","$RNA_Path/$affy_dir/$snp6_cd_file"); #check if directories or files exist
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
 
 chdir "$RNA_Path";
 
 `mkdir -p "$bases_dir"` unless(-d "$bases_dir");
 `rm -rf $bases_dir/*`;
-
-if (!(-d "$SNP6_Raw_Files_Dir"))
-{
-    print STDERR "The directory $SNP6_Raw_Files_Dir does not exist. It was moved, renamed or deleted";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
 
 #gets all of the files in the the directory that was specified to download the SNP-Array data
 my @birdseed = $parsing->get_only_files_in_dir("$SNP6_Raw_Files_Dir");
@@ -130,8 +79,8 @@ my @birdseed = $parsing->get_only_files_in_dir("$SNP6_Raw_Files_Dir");
 mce_map
 {
     chomp ($_);
-   #Prepare_Genos(Genotype files,directory where Genotype files were downloaded,snp6.cd.txt file created from 1.0,user or default output directory from command line,sample type(e.g. 0(normal), 1(tumor) or 2(normal/tumor))
-    $impute_plink->Prepare_Genos("$_","$SNP6_Raw_Files_Dir","$RNA_Path/$affy_dir/snp6.cd.txt","$bases_dir",2);
+   #Prepare_Genos(Genotype files,$SNP6_Raw_Files_Dir (directory where Genotype files were downloaded),$RNA_Path/$affy_dir/$snp6_cd_file (snp6_cd.txt file created from 1.0),$bases_dir (path to directory with default name bases),$sampletype(e.g. 0(normal), 1(tumor) or 2(normal/tumor)))
+    $impute_plink->Prepare_Genos("$_","$SNP6_Raw_Files_Dir","$RNA_Path/$affy_dir/$snp6_cd_file","$bases_dir",$sampletype);
 }@birdseed;
 
 #remove the .t files in the $bases_dir
@@ -149,63 +98,63 @@ for(my $i = 0;$i < scalar(@t_files);$i++)
 chdir "$RNA_Path";
 
  my @files = $parsing->get_only_files_in_dir("$bases_dir");
-    @files=grep{!/^\./ && -f "$bases_dir/$_"}@files;
+@files = grep{!/^\./ && -f "$bases_dir/$_"}@files;
  my $selected_file = $files[-1];
  #pull_column(file to pull column from,column(s) to pull, output file)
- $parsing->pull_column("$bases_dir/$selected_file","1","$disease_abbr\_t");
+ $parsing->pull_column("$bases_dir/$selected_file","1","$cancer_type\_t");
 
  mkdir "$map_dir" unless(-d "$RNA_Path/$map_dir");
  `rm -rf $RNA_Path/$map_dir/*`;
 
- $parsing->vlookup("$disease_abbr\_t",1,"$RNA_Path/$affy_dir/snp6.cd.txt",4,"1,3","y","map_for_sort");
+ $parsing->vlookup("$cancer_type\_t",1,"$RNA_Path/$affy_dir/$snp6_cd_file",4,"1,3","y","map_for_sort");
 
  `sort -k 2,2 -k 3,3n map_for_sort > map_for_pull_column`;
  $parsing->pull_column("map_for_pull_column","2,3,1","mk_map_file");
- #mk_map(file used to make maps, path to RNA_Seq_Analysis directory)
+ #mk_map(file used to make maps,$RNA_Path (path to directory where RNA-Seq analysis data is stored))
  $impute_plink->mk_map("mk_map_file","$RNA_Path/$map_dir");
 
  my @maps = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
  @maps = grep{!/^\./ and /^[0-9x]+.map$/i}@maps;
- open(CHR,">chrs") or die("Can't open filehandle: $!");
+ open (CHR,">chrs");
  for(my $i=0;$i<scalar(@maps);$i++)
 {
-     print CHR $maps[$i], "\n";
- }
- close(CHR);
+    print CHR $maps[$i], "\n";
+}
+ close (CHR);
 
 mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
 `rm -rf $RNA_Path/$ped_dir/*`;
 
-#mk_ped_list_4_plink(file with chr.map,user or default output directory from command line,outfile for peds,path to RNA_Seq_Analysis directory)
+#mk_ped_list_4_plink(file with chr.map,$bases_dir (directory with default name of bases),outfile for peds,$RNA_Path (path to directory where RNA-Seq analysis data is stored))
  $impute_plink->mk_ped_list_4_plink("chrs","$bases_dir","ped_list","$RNA_Path");
 
   mce_map_f
   {
-      chomp($_);
-      my @lines = split("\t",$_);
-      #only keep normal samples for plink
-      my $tn = [split("-",$lines[1])]->[-1];
-      $tn =~ s/[a-zA-Z]$//;
-      #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to RNA_Seq_Analysis directory,user or default output directory from command line)
-      $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir") if $tn > 9;
+    chomp($_);
+    my @lines = split("\t",$_);
+    #only keep normal samples for plink
+    my $tn = [split("-",$lines[1])]->[-1];
+    $tn =~ s/[a-zA-Z]$//;
+    #Make_Plink_Bed(chr#,sample(e.g. 10),sample id,path to directory where RNA-Seq analysis data is stored,$bases_dir (directory with default name of bases),$map_dir (path to directory where map files are stored),path/command for plink)
+    $impute_plink->Make_Plink_Bed("$lines[0]","$lines[1]","$lines[2]","$lines[3]","$bases_dir","$map_dir","$plink") if $tn > 9;
   }"$RNA_Path/ped_list";
 
   my @maps_bim = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
   @maps_bim = grep {/bim/}@maps_bim;
-  open(BIMS,">$RNA_Path/$map_dir/Small_Bims.txt") or die("Can't open file for output: $!");
+  open (BIMS,">$RNA_Path/$map_dir/Small_Bims.txt");
   for(my $i=0;$i<scalar(@maps_bim);$i++)
   {
-      $maps_bim[$i] =~ s/\.bim//;
-      print BIMS "$maps_bim[$i]\n";
+    $maps_bim[$i] =~ s/\.bim//;
+    print BIMS "$maps_bim[$i]\n";
   }
-  close(BIMS);
+  close (BIMS);
 
  chdir "$RNA_Path/$map_dir";
  #Merge all bims in dir maps with plink
- `plink --merge-list Small_Bims.txt --out $disease_abbr\_TN_TCGA_All`;
+ `$plink --merge-list Small_Bims.txt --out $cancer_type\_TN_TCGA_All`;
 
 chdir "$RNA_Path";
-`mv $RNA_Path/$map_dir/$disease_abbr\_TN_TCGA_All.* $RNA_Path`;
+`mv $RNA_Path/$map_dir/$cancer_type\_TN_TCGA_All.* $RNA_Path`;
 
 #To save space
 `rm -rf $bases_dir` unless(!(-d "$bases_dir"));
@@ -213,30 +162,10 @@ my @del_files = `ls $RNA_Path/$map_dir`;
 
  for(my $i = 0;$i < scalar(@del_files);$i++)
  {
-     if ($del_files[$i] =~ /.bim$/)
-     {
-         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
-     }
-     elsif($del_files[$i] =~ /.bed$/)
-     {
-         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
-     }
-     elsif($del_files[$i] =~ /.fam$/)
-     {
-       `rm -f $RNA_Path/$map_dir/$del_files[$i]`; 
-     }
-     elsif($del_files[$i] =~ /.log$/)
-     {
-         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
-     }
-     elsif($del_files[$i] =~ /.ped$/)
-     {
-         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
-     }
-     elsif($del_files[$i] =~ /.pro$/)
-     {
-         `rm -f $RNA_Path/$map_dir/$del_files[$i]`;  
-     }
+    if ($del_files[$i] =~ /.bim$/ || $del_files[$i] =~ /.bed$/ || $del_files[$i] =~ /.fam$/ || $del_files[$i] =~ /.log$/ || $del_files[$i] =~ /.ped$/ || $del_files[$i] =~ /.pro$/)
+    {
+        `rm -f $RNA_Path/$map_dir/$del_files[$i]`;
+    }
  }
 
 #Split Bed into peds and move them into the dir peds
@@ -244,7 +173,7 @@ my @chrs=(1..23);
 my @plink_cmds;
 while(my $chr=<@chrs>)
 {
-    push @plink_cmds,"plink --bfile $disease_abbr\_TN_TCGA_All --chr $chr --recode --out $RNA_Path/$ped_dir/$chr";
+    push @plink_cmds,"$plink --bfile $cancer_type\_TN_TCGA_All --chr $chr --recode --out $RNA_Path/$ped_dir/$chr";
 }
 
 mce_map
@@ -255,7 +184,7 @@ mce_map
 `rm -f $ped_dir/*.map`;
 `rm -f $ped_dir/*.log`;
 
-print "All Jobs have finished for $disease_abbr.\n";
+print "All Jobs have finished for $cancer_type.\n";
 
 $time = localtime;
 print "Script finished: $time.\n";

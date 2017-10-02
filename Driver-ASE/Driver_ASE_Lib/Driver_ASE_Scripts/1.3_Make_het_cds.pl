@@ -9,6 +9,8 @@ use Cwd 'realpath';
 use Cwd;
 use Getopt::Long;
 use strict;
+use autodie;
+no warnings 'once';
 
 my $time = localtime;
 print "Script started: $time.\n";
@@ -20,107 +22,44 @@ my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 my $impute_plink = Driver_ASE_Lib::Imputation_Plink->new;
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'cancer|c=s' => \my $cancer_type, #e.g. OV
+    'plink|p=s' => \my $plink, #path to plink
     'help|h' => \my $help
-) or die "Incorrect options!\n",$parsing->usage;
+) or die "Incorrect options!\n",$parsing->usage("1.3");
 
 if($help)
 {
-    $parsing->usage;
+    $parsing->usage("1.3");
 }
 
-if(!defined $disease_abbr)
+if(!defined $cancer_type)
 {
-    print "disease type was not entered!\n";
-    $parsing->usage;
+    print STDERR "Cancer type was not entered!\n";
+    $parsing->usage("1.3");
 }
+
+if (!defined $plink)
+{
+    $plink = "plink";
+}
+
+$parsing->CheckSoftware("$plink");
 
 my $Driver_ASE_Dir = realpath("../../");
 my $database_path = "$Driver_ASE_Dir/Database";
 my $Analysispath = realpath("../../Analysis");
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $RNA_Path = "$Analysispath/$cancer_type/RNA_Seq_Analysis";
 my $imputation = "$RNA_Path/Impute2Plink";
 my $phased = "$RNA_Path/phased";
-my $Impute2out = "$Analysispath/$disease_abbr/phased_imputed_raw_out";
+my $Impute2out = "$Analysispath/$cancer_type/phased_imputed_raw_out";
 my $cds_plink = "cds_plink";
 my $cds_sorted = "cds_sorted";
 my $cds_tmp = "cds_sorted_tmp";
-my $finished_RNA = "$disease_abbr\_finished_analysis_RNA";
+my $finished_RNA = "$cancer_type\_finished_analysis_RNA";
+my $phased_sample = "21.phased.sample";
 
-#Check if there is no Database directory
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist. It was either moved, renames, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
-
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
-
-#Checks if there is no Analysis directory
-if (!(-d "$Analysispath"))
-{
-    print STDERR "$Analysispath does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
-elsif(!(-d "$Analysispath/$disease_abbr"))
-{
-    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved or renamed.\n";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
-
-if (!(-d $RNA_Path))
-{
-    print STDERR "$RNA_Path does not exist. Either it was deleted, moved or renamed.\n";
-    print STDERR "Please run script 1.0_Prep_SNPs_for_Imputation_and_Plink.pl.\n";
-    exit;
-}
-
-if (!(-d "$phased"))
-{
-    print STDERR "The directory $phased does not exist. It was moved, renamed or deleted.\n";
-    print STDERR "Please run script 1.2_Shapeit_and_Imputation.pl.\n";
-    exit;
-}
-
-if(!(-d "$Impute2out"))
-{
-    print STDERR "The directory $Impute2out does not exist. It was moved, renamed or deleted.\n";
-    print STDERR "Please run script 1.2_Shapeit_and_Imputation.pl.\n";
-    exit;
-}
+$parsing->check_directory_existence("$database_path","$Analysispath","$Analysispath/$cancer_type","$Impute2out","$RNA_Path","$phased"); #check if directories or files exist
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
 
 chdir "$RNA_Path";
 
@@ -129,14 +68,14 @@ chdir "$RNA_Path";
 
 my @imputeout = $parsing->get_only_files_in_dir("$Impute2out");
 @imputeout = grep {/haps/}@imputeout;
-open(I2O,">$RNA_Path/imputed_haps") or die("Can't open file for output:$!");
+open (I2O,">$RNA_Path/imputed_haps");
 for(my $i = 0;$i < scalar(@imputeout);$i++)
 {
     print I2O "$imputeout[$i]\n";
 }
-
-#impute_2_out(path to phased_imputed_raw_out,path to RNA_Seq_Analysis directory,file that contains a list of haps files from directory phased_imputed_raw_out,user defened directory from command line or default directory from script 1.2,user defened directory from command line or default directory)
-my @impute_out_cmds = $impute_plink->impute_2_out("$Impute2out","$RNA_Path","$RNA_Path/imputed_haps","$phased","$imputation");
+close (I2O);
+#impute_2_out($Impute2out (path to directory where raw imputed data was stored in script 1.2),$RNA_Path (path to directory where RNA-Seq Analysis is stored),$RNA_Path/imputed_haps (file that contains a list of haps files from directory where raw imputed is stored),$phased (path to directory with default name phased),$imputation (path to directory where impluted plink data will be stored),$plink (path/command for plink),$phased_sample (phased sample file))
+my @impute_out_cmds = $impute_plink->impute_2_out("$Impute2out","$RNA_Path","$RNA_Path/imputed_haps","$phased","$imputation","$plink","$phased_sample");
 
 mce_map
 {
@@ -146,48 +85,48 @@ mce_map
 `rm $imputation/*.sample`;
 my @merge_list = $parsing->get_only_files_in_dir("$imputation");
 @merge_list = grep {/bim/}@merge_list;
-open(ML,">$imputation/Merged_list.txt") or die("Can't open file for output:$!");
+open (ML,">$imputation/Merged_list.txt");
 for(my $i=0;$i<scalar(@merge_list);$i++)
 {
  my $bim_file = $merge_list[$i];   
  $bim_file =~ s/.bim//;
  print ML "$bim_file\n";
 }
-close(ML);
+close (ML);
 
 mce_map_f
 {
     chomp($_);
-    #Assign_ChrPos_MissingId_SNPs(user defened directory from command line or default directory/bim file)
+    #Assign_ChrPos_MissingId_SNPs($imputation/$_.bim (path to bim files created in impute_2_out))
     $impute_plink->Assign_ChrPos_MissingId_SNPs("$imputation/$_.bim");
 }"$imputation/Merged_list.txt";
 
 chdir "$imputation";
-print "Now doing plink on Merged_list.txt\n";
-`plink --threads 3 --merge-list Merged_list.txt --out $disease_abbr\_TN_TCGA_Imputation`;
+print "Now doing plink on Merged_list.txt.\n";
+`$plink --threads 3 --merge-list Merged_list.txt --out $cancer_type\_TN_TCGA_Imputation`;
 
 chdir "$RNA_Path";
-`mv $imputation/$disease_abbr\_TN_TCGA_Imputation.* $RNA_Path`;
+`mv $imputation/$cancer_type\_TN_TCGA_Imputation.* $RNA_Path`;
 
 mkdir "$RNA_Path/$cds_plink" unless(-d "$RNA_Path/$cds_plink");
 `rm -f $RNA_Path/$cds_plink/*`;
 chdir "$RNA_Path/$cds_plink";
 
-print "Now running Extract_Ind_Het_Genos\n";
+print "Now running Extract_Ind_Het_Genos.\n";
 my @chrs = (1..23);
 my @Het_cmds;
 while(my $chr=<@chrs>)
 {
-    `plink --bfile $RNA_Path/$disease_abbr\_TN_TCGA_Imputation --chr $chr --make-bed --out $chr`;
-    #Extract_Ind_Het_Genos(chr#,chr file made in the cds_plink directory,21.phased.sample from the user defened directory from command line or default directory from script 1.2,cds_plink directory)
-    push @Het_cmds, $impute_plink->Extract_Ind_Het_Genos("chr$chr","$RNA_Path/$cds_plink/$chr","$phased/21.phased.sample","$RNA_Path/$cds_plink");
+    `$plink --bfile $RNA_Path/$cancer_type\_TN_TCGA_Imputation --chr $chr --make-bed --out $chr`;
+    #Extract_Ind_Het_Genos(chr$chr (chr#),$RNA_Path/$cds_plink/$chr (chr file made in the directory with default name cds_plink),$phased/$phased_sample (path to phased sample file),$RNA_Path/$cds_plink (path to directory with default name cds_plink),$plink (path/command for plink))
+    push @Het_cmds, $impute_plink->Extract_Ind_Het_Genos("chr$chr","$RNA_Path/$cds_plink/$chr","$phased/$phased_sample","$RNA_Path/$cds_plink","$plink");
 };
 mce_map
 {
     system("$Het_cmds[$_]");
 }0..$#Het_cmds;
 
-print "Now running Append_snplist_chrs\n";
+print "Now running Append_snplist_chrs.\n";
 mce_map_f
 {
     chomp($_);
@@ -198,34 +137,34 @@ mce_map_f
         my $ID=$as[1];
         #Append_snplist_chrs parameters: $ID $snplist_dir and $outdir;
         #Output file name will be $ID.snplist;
-        #Append_snplist_chrs(TCGA ID,cds_plink directory)
+        #Append_snplist_chrs($ID (TCGA ID),$RNA_Path/$cds_plink (path to directory with default name cds_plink))
         $impute_plink->Append_snplist_chrs("$ID","$RNA_Path/$cds_plink");
     }
-}"$phased/21.phased.sample";
+}"$phased/$phased_sample";
 
-print "Now running merge_tcga_snplist\n";
-#merge_tcga_snplist(path to RNA_Seq_Analysis/cds_plink directory)
+print "Now running merge_tcga_snplist.\n";
+#merge_tcga_snplist($RNA_Path/$cds_plink (path to directory with default name cds_plink))
 $impute_plink->merge_tcga_snplist("$RNA_Path/$cds_plink");
 
-print "Now running Get_Uniq_SNPS_From_SNPlists\n";
+print "Now running Get_Uniq_SNPS_From_SNPlists.\n";
 #ALL_SNPLIST.txt is not an actual file instead it is a tag that is used in this subroutine to get files with ALL_SNPLIST.txt in it
 #There should be not path included int as it will look for the path in the file name
-#Get_Uniq_SNPS_From_SNPlists(cds_plink directory,file tag,output file)
+#Get_Uniq_SNPS_From_SNPlists($RNA_Path/$cds_plink (path to directory with default name cds_plink),file tag,output file)
 $impute_plink->Get_Uniq_SNPS_From_SNPlists("$RNA_Path/$cds_plink","ALL_SNPLIST.txt","all_snplist.txt");
 
-print "Now putting all snp lists into file all_chrs_snplist.txt\n";
-$parsing->vlookup("$RNA_Path/$cds_plink/all_snplist.txt",1,"$RNA_Path/$disease_abbr\_TN_TCGA_Imputation.bim",2,1,"y","$RNA_Path/all_chrs_snplist.txt");
+print "Now putting all snp lists into file all_chrs_snplist.txt.\n";
+$parsing->vlookup("$RNA_Path/$cds_plink/all_snplist.txt",1,"$RNA_Path/$cancer_type\_TN_TCGA_Imputation.bim",2,1,"y","$RNA_Path/all_chrs_snplist.txt");
 
-print "Now running Snplist_Query_Haps_for_Beds\n";
+print "Now running Snplist_Query_Haps_for_Beds.\n";
 mce_map
 {
     my $chr=$_;
-    #Snplist_Query_Haps_for_Beds(file that conains all the chr snplists,21.phased.sample in the user defened directory from command line or default directory from script 1.2,path to phased_imputed_raw_out,output bed tag,chr#)
-    $impute_plink->Snplist_Query_Haps_for_Beds("$RNA_Path/all_chrs_snplist.txt","$phased/21.phased.sample","$Impute2out","$RNA_Path/$cds_plink/All_Hets_Haps","$chr"); 
+    #Snplist_Query_Haps_for_Beds(file that conains all the chr snplists,$phased/$phased_sample (path to phased sample file),$Impute2out (path to directory where raw imputed data was stored in script 1.2),output bed tag,chr#)
+    $impute_plink->Snplist_Query_Haps_for_Beds("$RNA_Path/all_chrs_snplist.txt","$phased/$phased_sample","$Impute2out","$RNA_Path/$cds_plink/All_Hets_Haps","$chr"); 
  }1..23;
 
-print "Now running Split_Bed_Haps_for_individuals\n";
-#Split_Bed_Haps_for_individuals(cds_plink directory)
+print "Now running Split_Bed_Haps_for_individuals.\n";
+#Split_Bed_Haps_for_individuals($RNA_Path/$cds_plink (path to directory with default name cds_plink))
 my @split_bed_haps_cmds = $impute_plink->Split_Bed_Haps_for_individuals("$RNA_Path/$cds_plink");
 
 mce_map
@@ -247,7 +186,7 @@ chdir $RNA_Path;
 mkdir "$RNA_Path/$cds_sorted";
 `rm -f $RNA_Path/$cds_sorted/*`;
 
-print "Now running Split_BedHaps\n";
+print "Now running Split_BedHaps.\n";
 mce_map
 {
     my $chr = $_;
@@ -255,15 +194,15 @@ mce_map
     #Due to the large number of opened files (sample_size*23=1061*23)
     #Linux system reject the following procedure!
     #Thus, we only open no more than 400 file for writting!
-    #Split_BedHaps(All_Hets_Haps.chr#.sorted.bed file in the cds_plink directory,cds_sorted directory,chr#,filehandle#)
+    #Split_BedHaps($RNA_Path/$cds_plink/All_Hets_Haps.chr$chr.sorted.bed (All_Hets_Haps.chr#.sorted.bed file in the directory with default name cds_plink),$RNA_Path/$cds_sorted (path to directory with default name cds_sorted),chr#,filehandle#)
     $impute_plink->Split_BedHaps("$RNA_Path/$cds_plink/All_Hets_Haps.chr$chr.sorted.bed","$RNA_Path/$cds_sorted","$chr","400");
 }1..23;
 
 chdir "$RNA_Path/$cds_sorted";
 
-print "Now running Merge_All_Chrs_4_Single_TCGA_Bed\n";
-#Merge_All_Chrs_4_Single_TCGA_Bed(21.phased.sample file in the the user defened directory from command line or default directory from script 1.2,cds_plink directory,cds_sorted directory)
-$impute_plink->Merge_All_Chrs_4_Single_TCGA_Bed("$phased/21.phased.sample","$RNA_Path/$cds_plink","$RNA_Path/$cds_sorted");
+print "Now running Merge_All_Chrs_4_Single_TCGA_Bed.\n";
+#Merge_All_Chrs_4_Single_TCGA_Bed($phased/$phased_sample (path to phased sample file created in script 1.2),$RNA_Path/$cds_plink (path to directory with default name cds_plink),$RNA_Path/$cds_sorted (path to directory with default name cds_sorted))
+$impute_plink->Merge_All_Chrs_4_Single_TCGA_Bed("$phased/$phased_sample","$RNA_Path/$cds_plink","$RNA_Path/$cds_sorted");
 
 chdir "$RNA_Path";
 `rm -f $cds_sorted/*chr*`;
@@ -275,27 +214,17 @@ mkdir "$cds_tmp";
 
 my @cds_sort_files = `ls $cds_sorted`;
 
-print "Now running Change_CD_ChrInfo_4_Mpileup\n";
+print "Now running Change_CD_ChrInfo_4_Mpileup.\n";
 mce_map
 {
     chomp(my $TCGA=$_);
     my $rd=rand();
     $rd=substr($rd,2,6);
-    #Change_CD_ChrInfo_for_Mpileup(bed file,cds_sorted directory,cds_sorted_tmp/bed file)
+    #Change_CD_ChrInfo_for_Mpileup($TCGA (bed file),$RNA_Path/$cds_sorted (path to directory with default name cds_sorted),$RNA_Path/$cds_tmp/$TCGA ( path to bed file created in directory with default name cds_sorted_tmp))
     $impute_plink->Change_CD_ChrInfo_for_Mpileup("$TCGA","$RNA_Path/$cds_sorted","$RNA_Path/$cds_tmp/$TCGA");
 }@cds_sort_files;
 
-#If there are some errors in cds_sorted or cds_sorted_tmp
-#Use info in the tar.gz to get right cd files!
-
-chdir "$RNA_Path/$cds_plink";
-mkdir "$Analysispath/$disease_abbr/$finished_RNA" unless(-d "$Analysispath/$disease_abbr/$finished_RNA");
-print "Now compressing All_Het_Haps and snplists files from cds_plink directory.\n";
-`tar -zcvf $disease_abbr\_Imputation_Haps.tar.gz All_Hets_Haps.chr*.sorted.bed TCGA*.snplist`;
-`mv $disease_abbr\_Imputation_Haps.tar.gz $Analysispath/$disease_abbr/$finished_RNA`;
-chdir $RNA_Path;
-
-print "All Jobs have finished for $disease_abbr.\n";
+print "All Jobs have finished for $cancer_type.\n";
 
 $time = localtime;
 print "Script finished: $time.\n";

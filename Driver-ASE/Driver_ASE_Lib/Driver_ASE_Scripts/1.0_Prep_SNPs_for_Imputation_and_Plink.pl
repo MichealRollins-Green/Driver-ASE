@@ -7,6 +7,7 @@ use Parsing_Routines;
 use Cwd 'realpath';
 use Getopt::Long;
 use strict;
+use autodie;
 
 my $time = localtime;
 print "Script started: $time.\n";
@@ -18,7 +19,7 @@ my $impute_plink = Driver_ASE_Lib::Imputation_Plink->new;
 my $parsing = Driver_ASE_Lib::Parsing_Routines->new;
 
 GetOptions(
-    'disease|d=s' => \my $disease_abbr,#e.g. OV
+    'cancer|c=s' => \my $cancer_type,#e.g. OV
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage;
 
@@ -27,106 +28,57 @@ if ($help)
     $parsing->usage;
 }
 
-if (!defined $disease_abbr)
+if (!defined $cancer_type)
 {
-    print "disease type was not entered!\n";
+    print STDERR "Cancer type was not entered!\n";
     $parsing->usage;
 }
 
 my $Driver_ASE_Dir = realpath("../../");
 my $Analysispath = realpath("../../Analysis");
 my $database_path = "$Driver_ASE_Dir/Database";
-my $RNA_Path = "$Analysispath/$disease_abbr/RNA_Seq_Analysis";
+my $RNA_Path = "$Analysispath/$cancer_type/RNA_Seq_Analysis";
 my $affy_dir = "affy6";
+my $snp6_anno_file = "snp6.anno.txt";
+my $snp6_cd_file = "snp6.cd.txt";
+my $GenomeWideSNP = "GenomeWideSNP_6.na35.annot.csv";
 
-#Check if the Database directory does not exist
-if(!(-d "$database_path"))
-{
-    print STDERR "$database_path does not exist, it was either moved, renamed, deleted or has not been downloaded.\nPlease check the README.md file on the github page to find out where to get the Database directory.\n";
-    exit;
-}
+$parsing->check_directory_existence("$database_path","$Analysispath/$cancer_type"); #check if directories or files exist
+$parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
 
-#Check if the cancer type entered exists with in the file.
-open(my $can,"$database_path/Cancer_Types.txt") or die "Can't open Cancer_Types.txt for input: $!\n";
-my @can_types = <$can>;
-my $line_num = 1;
-my $num_of_ctypes = scalar(@can_types);
-my $no_count = 0;
-
-print "Locating $disease_abbr...\n";
-
-foreach my $line (@can_types)
-{
-    chomp($line);
-    if ($disease_abbr eq $line)
-    {
-	print "Found $disease_abbr on line $line_num.\n\nContinuing program.\n\n";
-	last;
-    }
-    else
-    {
-	print "No $disease_abbr on line $line_num.\n";
-	print "Line $line_num was $line.\n\n";
-	$no_count += 1;
-    }
-    $line_num += 1;
-}
-close ($can);
-
-if ($no_count == $num_of_ctypes)
-{
-    print "$disease_abbr is not in the Cancer_Types.txt file. Maybe it was misspelled or it does not exits within the file.\n";
-    exit;
-}
-
-#Checks if there is no Analysis directory
-if (!(-d "$Analysispath"))
-{
-    print STDERR "$Analysispath does not exist. It was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
-elsif(!(-d "$Analysispath/$disease_abbr"))
-{
-    print STDERR "$Analysispath/$disease_abbr does not exist. It was either deleted, moved, renamed or the script that creates it wasn't ran.\n";
-    print STDERR "Please run script 0_Download_SNPArray_From_GDC.pl.\n";
-    exit;
-}
-
-mkdir "$Analysispath/$disease_abbr/RNA_Seq_Analysis" unless(-d "$Analysispath/$disease_abbr/RNA_Seq_Analysis");
+mkdir "$RNA_Path" unless(-d "$RNA_Path");
 
 chdir $RNA_Path;
 
 $affy_dir =~ s/\/$//;
 `mkdir -p $RNA_Path/$affy_dir` unless(-d "$RNA_Path/$affy_dir");
 
-if (-e "$RNA_Path/$affy_dir/snp6.anno.txt" and -e "$RNA_Path/$affy_dir/snp6.cd.txt") 
+if ((-e "$RNA_Path/$affy_dir/$snp6_anno_file" and -s "$RNA_Path/$affy_dir/$snp6_anno_file" !=0 ) and (-e "$RNA_Path/$affy_dir/$snp6_cd_file" and -s "$RNA_Path/$affy_dir/$snp6_cd_file" != 0)) 
 {
-    print "the necessary files (snp6.anno.txt and snp6.cd.txt) have already been processed and reside in $RNA_Path/$affy_dir/\n";
+    print "The necessary files ($snp6_anno_file and $snp6_cd_file) have already been processed and reside in $RNA_Path/$affy_dir/\n";
     print "proceed to script 1.1_Birdseed_to_ped_and_maps.pl\n";
-    exit;
 }
 else
 {
-    unless (-e "$database_path/GenomeWideSNP_6.na35.annot.csv")
+    unless (-e "$RNA_Path/$affy_dir/$GenomeWideSNP")
     {
         `unzip $database_path/GenomeWideSNP_6.na35.annot.csv.zip -d $RNA_Path/$affy_dir`;
     }
     
     #ParseAnnoAffxSNP6 changes the strand '-' into "+" and transforms two alleles in /ATCG/ into their complements /TAGC/
-    print "Now running ParseAnnoAffxSNP6\n";
-    #ParseAnnoAffxSNP6(GenomeWideSNP_6.na35.annot.csv file, output file)
-    $impute_plink->ParseAnnoAffxSNP6("$RNA_Path/$affy_dir/GenomeWideSNP_6.na35.annot.csv","$RNA_Path/$affy_dir/snp6.anno.txt");
+    print "Now running ParseAnnoAffxSNP6.\n";
+    #ParseAnnoAffxSNP6($RNA_Path/$affy_dir/$GenomeWideSNP (path to GenomeWideSNP_6.na35.annot.csv file), $RNA_Path/$affy_dir/$snp6_anno_file(output file))
+    $impute_plink->ParseAnnoAffxSNP6("$RNA_Path/$affy_dir/$GenomeWideSNP","$RNA_Path/$affy_dir/$snp6_anno_file");
     
-    #Get snp6.cd.txt for imputation, which is saved in the dir affy6
-    print "Now running PrepareAffxAlleleAccording2ImputationAlleles\n";
-    #PrepareAffxAlleleAccording2ImputationAlleles(path to GenomeWideSNP_6.na35.annot.csv,database directory path)
-    $impute_plink->PrepareAffxAlleleAccording2ImputationAlleles("$RNA_Path/$affy_dir","$database_path");
+    #Get $snp6_cd_file for imputation, which is saved in the dir affy6
+    print "Now running PrepareAffxAlleleAccording2ImputationAlleles.\n";
+    #PrepareAffxAlleleAccording2ImputationAlleles($RNA_Path/$affy_dir/$GenomeWideSNP (path to GenomeWideSNP_6.na35.annot.csv file),$database_path (path to the Database directory), $snp6_anno_file (snp6.anno.txt file),$snp6_cd_file (snp6.cd.txt file))
+    $impute_plink->PrepareAffxAlleleAccording2ImputationAlleles("$RNA_Path/$affy_dir","$database_path","$snp6_anno_file","$snp6_cd_file");
     
-    print "All jobs have finished for $disease_abbr\n";
+    print "All jobs have finished for $cancer_type.\n";
     
     $time = localtime;
     print "Script finished: $time.\n";
-    
-    exit;
 }
+
+exit;
