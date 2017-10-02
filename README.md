@@ -96,6 +96,8 @@ curl -L http://cpanmin.us | perl - LWP::Simple
 
 curl -L http://cpanmin.us | perl - File::Which
 
+curl -L http://cpanmin.us | perl - Archive::Tar
+
 curl -L http://cpanmin.us | perl - autodie
 
 curl -L http://cpanmin.us | perl - lib
