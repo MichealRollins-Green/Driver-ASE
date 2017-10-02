@@ -27,12 +27,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("1.3");
 
-if($help)
+if ($help)
 {
     $parsing->usage("1.3");
 }
 
-if(!defined $cancer_type)
+if (!defined $cancer_type)
 {
     print STDERR "Cancer type was not entered!\n";
     $parsing->usage("1.3");
@@ -69,7 +69,7 @@ chdir "$RNA_Path";
 my @imputeout = $parsing->get_only_files_in_dir("$Impute2out");
 @imputeout = grep {/haps/}@imputeout;
 open (I2O,">$RNA_Path/imputed_haps");
-for(my $i = 0;$i < scalar(@imputeout);$i++)
+for (my $i = 0;$i < scalar(@imputeout);$i++)
 {
     print I2O "$imputeout[$i]\n";
 }
@@ -86,7 +86,7 @@ mce_map
 my @merge_list = $parsing->get_only_files_in_dir("$imputation");
 @merge_list = grep {/bim/}@merge_list;
 open (ML,">$imputation/Merged_list.txt");
-for(my $i=0;$i<scalar(@merge_list);$i++)
+for (my $i=0;$i<scalar(@merge_list);$i++)
 {
  my $bim_file = $merge_list[$i];   
  $bim_file =~ s/.bim//;
@@ -115,7 +115,7 @@ chdir "$RNA_Path/$cds_plink";
 print "Now running Extract_Ind_Het_Genos.\n";
 my @chrs = (1..23);
 my @Het_cmds;
-while(my $chr=<@chrs>)
+while (my $chr=<@chrs>)
 {
     `$plink --bfile $RNA_Path/$cancer_type\_TN_TCGA_Imputation --chr $chr --make-bed --out $chr`;
     #Extract_Ind_Het_Genos(chr$chr (chr#),$RNA_Path/$cds_plink/$chr (chr file made in the directory with default name cds_plink),$phased/$phased_sample (path to phased sample file),$RNA_Path/$cds_plink (path to directory with default name cds_plink),$plink (path/command for plink))
@@ -130,7 +130,7 @@ print "Now running Append_snplist_chrs.\n";
 mce_map_f
 {
     chomp($_);
-    if($_=~/TCGA/)
+    if ($_=~/TCGA/)
     {
         #Get rid of the first two lines;
         my @as=split("\t| ",$_);

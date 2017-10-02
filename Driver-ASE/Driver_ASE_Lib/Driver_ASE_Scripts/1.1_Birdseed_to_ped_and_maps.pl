@@ -27,12 +27,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("1.1");
 
-if($help)
+if ($help)
 {
     $parsing->usage("1.1");
 }
 
-if(!defined $cancer_type)
+if (!defined $cancer_type)
 {
     print STDERR "Cancer type was not entered!\n";
     $parsing->usage("1.1");
@@ -86,9 +86,9 @@ mce_map
 #remove the .t files in the $bases_dir
 my @t_files = `ls "$bases_dir"`;
 chdir "$bases_dir";
-for(my $i = 0;$i < scalar(@t_files);$i++)
+for (my $i = 0;$i < scalar(@t_files);$i++)
 {
-    if($t_files[$i] =~ /\.t/)
+    if ($t_files[$i] =~ /\.t/)
     {
         chomp($t_files[$i]);
         `rm '$bases_dir'/$t_files[$i]`;  
@@ -116,11 +116,11 @@ chdir "$RNA_Path";
  my @maps = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
  @maps = grep{!/^\./ and /^[0-9x]+.map$/i}@maps;
  open (CHR,">chrs");
- for(my $i=0;$i<scalar(@maps);$i++)
+ for (my $i=0;$i<scalar(@maps);$i++)
 {
     print CHR $maps[$i], "\n";
 }
- close (CHR);
+ close ( (CHR);
 
 mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
 `rm -rf $RNA_Path/$ped_dir/*`;
@@ -142,12 +142,12 @@ mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
   my @maps_bim = $parsing->get_only_files_in_dir("$RNA_Path/$map_dir");
   @maps_bim = grep {/bim/}@maps_bim;
   open (BIMS,">$RNA_Path/$map_dir/Small_Bims.txt");
-  for(my $i=0;$i<scalar(@maps_bim);$i++)
+  for (my $i=0;$i<scalar(@maps_bim);$i++)
   {
     $maps_bim[$i] =~ s/\.bim//;
     print BIMS "$maps_bim[$i]\n";
   }
-  close (BIMS);
+  close ( (BIMS);
 
  chdir "$RNA_Path/$map_dir";
  #Merge all bims in dir maps with plink
@@ -160,7 +160,7 @@ chdir "$RNA_Path";
 `rm -rf $bases_dir` unless(!(-d "$bases_dir"));
 my @del_files = `ls $RNA_Path/$map_dir`;
 
- for(my $i = 0;$i < scalar(@del_files);$i++)
+ for (my $i = 0;$i < scalar(@del_files);$i++)
  {
     if ($del_files[$i] =~ /.bim$/ || $del_files[$i] =~ /.bed$/ || $del_files[$i] =~ /.fam$/ || $del_files[$i] =~ /.log$/ || $del_files[$i] =~ /.ped$/ || $del_files[$i] =~ /.pro$/)
     {
@@ -171,7 +171,7 @@ my @del_files = `ls $RNA_Path/$map_dir`;
 #Split Bed into peds and move them into the dir peds
 my @chrs=(1..23);
 my @plink_cmds;
-while(my $chr=<@chrs>)
+while (my $chr=<@chrs>)
 {
     push @plink_cmds,"$plink --bfile $cancer_type\_TN_TCGA_All --chr $chr --recode --out $RNA_Path/$ped_dir/$chr";
 }

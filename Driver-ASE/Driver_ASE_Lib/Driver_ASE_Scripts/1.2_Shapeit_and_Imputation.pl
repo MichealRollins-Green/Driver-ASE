@@ -27,12 +27,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("1.2");
 
-if($help)
+if ($help)
 {
     $parsing->usage("1.2");
 }
 
-if(!defined $cancer_type)
+if (!defined $cancer_type)
 {
     print STDERR "Cancer type was not entered!\n";
     $parsing->usage("1.2");

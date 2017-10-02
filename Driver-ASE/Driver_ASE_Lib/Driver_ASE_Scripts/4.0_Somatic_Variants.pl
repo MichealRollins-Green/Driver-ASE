@@ -102,7 +102,7 @@ if (lc $overlap eq "y" || lc $overlap eq "yes")
         chdir "$WGS_Path"; #changes back to this directory after overlapping as the Overlap_RNA_WGS_Geno routine changes to the $Analysispath/$cancer_type/$tables directory
         `ls $Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups > wgs_mpileups.txt`;
         
-        open(MPO,">wgs_look.txt");
+        open (MPO,">wgs_look.txt");
         my @mp = `cat wgs_mpileups.txt`;
         foreach my $mps (@mp)
         {
@@ -113,7 +113,7 @@ if (lc $overlap eq "y" || lc $overlap eq "yes")
         close (MPO);
         $parsing->vlookup("wgs_look.txt",2,"$Analysispath/$cancer_type/$tables/$WGS_table_overlap",2,2,"y","wgs_mpileups_NaN.txt"); #new $WGS_table file contains only overlap IDs and matches those IDs to the IDs in the wgs_look.txt file
         my @filt_mpileups = `cat wgs_mpileups_NaN.txt`;
-        open(MPO,">$WGS_Mpileups_Overlapped");
+        open (MPO,">$WGS_Mpileups_Overlapped");
         foreach my $mpm (@filt_mpileups)
         {
             chomp($mpm);
@@ -146,7 +146,7 @@ if (lc $overlap eq "y" or lc $overlap eq "yes")
 else
 {
     my @mpile = `ls $Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups`;
-    open(MPO,">$WGS_Mpileups");
+    open (MPO,">$WGS_Mpileups");
     
     for my $mp (@mpile)
     {
@@ -155,7 +155,7 @@ else
         my $join_mp = join(".",$sp_mp[0],$sp_mp[1]); #join UUID and TCGA ID
         print MPO "$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups/$mp\t$join_mp\t$Analysispath/$cancer_type/$wgs_dwnlds\t$wgs_mpileups/$mp\n";
     }
-    close MPO;
+    close (MPO);
     
     $wgs_analysis->filter_not_done_somatic($not_done,"$WGS_Path/$WGS_Mpileups","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
     

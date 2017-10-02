@@ -58,6 +58,9 @@ my $downloadtable = "final_downloadtable_$cancer_type";
 my $RNA_table = "$downloadtable\_RNA-Seq.txt";
 my $WGS_table = "$downloadtable\_WGS.txt";
 my $Genotypes_table = "$cancer_type.Genotypes.id2uuid.txt";
+my $RNA_table_overlap = "$downloadtable\_RNA-Seq_overlap.txt";
+my $WGS_table_overlap = "$downloadtable\_WGS_overlap.txt";
+my $Genotypes_table_overlap = "$cancer_type.Genotypes.id2uuid_overlap.txt";
 my $reference_file = "$cancer_type\_$Exp_Strategy\_reference.txt";
 
 #If the path to the gdc key was not specified then an error will be printed and the usage of the program will be shown.
@@ -140,7 +143,7 @@ else
    @cancer = $cancer_type; 
 }
 
-foreach my $cancer_type(@cancer)
+foreach my $cancer_type (@cancer)
 {
     $cancer_type = $parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer type entered is valid
     next unless (defined $cancer_type);
@@ -181,7 +184,7 @@ foreach my $cancer_type(@cancer)
         open (my $ME,">$cancer_type.edit.metadata.txt");
         chomp(my @metaedit = <$meta>);
         close ($meta);
-        for(my $i = 0;$i < scalar(@metaedit);$i++)
+        for (my $i = 0;$i < scalar(@metaedit);$i++)
         {
         $metaedit[$i] =~ s/\r//g;
         }
@@ -272,14 +275,15 @@ foreach my $cancer_type(@cancer)
             print "It seems that there is a table in the directory $Analysispath/$cancer_type/$tables. $RNA_table\n";
         }
     }
-    
+}
+
 if (lc $overlap eq "y" || lc $overlap eq "yes")
 {
     $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$RNA_table","$Analysispath/$cancer_type/$tables/$WGS_table","$Analysispath/$cancer_type/$tables/$Genotypes_table"); #checks if RNA-Seq, WGS and Genotypes tables exist before overlapping them
     if (!(-s "$Analysispath/$cancer_type/$tables/$RNA_table" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$WGS_table" == 0) and !(-s "$Analysispath/$cancer_type/$tables/$Genotypes_table" == 0))
     {
         #Overlap_RNA_WGS_Geno($Analysispath/$cancer_type/$tables (path to cancer type table directory),$RNA_table (RNA-Seq table file),$WGS_table (WGS_table file),$Genotypes_table (Genotypes table file),$Intersect (file to output overlapped results),$Exp_Strategy (RNA-Seq or WGS),$cancer_type (e.g. OV))
-        $parsing->Overlap_RNA_WGS_Geno("$Analysispath/$cancer_type/$tables","$RNA_table","$WGS_table","$Genotypes_table","$Intersect","$Exp_Strategy","$cancer_type");
+        $parsing->Overlap_RNA_WGS_Geno("$Analysispath/$cancer_type/$tables","$RNA_table","$WGS_table","$Genotypes_table","$RNA_table_overlap","$WGS_table_overlap","$Genotypes_table_overlap","$Intersect","$Exp_Strategy","$cancer_type");
     }
     else
     {

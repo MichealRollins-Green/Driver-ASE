@@ -32,12 +32,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("3.2");
 
-if($help)
+if ($help)
 {
     $parsing->usage("3.2");
 }
 
-if(!defined $cancer_type)
+if (!defined $cancer_type)
 {
     print STDERR "Cancer type was not entered!\n";
     $parsing->usage("3.2");
@@ -78,7 +78,7 @@ if (!defined $duplicates)
 {
     $duplicates = "yes";
 }
-elsif(lc $duplicates ne "y" and lc $duplicates ne "yes" and lc $duplicates ne "n" and lc $duplicates ne "no")
+elsif (lc $duplicates ne "y" and lc $duplicates ne "yes" and lc $duplicates ne "n" and lc $duplicates ne "no")
 {
     print STDERR "Incorrect option specified! Must be yes|y|no|n.\n";
     $parsing->usage("3.2");
@@ -89,7 +89,7 @@ if (!defined $rem_files)
 {
     $rem_files = "no"
 }
-elsif(lc $rem_files ne "y" and lc $rem_files ne "yes" and lc $rem_files ne "n" and lc $rem_files ne "no")
+elsif (lc $rem_files ne "y" and lc $rem_files ne "yes" and lc $rem_files ne "n" and lc $rem_files ne "no")
 {
     print STDERR "Incorrect option specified! Must be yes|y|no|n.\n";
     $parsing->usage("3.2");
@@ -99,7 +99,7 @@ if (!defined $archive)
 {
     $archive = "no";
 }
-elsif(lc $archive ne "y" and lc $archive ne "yes" and lc $archive ne "n" and lc $archive ne "no")
+elsif (lc $archive ne "y" and lc $archive ne "yes" and lc $archive ne "n" and lc $archive ne "no")
 {
     print STDERR "Incorrect option specified! Must be yes|y|no|n.\n";
     $parsing->usage("3.2");    
@@ -136,7 +136,7 @@ if (lc $overlap eq "y"  or lc $overlap eq "yes")
     `ls $ase/$gene_level > gene_level_look.txt`;
     $parsing->vlookup("gene_level_look.txt",1,"$RNA_CDS_Mpileups_overlap",1,1,"y","gene_level_NaN.txt");
     my @gen_nan = `cat gene_level_NaN.txt`;
-    open(GENO,">gene_level_overlap.txt");
+    open (GENO,">gene_level_overlap.txt");
     
     for my $gen (@gen_nan)
     {
@@ -357,7 +357,7 @@ if (lc $rem_files eq "y" or lc $rem_files eq "yes")
 
     @del_files = grep{!/\.bim/ and !/\.fam/ and !/\.log/ and !/\.bed/}@del_files;
     #Delete files in the RNA_Seq_Analysis directory
-    for(my $i = 0;$i < scalar(@del_files);$i++)
+    for (my $i = 0;$i < scalar(@del_files);$i++)
     {
 	`rm "$del_files[$i]"`;
     }
@@ -367,7 +367,7 @@ if (lc $rem_files eq "y" or lc $rem_files eq "yes")
     undef @del_files;
     @del_files = $parsing->get_only_files_in_dir("$ase");
     #Delete files in the ase directory
-    for(my $i = 0;$i < scalar(@del_files);$i++)
+    for (my $i = 0;$i < scalar(@del_files);$i++)
     {
 	`rm "$del_files[$i]"`;
     }
@@ -395,7 +395,7 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     my @impute_hap_list = `ls All_Hets_Haps.chr*.sorted.bed TCGA*.snplist`;
     chdir $ase;
     
-    open(IHO,">$impute_haps_archive");
+    open (IHO,">$impute_haps_archive");
     
     foreach my $impute_hap_files (@impute_hap_list)
     {
@@ -410,8 +410,8 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     print "Making archive $ase_compress_file.\n";
     
     #sets up archive files before running archive_files routine
-    open(MPA,">$RNA_CDS_Mpileups_archive");
-    open(CDA,">$cds_sorted_archive");
+    open (MPA,">$RNA_CDS_Mpileups_archive");
+    open (CDA,">$cds_sorted_archive");
     
     my @cds_mp;
     if (lc $overlap eq "y" or lc $overlap eq "yes")
@@ -446,40 +446,40 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     my @phased_files = `ls $phased`;
     chdir $ase;
     
-    open(IMO,">$Impute_archive");
+    open (IMO,">$Impute_archive");
     
-    foreach my $impute_file(@Imputation_files)
+    foreach my $impute_file (@Imputation_files)
     {
         print IMO "$RNA_Path\t$impute_file";
     }
     close (IMO);
     
-    open(MO,">$maps_archive");
+    open (MO,">$maps_archive");
     
     foreach my $map_list (@map_files)
     {
         print MO "$RNA_Path\t$maps/$map_list";
     }
-    close(MO);
+    close (MO);
     
-    open(PO,">$peds_archive");
+    open (PO,">$peds_archive");
     
     foreach my $ped_list (@ped_files)
     {
         print PO "$RNA_Path\t$peds/$ped_list";
     }
-    close(PO);
+    close (PO);
     
-    open(PHO,">$phased_archive");
+    open (PHO,">$phased_archive");
     
-    foreach my $phased_list(@phased_files)
+    foreach my $phased_list (@phased_files)
     {
         print PHO "$RNA_Path\t$phased/$phased_list";
     }
-    close(PHO);
+    close (PHO);
     
     my @matrix_list = `ls $ase/$matrix`;
-    open(MO,">$matrix_archive");
+    open (MO,">$matrix_archive");
     
     foreach my $matrix_files (@matrix_list)
     {
@@ -491,8 +491,8 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     {
         $parsing->check_directory_existence("$ase/$problem_snps","$ase/$problem_cnvs");
         #sets up the $problem_snps and $problem_cnvs archives by using the $gene_level_archive file and substituting the $gene_level string with $problem_cnvs/$problem_snps and writing to the $problem_snps_archive and $problem_snps_archive files
-        open(PCO,">$problem_cnv_archive");
-        open(PSO,">$problem_snp_archive");
+        open (PCO,">$problem_cnv_archive");
+        open (PSO,">$problem_snp_archive");
         my @gl_list = `cat $gene_level_archive`;
         
         foreach my $gl_files (@gl_list)
@@ -507,11 +507,11 @@ if (lc $archive eq "y" or lc $archive eq "yes")
                 print PCO "$file_path\t$sub_file\n";
             }
         }
-        close(PSO);
-        close(PCO);
+        close (PSO);
+        close (PCO);
         
-        open(BSO,">$bad_snp_archive");
-        open(BCO,">$bad_cnv_archive");
+        open (BSO,">$bad_snp_archive");
+        open (BCO,">$bad_cnv_archive");
         my @cds = `cat $ase/$cds_sorted_archive`;
         
         foreach my $cd_files (@cds)

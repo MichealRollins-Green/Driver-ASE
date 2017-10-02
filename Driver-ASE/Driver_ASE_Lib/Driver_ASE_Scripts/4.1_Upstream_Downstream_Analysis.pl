@@ -29,12 +29,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("4.1");
 
-if($help)
+if ($help)
 {
     $parsing->usage("4.1");
 }
 
-if(!defined $cancer_type)
+if (!defined $cancer_type)
 {
     print STDERR "Cancer type was not entered!\n";
     $parsing->usage("4.1");
@@ -103,7 +103,7 @@ chdir "$WGS_Path";
 
 if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
 {
-    open(SOMO,">$WGS_Path/somatic_look.txt");
+    open (SOMO,">$WGS_Path/somatic_look.txt");
     my @get_som = `ls $WGS_Path/$somatic`;
     for my $som (@get_som)
     {
@@ -111,12 +111,12 @@ if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
         my @sp_som = split("\\.",$som);
         print SOMO $sp_som[0],"\t",$sp_som[1],"\n";
     }
-    close (SOMO);
+    close ( (SOMO);
 
     $parsing->vlookup("$WGS_Path/somatic_look.txt",1,"$Analysispath/$cancer_type/$tables/$WGS_table_overlap",1,1,"y","$WGS_Path/somatic_overlap_nan.txt");
 
     my @som_nan = `cat $WGS_Path/somatic_overlap_nan.txt`;
-    open(SOML,">$WGS_Path/somatic_overlap_list.txt");
+    open (SOML,">$WGS_Path/somatic_overlap_list.txt");
     foreach my $somo (@som_nan)
     {
         chomp($somo);
@@ -127,7 +127,7 @@ if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
             print SOML "$WGS_Path/$somatic/$som_file_path","\n";
         }
     }
-    close (SOML);
+    close ( (SOML);
 
     #mk_files_for_wgs($WGS_Path/$somatic (directory that holds somatic variant files), output file)
     $wgs_analysis->mk_files_for_wgs("$WGS_Path/somatic_overlap_list.txt","$WGS_Path/somatic_list");
@@ -148,7 +148,7 @@ chdir "$WGS_Path/$annotate_vars";
 mkdir "$WGS_Path/$annotate_vars/$overlap" unless(-d "$WGS_Path/$annotate_vars/$overlap");
 opendir (DD,"$database_path/$reg");
 my @zcat = readdir (DD);
-closedir (DD);
+close (dir (DD);
 @zcat = grep{!/\.$/}@zcat;
 my $bed;
 mce_map
@@ -190,15 +190,15 @@ $wgs_analysis->vlookem_all("$WGS_Path/$annotate_vars/$overlap","$WGS_Path/$annot
 opendir (DD,"$WGS_Path/$annotate_vars");
 my @dd = readdir (DD);
 @dd = grep{/^$stream_data*/}@dd;
-closedir (DD);
+close (dir (DD);
 my $sdata_num;
 my $highest_sdata_num = 0;
 my @a;
-for(my $i = 0;$i < scalar(@dd);$i++)
+for (my $i = 0;$i < scalar(@dd);$i++)
 {
    @a = split (/(\d+)/,$dd[$i]);
    $sdata_num = $a[1];
-   if($highest_sdata_num < $sdata_num)
+   if ($highest_sdata_num < $sdata_num)
    { 
        $highest_sdata_num = $sdata_num;
    }
@@ -277,14 +277,14 @@ if (lc $rem_files eq "y" or lc $rem_files eq "yes")
     chdir "$WGS_Path";
     my @del_files = $parsing->get_only_files_in_dir("$WGS_Path");
     #Removes all files after the processes have finished.
-    for(my $i = 0;$i < scalar(@del_files);$i++)
+    for (my $i = 0;$i < scalar(@del_files);$i++)
     {
         `rm "$del_files[$i]"`;
     }
     undef @del_files;
     chdir "$WGS_Path/$annotate_vars";
     @del_files = $parsing->get_only_files_in_dir("$WGS_Path/$annotate_vars");
-    for(my $i = 0;$i < scalar(@del_files);$i++)
+    for (my $i = 0;$i < scalar(@del_files);$i++)
     {
         `rm "$del_files[$i]"`;
     }
@@ -297,19 +297,19 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
     {
         $WGS_compress_file .= "_overlap.tar.gz";
-        open(WMO,">$WGS_Path/$wgs_mpileup_archive");
+        open (WMO,">$WGS_Path/$wgs_mpileup_archive");
         @wgs_mps = `cat $WGS_Path/$WGS_Mpileups_Overlapped`;
     }
     else
     {
-        open(WMO,">$WGS_Path/$wgs_mpileup_archive");
+        open (WMO,">$WGS_Path/$wgs_mpileup_archive");
         $WGS_compress_file .= ".tar.gz";
         @wgs_mps = `cat $WGS_Path/$WGS_Mpileups_Full`;
     }
     
     print "Making archive $WGS_compress_file.\n";
     
-    open(WSO,">$somatic_archive");
+    open (WSO,">$somatic_archive");
     my $prev_som = "";
     foreach my $wgs_lists (@wgs_mps)
     {
@@ -324,10 +324,10 @@ if (lc $archive eq "y" or lc $archive eq "yes")
             $prev_som = $somatic_files;
         }
     }
-    close (WMO);
-    close (WSO);
+    close ( (WMO);
+    close ( (WSO);
     
-    open(AO,">$WGS_Path/$annotations_archive");
+    open (AO,">$WGS_Path/$annotations_archive");
     
     chdir "$WGS_Path/$annotate_vars";
     
@@ -337,7 +337,7 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     {
         print AO "$WGS_Path\t$annotate_vars/$ann_list";
     }
-    close(AO);
+    close ((AO);
     chdir $WGS_Path;
     $parsing->archive_files("$WGS_Path/$wgs_mpileup_archive","$WGS_Path/$somatic_archive","$WGS_Path/$annotations_archive","$WGS_compress_file");
     

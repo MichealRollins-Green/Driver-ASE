@@ -62,7 +62,7 @@ mkdir "$Driver_ASE_Dir/Analysis" unless(-d "$Driver_ASE_Dir/Analysis");
 
 if ("$Exp_Strategy" eq "Genotyping array")
 {
-    if("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
+    if ("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
     {
         print STDERR "Array type must be Genotypes or Copy number estimate, as those are the types that are used in this pipeline.\n";
         $parsing->usage("0");
@@ -84,7 +84,7 @@ elsif ($dwld_cmd eq "curl" or $dwld_cmd eq "aria2c")
 {
     print "Using $dwld_cmd as the download command.\n";
 }
-elsif($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
+elsif ($dwld_cmd eq "aria" or $dwld_cmd eq "aria2")
 {
     print "$dwld_cmd entered! Converting to aria2c.\n";
     $dwld_cmd = "aria2c";
@@ -110,7 +110,7 @@ chdir "$SNP_dir";
 #copyfile2newfullpath(path to gdc key file,path where gdc key file will be copied)
 $parsing->copyfile2newfullpath("$key","$SNP_dir/gdc.key");
 
-if(!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
+if (!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
 {
     #gets the manifest file from gdc and gets the UUIDs from it
     #gdc_parser(cancer type(e.g. OV),type of data (Genotypign array),data type)
@@ -118,35 +118,35 @@ if(!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
     
     if ("$array_type" eq "Copy number estimate")
     {
-        open(my $tangent,"$cancer_type.$array_type.result.txt");
-        open(my $out,">$cancer_type\_tangent.txt");
+        open (my $tangent,"$cancer_type.$array_type.result.txt");
+        open (my $out,">$cancer_type\_tangent.txt");
         my @tanarray = <$tangent>;
         chomp(@tanarray);
         close ($tangent);
         @tanarray = grep{/tangent/}@tanarray;
-        foreach(@tanarray)
+        foreach (@tanarray)
         {
             print $out "$_\n";
         }
-        close($out);
+        close ($out);
         #puts the UUIDs in a payload file which will be used for the curl command
         #metadata_collect(tangent.txt file,output file)
         $dwnld->metadata_collect("$cancer_type\_tangent.txt","$cancer_type\_$array_type\_Payload.txt");
     }
     #This filter only gets birdseed files. This is mainly for cancer types that have files that are not just birdseed
-    elsif($array_type eq "Genotypes")
+    elsif ($array_type eq "Genotypes")
     {
-        open(my $birdseed,"$cancer_type.$array_type.result.txt");
-        open(my $out,">$cancer_type\_birdseed.txt");
+        open (my $birdseed,"$cancer_type.$array_type.result.txt");
+        open (my $out,">$cancer_type\_birdseed.txt");
         my @birdseedarray = <$birdseed>;
         chomp(@birdseedarray);
         close ($birdseed);
         @birdseedarray = grep{/birdseed/}@birdseedarray;
-        foreach(@birdseedarray)
+        foreach (@birdseedarray)
         {
             print $out "$_\n";
         }
-        close($out);
+        close ($out);
         #metadata_collect(birdseed.txt file,output file)
         $dwnld->metadata_collect("$cancer_type\_birdseed.txt","$cancer_type\_$array_type\_Payload.txt");
     }
@@ -159,10 +159,10 @@ if(!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
     $parsing->QueryBase("$cancer_type.$array_type.result.txt",1,"$cancer_type\_$array_type.metadata.txt",'TCGA-\w+-\w+-\w+',"t1.txt",0);
     $parsing->QueryBase("t1.txt",1,"$cancer_type\_$array_type.metadata.txt",'(tumor|blood|normal)',"$cancer_type.$array_type.id2uuid_query.txt",1);
     
-    open(IDI,"$cancer_type.$array_type.id2uuid_query.txt");
-    open(IDO,">$Geno_CNV_table");
+    open (IDI,"$cancer_type.$array_type.id2uuid_query.txt");
+    open (IDO,">$Geno_CNV_table");
     
-    while(my $r = <IDI>)
+    while (my $r = <IDI>)
     {
 	chomp($r);
 	my @a = split("\t",$r);
@@ -173,8 +173,8 @@ if(!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
 	$sample =~ s/^0//;
 	print IDO "$a[0]\t$a[1]\t$sample\t$a[2]\t$TCGA\n";
     }
-    close(IDI);
-    close(IDO);
+    close (IDI);
+    close (IDO);
     
     `mkdir $Analysispath/$cancer_type/$tables` unless(-d "$Analysispath/$cancer_type/$tables");
     
@@ -193,7 +193,7 @@ if ($array_type eq "Genotypes" or $array_type eq "Copy number estimate")
 #get_only_files_in_dir(directory to get files from)
 my @del_files = $parsing->get_only_files_in_dir("$SNP_dir");
 
-for(my $i = 0;$i < scalar(@del_files);$i++)
+for (my $i = 0;$i < scalar(@del_files);$i++)
 {
     `rm "$del_files[$i]"`;
 }

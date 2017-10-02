@@ -25,12 +25,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage;
 
-if($help)
+if ($help)
 {
     $parsing->usage;
 }
 
-if(!defined $cancer_type)
+if (!defined $cancer_type)
 {
     print STDERR "Cancer type was not entered!\n";
     $parsing->usage;
@@ -56,7 +56,7 @@ chdir "$RNA_Path";
 print "Running zcat on $GenomeWideSNP.\n";
 open (F,"zcat $database_path/$GenomeWideSNP|");
 open (O,">annot_csv");
-while(my $r = <F>)
+while (my $r = <F>)
 {
   print O $r;      
 }

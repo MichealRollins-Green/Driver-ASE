@@ -28,12 +28,12 @@ GetOptions(
     'help|h' => \my $help
 ) or die "Incorrect options!\n",$parsing->usage("0_table");
 
-if($help)
+if ($help)
 {
     $parsing->usage("0_table");
 }
 
-if(!defined $cancer_type || !defined $Exp_Strategy || !defined $array_type)
+if (!defined $cancer_type || !defined $Exp_Strategy || !defined $array_type)
 {
     print STDERR "Cancer type, array type and/or experimental strategy was not entered!\n";
     $parsing->usage("0_table");
@@ -41,7 +41,7 @@ if(!defined $cancer_type || !defined $Exp_Strategy || !defined $array_type)
 
 if ($Exp_Strategy eq "Genotyping array")
 {
-    if("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
+    if ("$array_type" ne "Genotypes" and "$array_type" ne "Copy number estimate")
     {
         print STDERR "Array type must be Genotypes or Copy number estimate, as those are the types that are used in this pipeline.\n";
         $parsing->usage("0_table");
@@ -63,7 +63,7 @@ my $Geno_CNV_table = "$cancer_type.$array_type.id2uuid.txt";
 $parsing->check_directory_existence("$database_path"); #check if directories or files exist
 
 my @cancer;
-if($cancer_type =~ /,/)
+if ($cancer_type =~ /,/)
 {
     @cancer = split(",",$cancer_type);
 }
@@ -80,49 +80,49 @@ chdir $Analysispath;
 
 chdir $Table_Dir;
 
-foreach my $cancer_type(@cancer)
+foreach my $cancer_type (@cancer)
 {
-     $cancer_type = $parsing->check_cancer_type($database_path,$cancer_type);
-     next unless (defined $cancer_type);
-     
+    $cancer_type = $parsing->check_cancer_type($database_path,$cancer_type);
+    next unless (defined $cancer_type);
+    
     `mkdir $Analysispath/$cancer_type` unless(-d "$Analysispath/$cancer_type");
     
-    if(!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
+    if (!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
     {
         #gets the manifest file from gdc and gets the UUIDs from it
         #gdc_parser(cancer type(e.g. OV),type of data (Genotyping array),data type)
         $dwnld->gdc_parser($cancer_type,$Exp_Strategy,$array_type);
         
-        if($array_type eq "Copy number estimate")
+        if ($array_type eq "Copy number estimate")
         {
-            open(my $tangent,"$cancer_type.$array_type.result.txt");
-            open(my $out,">$cancer_type\_tangent.txt");
+            open (my $tangent,"$cancer_type.$array_type.result.txt");
+            open (my $out,">$cancer_type\_tangent.txt");
             my @tanarray = <$tangent>;
             chomp(@tanarray);
             close ($tangent);
             @tanarray = grep{/tangent/}@tanarray;
-            foreach(@tanarray)
+            foreach (@tanarray)
             {
                 print $out "$_\n";
             }
-            close($out);
+            close ($out);
             #metadata_collect(tangent.txt file,output file)
             $dwnld->metadata_collect("$cancer_type\_tangent.txt","$cancer_type\_$array_type\_Payload.txt");
         }
         #This filter only gets birdseed files. This is mainly for cancer types that have files that are not just birdseed
-        elsif($array_type eq "Genotypes")
+        elsif ($array_type eq "Genotypes")
         {
-            open(my $birdseed,"$cancer_type.$array_type.result.txt");
-            open(my $out,">$cancer_type\_birdseed.txt");
+            open (my $birdseed,"$cancer_type.$array_type.result.txt");
+            open (my $out,">$cancer_type\_birdseed.txt");
             my @birdseedarray = <$birdseed>;
             chomp(@birdseedarray);
             close ($birdseed);
             @birdseedarray = grep{/birdseed/}@birdseedarray;
-            foreach(@birdseedarray)
+            foreach (@birdseedarray)
             {
                 print $out "$_\n";
             }
-            close($out);
+            close ($out);
             #puts the UUIDs in a payload file which will be used for the curl command
             #metadata_collect(birdseed.txt file,output file)
             $dwnld->metadata_collect("$cancer_type\_birdseed.txt","$cancer_type\_$array_type\_Payload.txt");
@@ -136,10 +136,10 @@ foreach my $cancer_type(@cancer)
         $parsing->QueryBase("$cancer_type.$array_type.result.txt",1,"$cancer_type\_$array_type.metadata.txt",'TCGA-\w+-\w+-\w+',"t1.txt",0);
         $parsing->QueryBase("t1.txt",1,"$cancer_type\_$array_type.metadata.txt",'(tumor|blood|normal)',"$cancer_type.$array_type.id2uuid_query.txt",1);
 	
-	open(IDI,"$cancer_type.$array_type.id2uuid_query.txt");
-	open(IDO,">$Geno_CNV_table");
+	open (IDI,"$cancer_type.$array_type.id2uuid_query.txt");
+	open (IDO,">$Geno_CNV_table");
 	
-	while(my $r = <IDI>)
+	while (my $r = <IDI>)
 	{
 	    chomp($r);
 	    my @a = split("\t",$r);
@@ -150,8 +150,8 @@ foreach my $cancer_type(@cancer)
             $sample =~s/^0//;
 	    print IDO "$a[0]\t$a[1]\t$sample\t$a[2]\t$TCGA\n";
 	}
-	close(IDI);
-	close(IDO);
+	close (IDI);
+	close (IDO);
         
         `mkdir $Analysispath/$cancer_type/$tables` unless(-d "$Analysispath/$cancer_type/$tables");
         
