@@ -65,8 +65,8 @@ sub filter_not_done_somatic
 
 sub Varscan_filter
 {
-    my $wgs_mpileups = shift; #path to the directory where wgs mpileups are stored
-    my $self = $wgs_mpileups and $wgs_mpileups = shift if ref $wgs_mpileups;
+    my $not_done_wgs_som_file = shift; #path to the directory where wgs mpileups are stored
+    my $self = $not_done_wgs_som_file and $not_done_wgs_som_file = shift if ref $not_done_wgs_som_file;
     my $somatic = shift; #directory where somatic data will be stored
     my $readcutoff = shift || 20;
     my $VarType = shift || ".*"; #what will be filtered in this routine (Somatic)
@@ -103,7 +103,7 @@ sub Varscan_filter
     my @dd;
     #directory or file will be passed to routine based on if user wants to overlap data or not
 
-    @dd = `cat $wgs_mpileups`;
+    @dd = `cat $not_done_wgs_som_file`;
     
     for (my $i = 0;$i < scalar(@dd);$i++)
     {
