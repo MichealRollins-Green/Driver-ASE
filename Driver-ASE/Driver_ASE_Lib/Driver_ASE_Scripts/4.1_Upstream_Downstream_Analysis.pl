@@ -111,7 +111,7 @@ if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
         my @sp_som = split("\\.",$som);
         print SOMO $sp_som[0],"\t",$sp_som[1],"\n";
     }
-    close ( (SOMO);
+    close (SOMO);
 
     $parsing->vlookup("$WGS_Path/somatic_look.txt",1,"$Analysispath/$cancer_type/$tables/$WGS_table_overlap",1,1,"y","$WGS_Path/somatic_overlap_nan.txt");
 
@@ -127,7 +127,7 @@ if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
             print SOML "$WGS_Path/$somatic/$som_file_path","\n";
         }
     }
-    close ( (SOML);
+    close (SOML);
 
     #mk_files_for_wgs($WGS_Path/$somatic (directory that holds somatic variant files), output file)
     $wgs_analysis->mk_files_for_wgs("$WGS_Path/somatic_overlap_list.txt","$WGS_Path/somatic_list");
@@ -148,7 +148,7 @@ chdir "$WGS_Path/$annotate_vars";
 mkdir "$WGS_Path/$annotate_vars/$overlap" unless(-d "$WGS_Path/$annotate_vars/$overlap");
 opendir (DD,"$database_path/$reg");
 my @zcat = readdir (DD);
-close (dir (DD);
+closedir (DD);
 @zcat = grep{!/\.$/}@zcat;
 my $bed;
 mce_map
@@ -190,7 +190,7 @@ $wgs_analysis->vlookem_all("$WGS_Path/$annotate_vars/$overlap","$WGS_Path/$annot
 opendir (DD,"$WGS_Path/$annotate_vars");
 my @dd = readdir (DD);
 @dd = grep{/^$stream_data*/}@dd;
-close (dir (DD);
+closedir (DD);
 my $sdata_num;
 my $highest_sdata_num = 0;
 my @a;
@@ -324,8 +324,8 @@ if (lc $archive eq "y" or lc $archive eq "yes")
             $prev_som = $somatic_files;
         }
     }
-    close ( (WMO);
-    close ( (WSO);
+    close (WMO);
+    close (WSO);
     
     open (AO,">$WGS_Path/$annotations_archive");
     
@@ -337,7 +337,7 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     {
         print AO "$WGS_Path\t$annotate_vars/$ann_list";
     }
-    close ((AO);
+    close (AO);
     chdir $WGS_Path;
     $parsing->archive_files("$WGS_Path/$wgs_mpileup_archive","$WGS_Path/$somatic_archive","$WGS_Path/$annotations_archive","$WGS_compress_file");
     

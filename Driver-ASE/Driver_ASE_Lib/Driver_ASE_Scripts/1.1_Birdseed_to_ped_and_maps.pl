@@ -120,7 +120,7 @@ chdir "$RNA_Path";
 {
     print CHR $maps[$i], "\n";
 }
- close ( (CHR);
+ close (CHR);
 
 mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
 `rm -rf $RNA_Path/$ped_dir/*`;
@@ -147,7 +147,7 @@ mkdir "$RNA_Path/$ped_dir" unless(-d "$RNA_Path/$ped_dir");
     $maps_bim[$i] =~ s/\.bim//;
     print BIMS "$maps_bim[$i]\n";
   }
-  close ( (BIMS);
+  close (BIMS);
 
  chdir "$RNA_Path/$map_dir";
  #Merge all bims in dir maps with plink

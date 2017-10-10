@@ -78,7 +78,7 @@ my $Intersect = "$cancer_type\_RNA_WGS_Geno.txt";
 my $tables = "$cancer_type\_tables";
 my $Exp_Strategy = "WGS";
 my ($WGS_Mpileups,$WGS_Mpileups_Overlapped) = ("WGS_Mpileups_Full.txt","WGS_Mpileups_Overlap.txt");
-my $not_done = "$WGS_Path/not_done_somatic.txt";
+my $somatic_not_done = "$WGS_Path/not_done_somatic.txt";
 
 $parsing->check_directory_existence("$database_path","$Analysispath","$Analysispath/$cancer_type","$Analysispath/$cancer_type/$wgs_dwnlds","$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups"); #check if directories or files exist
 
@@ -122,10 +122,11 @@ if (lc $overlap eq "y" || lc $overlap eq "yes")
                 my @new_mp = split("\t",$mpm);
                 pop @new_mp; #pops the last element as it is just the IDs that were matched and printed from the vlookup routine
                 my $joined_mp = join(".",$new_mp[0],$new_mp[1]); #re-joins the file name after being split and used in vlookup
-                print MPO "$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups/$mpm\t$joined_mp\t$Analysispath/$cancer_type/$wgs_dwnlds\t$wgs_mpileups/$mpm\n"; #prints the path to the mpileup file
+                my $joined_mpm = join(".",@new_mp);
+                print MPO "$Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups/$joined_mpm\t$joined_mp\t$Analysispath/$cancer_type/$wgs_dwnlds\t$wgs_mpileups/$joined_mpm\n"; #prints the path to the mpileup file
             }
         }
-        close(MPO);      
+        close (MPO);      
     }
     else
     {
@@ -140,8 +141,8 @@ print "Running Varscan_filter.\n";
 #Varscan_filter($Analysispath/$cancer_type/$wgs_dwnlds/$wgs_mpileups (path to ), $WGS_Path/$somatic (directory where somatic variant data will be stored), $read_cutoff (readcutoff e.g. 20),VarType(e.g. Somatic), $normal_freq (normal alternate frequency e.g. 0.1), $tumor_freq (tumor alternate frequency e.g. 0.1))
 if (lc $overlap eq "y" or lc $overlap eq "yes")
 {
-    $wgs_analysis->filter_not_done_somatic($not_done,"$WGS_Path/$WGS_Mpileups_Overlapped","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
-    $wgs_analysis->Varscan_filter("$not_done","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
+    $wgs_analysis->filter_not_done_somatic("$somatic_not_done","$WGS_Path/$WGS_Mpileups_Overlapped","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
+    $wgs_analysis->Varscan_filter("$somatic_not_done","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
 }
 else
 {
@@ -157,9 +158,8 @@ else
     }
     close (MPO);
     
-    $wgs_analysis->filter_not_done_somatic($not_done,"$WGS_Path/$WGS_Mpileups","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
-    
-    $wgs_analysis->Varscan_filter("$not_done","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
+    $wgs_analysis->filter_not_done_somatic("$somatic_not_done","$WGS_Path/$WGS_Mpileups","$WGS_Path/$somatic\_done.txt","$WGS_Path","$somatic");
+    $wgs_analysis->Varscan_filter("$somatic_not_done","$WGS_Path/$somatic",$read_cutoff,"Somatic",$normal_freq,$tumor_freq);
 }
 
 print "All jobs have finished for $cancer_type.\n";
