@@ -87,9 +87,12 @@ my $finished_WGS = "$cancer_type\_finished_analysis_WGS";
 my $overlap = "overlap";
 my $reg = "reg";
 my $tables = "$cancer_type\_tables";
+my $somatic_calls = "somatic_calls";
+my $mutations = "mutations";
+my $annotations = "annotations";
 my ($WGS_table_file,$WGS_table_overlap) = ("final_downloadtable_$cancer_type\_WGS.txt","final_downloadtable_$cancer_type\_WGS_overlap.txt");
 my ($refseq_hg9_bed,$vars_bed,$ccds_bed,$ccds_tab,$stream_data) = ("refseq.ucsc.ensembl.mrna.hg9.nr.bed","vars.bed","ccds.hg19.bed","ccds.hg19.tab","stream_data");
-my ($wgs_mpileup_archive,$somatic_archive,$annotations_archive) = ("$wgs_mpileups\_varscan_to_archive.txt","$somatic\_to_archive.txt","$annotate_vars\_to_archive.txt");
+my ($wgs_mpileup_archive,$somatic_archive,$annotations_archive,$somatic_calls_archive,$mutations_archive) = ("$wgs_mpileups\_varscan_to_archive.txt","$somatic\_to_archive.txt","$annotations\_to_archive.txt","$somatic_calls\_to_archive.txt","$mutations\_to_archive.txt");
 my ($WGS_Mpileups_Full,$WGS_Mpileups_Overlapped) = ("WGS_Mpileups_Full.txt","WGS_Mpileups_Overlap.txt");
 my $WGS_compress_file = "$cancer_type\_WGS_Analysis";
 
@@ -139,6 +142,10 @@ else
 }
 
 $parsing->matricize("$WGS_Path/somatic_list","$WGS_Path/somatic_list",1,6,"$WGS_Path");
+
+mkdir "$WGS_Path/$mutations" unless (-s "$WGS_Path/$mutations");
+
+`cp matrix.tab rowlabels.txt collabels.txt $WGS_Path/$mutations`;
 
 #var_ID_to_bed(rowlabels.txt file created from matricize, output file)
 $wgs_analysis->var_ID_to_bed("$WGS_Path/rowlabels.txt","$WGS_Path/$annotate_vars/$vars_bed");
@@ -219,6 +226,9 @@ $parsing->strip_head("$WGS_Path/$annotate_vars/vars_gene_out","$WGS_Path/$annota
 $parsing->pull_column("$WGS_Path/$annotate_vars/vars_gene_out_pull","2,1","$WGS_Path/$annotate_vars/vars_gene_out_sort");
 `sort -k 1,1 $WGS_Path/$annotate_vars/vars_gene_out_sort > $WGS_Path/$annotate_vars/var2gene.tab`;
 
+mkdir "$WGS_Path/$annotate_vars/$somatic_calls" unless (-d "$WGS_Path/$annotate_vars/$somatic_calls");
+`cp $WGS_Path/$annotate_vars/var2gene.tab $WGS_Path/$annotate_vars/$somatic_calls`;
+
 #mk_coding($WGS_Path/$annotate_vars/$vars_bed ($vars_bed file), output file)
 $wgs_analysis->mk_coding("$WGS_Path/$annotate_vars/$vars_bed","$WGS_Path/$annotate_vars/vars_grep");
 `cat $WGS_Path/$annotate_vars/vars_grep | grep shift > $WGS_Path/$annotate_vars/vars_sort.txt`;
@@ -251,12 +261,16 @@ $parsing->vlookup("$WGS_Path/$annotate_vars/rowlabels_processed.txt",1,"$WGS_Pat
 
 $parsing->pull_column("$WGS_Path/$annotate_vars/syn_pull","2,3,4","$WGS_Path/$annotate_vars/syn.tab");
 
+mkdir "$WGS_Path/$annotate_vars/$annotations" unless (-d "$WGS_Path/$annotate_vars/$annotations");
+`cp matrix.tab rowlabels.txt collabels.txt syn.tab $WGS_Path/$annotate_vars/$annotations`;
 
 `$overlapSelect $database_path/$ccds_bed $WGS_Path/$annotate_vars/$vars_bed $WGS_Path/$annotate_vars/vars_ccds.bed`;
 `$overlapSelect $WGS_Path/$annotate_vars/vars_ccds.bed $database_path/$refseq_hg9_bed -idOutput $WGS_Path/$annotate_vars/vars_refseq_bed`;
 
 $parsing->strip_head("$WGS_Path/$annotate_vars/vars_refseq_bed","$WGS_Path/$annotate_vars/vars_refseq_bed_pull");
 $parsing->pull_column("$WGS_Path/$annotate_vars/vars_refseq_bed_pull","2,1","$WGS_Path/$annotate_vars/var2gene.coding.tab");
+
+`cp $WGS_Path/$annotate_vars/var2gene.coding.tab $WGS_Path/$annotate_vars/$somatic_calls`;
 
 if (lc $overlap eq "y" or lc $overlap eq "yes")
 {
@@ -268,9 +282,11 @@ else
     $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_file","1,2","$WGS_Path/$annotate_vars/look.tab");     
 }
 
+`cp $WGS_Path/$annotate_vars/look.tab $WGS_Path/$annotate_vars/$somatic_calls`;
+
 #two files: mut_ase_look.txt and coding_genes.tab are pre-created
-`cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars`;
-`cp $database_path/coding_genes.tab $WGS_Path/$annotate_vars`;
+`cp $database_path/mut_ase_look.txt $WGS_Path/$annotate_vars/$somatic_calls`;
+`cp $database_path/coding_genes.tab $WGS_Path/$annotate_vars/$somatic_calls`;
 
 if (lc $rem_files eq "y" or lc $rem_files eq "yes")
 {
@@ -327,22 +343,42 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     close (WMO);
     close (WSO);
     
-    open (AO,">$WGS_Path/$annotations_archive");
+    chdir "$WGS_Path";
+    
+    my @mutation = `ls $mutations`;
+    open (MUTO,">$WGS_Path/$mutations_archive");
+    
+    foreach my $mut (@mutation)
+    {
+        print MUTO "$WGS_Path/$annotate_vars\t$mutations/$mut";
+    }
+    close (MUTO);
     
     chdir "$WGS_Path/$annotate_vars";
     
-    my @annotate_files = `ls matrix.tab rowlabels.txt collabels.txt syn.tab look.tab var2gene.tab var2gene.coding.tab coding_genes.tab mut_ase_look.txt`;
+    open (ANNO,">$WGS_Path/$annotations_archive");
+    my @annotate_files = `ls $annotations`;
     
     foreach my $ann_list (@annotate_files)
     {
-        print AO "$WGS_Path\t$annotate_vars/$ann_list";
+        print ANNO "$WGS_Path/$annotate_vars\t$annotations/$ann_list";
     }
-    close (AO);
+    close (ANNO);
+    
+    open (SOMC,">$WGS_Path/$somatic_calls_archive");
+    
+    my @som_calls = `ls $somatic_calls`;
+    
+    foreach my $sc (@som_calls)
+    {
+        print SOMC "$WGS_Path/$annotate_vars\t$somatic_calls/$sc";
+    }
+    close (SOMC);
+    
     chdir $WGS_Path;
-    $parsing->archive_files("$WGS_Path/$wgs_mpileup_archive","$WGS_Path/$somatic_archive","$WGS_Path/$annotations_archive","$WGS_compress_file");
+    $parsing->archive_files("$WGS_Path/$wgs_mpileup_archive","$WGS_Path/$somatic_archive","$WGS_Path/$annotations_archive","$WGS_Path/$mutations_archive","$WGS_Path/$somatic_calls_archive","$WGS_compress_file");
     
     mkdir "$Analysispath/$cancer_type/$finished_WGS" unless (-d "$Analysispath/$cancer_type/$finished_WGS");
-
 
     `mv $WGS_Path/$WGS_compress_file $Analysispath/$cancer_type/$finished_WGS`;
 }
