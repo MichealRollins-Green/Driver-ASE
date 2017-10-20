@@ -1,6 +1,6 @@
 # Driver-ASE
 
-Allele-specific expression is a powerful method to detect the disturbed expression of genes in tumors compared to its corresponding normals, as the two alleles are exposed to the same environment. Hereby, we invited a new bioinformatic tools to use only tumor samples to obtain potential driver genes that are imbalanced expressed in tumors and are also harboring somatic mutations in different regulatory regions. Out pipeline that correlates somatic mutation in tumor/normal WGS paired samples with gene-level allele-specific expression to systematically uncover cis-regulatory variants involved in tumorigenesis.
+Allele-specific expression is a powerful method to detect the disturbed expression of genes in tumors compared to its corresponding normals, as the two alleles are exposed to the same environment. Hereby, we invited a new bioinformatic tools to use only tumor samples to obtain potential driver genes that are imbalancedly expressed in tumors and are also harboring somatic mutations in different regulatory regions. Our pipeline that correlates somatic mutation in tumor/normal WGS paired samples with gene-level allele-specific expression to systematically uncover cis-regulatory variants involved in tumorigenesis.
 
 # Introduction
 
