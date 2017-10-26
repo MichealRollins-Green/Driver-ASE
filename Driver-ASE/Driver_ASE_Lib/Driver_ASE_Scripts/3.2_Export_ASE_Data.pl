@@ -211,7 +211,7 @@ if (lc $bad_snps_cnvs eq "y" || lc $bad_snps_cnvs eq "yes")
 else
 {
     #if overlap is no then there will be an additional column in the file that is not there when overlap is yes. This column is removed
-    if (lc $overlap eq "n" or lc $overlap eq "no")
+    if (lc $overlap eq "y" or lc $overlap eq "yes")
     {
         $parsing->vlookup("$ase/$gene_level_ases",1,"$Analysispath/$cancer_type/$tables/$RNA_table_overlap",1,"3,4,5,6,7","y","$ase/ASEs4lookup.txt");
         #$parsing->pull_column("$ase/ASEs4lookup_pull.txt","1,2,3,4,6,7,8,9,10","$ase/ASEs4lookup.txt") unless (lc $overlap eq "y" or lc $overlap eq "yes");
