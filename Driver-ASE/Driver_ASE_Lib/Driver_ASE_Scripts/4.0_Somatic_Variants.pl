@@ -5,7 +5,6 @@ use lib "$Bin/..";
 use WGS_Analysis;
 use Parsing_Routines;
 use Cwd "realpath";
-use File::Copy;
 use Getopt::Long;
 use strict;
 use autodie;

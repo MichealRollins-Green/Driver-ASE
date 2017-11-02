@@ -2,8 +2,8 @@
 
 use FindBin qw($Bin);
 use lib "$Bin/..";
-use Parsing_Routines;
 use WGS_Analysis;
+use Parsing_Routines;
 use Cwd "realpath";
 use Getopt::Long;
 use MCE::Map;
@@ -106,6 +106,7 @@ chdir "$WGS_Path";
 
 if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
 {
+    $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$WGS_table_overlap");
     open (SOMO,">$WGS_Path/somatic_look.txt");
     my @get_som = `ls $WGS_Path/$somatic`;
     for my $som (@get_som)
@@ -130,10 +131,10 @@ if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
             print SOML "$WGS_Path/$somatic/$som_file_path","\n";
         }
     }
-    close (SOML);
+   close (SOML);
 
-    #mk_files_for_wgs($WGS_Path/$somatic (directory that holds somatic variant files), output file)
-    $wgs_analysis->mk_files_for_wgs("$WGS_Path/somatic_overlap_list.txt","$WGS_Path/somatic_list");
+            #mk_files_for_wgs($WGS_Path/$somatic (directory that holds somatic variant files), output file)
+   $wgs_analysis->mk_files_for_wgs("$WGS_Path/somatic_overlap_list.txt","$WGS_Path/somatic_list");
 }
 else
 {
@@ -272,15 +273,26 @@ $parsing->pull_column("$WGS_Path/$annotate_vars/vars_refseq_bed_pull","2,1","$WG
 
 `cp $WGS_Path/$annotate_vars/var2gene.coding.tab $WGS_Path/$annotate_vars/$somatic_calls`;
 
-if (lc $overlap eq "y" or lc $overlap eq "yes")
+if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
 {
-    $parsing->check_directory_existence("$Analysispath/$cancer_type/$tables/$WGS_table_overlap");
-    $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_overlap","1,2","$WGS_Path/$annotate_vars/look.tab");
+    $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_overlap","1,2","$WGS_Path/$annotate_vars/look.txt");
 }
 else
 {
-    $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_file","1,2","$WGS_Path/$annotate_vars/look.tab");     
+    $parsing->pull_column("$Analysispath/$cancer_type/$tables/$WGS_table_file","1,2","$WGS_Path/$annotate_vars/look.txt");     
 }
+
+#join UUID and TCGA ID and print the fields
+my @UUID_TCGA =  `cat look.txt`;
+open(LT,">look.tab");
+foreach my $ut (@UUID_TCGA)
+{
+    chomp($ut);
+    my @sp_ut = split("\t",$ut);
+    my $utn = join(".",@sp_ut);
+    print LT "$ut\t$utn\n";
+}
+close (LT);
 
 `cp $WGS_Path/$annotate_vars/look.tab $WGS_Path/$annotate_vars/$somatic_calls`;
 
@@ -313,8 +325,8 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
     {
         $WGS_compress_file .= "_overlap.tar.gz";
-        open (WMO,">$WGS_Path/$wgs_mpileup_archive");
-        @wgs_mps = `cat $WGS_Path/$WGS_Mpileups_Overlapped`;
+       open (WMO,">$WGS_Path/$wgs_mpileup_archive");
+       @wgs_mps = `cat $WGS_Path/$WGS_Mpileups_Overlapped`;
     }
     else
     {
@@ -350,7 +362,7 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     
     foreach my $mut (@mutation)
     {
-        print MUTO "$WGS_Path/$annotate_vars\t$mutations/$mut";
+        print MUTO "$WGS_Path\t$mutations/$mut";
     }
     close (MUTO);
     
@@ -380,7 +392,7 @@ if (lc $archive eq "y" or lc $archive eq "yes")
     
     mkdir "$Analysispath/$cancer_type/$finished_WGS" unless (-d "$Analysispath/$cancer_type/$finished_WGS");
 
-    `mv $WGS_Path/$WGS_compress_file $Analysispath/$cancer_type/$finished_WGS`;
+    `mv $WGS_Path/$annotate_vars/$WGS_compress_file $Analysispath/$cancer_type/$finished_WGS`;
 }
 
 print "All jobs have finished for $cancer_type.\n";
