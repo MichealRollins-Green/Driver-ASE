@@ -275,7 +275,7 @@ You will also need to have a GDC account to get the key for downloading as it do
 
 https://mega.nz/#!aJs1jIaR!KqhQiXh1eBK0p0re0oS4mi6meVnn3YlD5moYEJLsBRI
 
-#### Once downloaded creat a directory for the cancer type being worked on in the directory titled MatLab_Analysis
+#### Once downloaded create a directory for the cancer type being worked on in the directory titled MatLab_Analysis
 #### In the created cancer type directory there will be directories that are created from the analysis scripts that will need to be placed in there. These directories are: somatic_calls, mutations, annotations and matrix
 
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the path to the sctipts if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
