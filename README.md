@@ -276,12 +276,14 @@ You will also need to have a GDC account to get the key for downloading as it do
 https://mega.nz/#!aJs1jIaR!KqhQiXh1eBK0p0re0oS4mi6meVnn3YlD5moYEJLsBRI
 
 #### Once downloaded create a directory for the cancer type being worked on in the directory titled MatLab_Analysis
-#### In the created cancer type directory there will be directories that are created from the analysis scripts that will need to be placed in there. These directories are: somatic_calls, mutations, annotations and matrix
+#### In the created cancer type directory there will be directories that are created from the analysis scripts that will need to be placed in there. These directories are: somatic_calls, mutations, annotations and matrix.
+#### Another thing to do is add the these directory paths to the set path in MatLab: Driver_ASE_MatLab_Lib, MatLab_Variables, Driver_ASE_MatLab_Scripts.
+#### Doing the above allows MatLab to look in those directories for the scripts and run them without the use of absolute paths.
 
 
 #### Script usage
 
-To use script M1_Import_ASE_and_Mutation_data, the full path to the MatLab_Analysis directory and the cancer type being worked on will need to be entered in as arguments
+To use script M1_Import_ASE_and_Mutation_data, the full path to the MatLab_Analysis directory and the cancer type being worked on will need to be entered in as arguments.
 
 
 This pipeline can be used right away in any part of the system once all of the above has been done. You can also add the path to the sctipts if you wish so you don't have to be in the directory or specify the path to them in order to execute them.
