@@ -219,7 +219,7 @@ Place plink and prettify in the same directory as samtools (might be /usr/bin or
 
 #### overlapSelect 
 
-download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64.v287/
+download link - http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/
 
 Find overlapSelect and download it. After it downloads, change the permissions on it to be executable
 
