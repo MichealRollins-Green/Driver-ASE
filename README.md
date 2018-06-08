@@ -52,7 +52,9 @@ Developement Tools - yum groupinstall -y "Development Tools"
 
 Make sure that the firewall allows for incoming and outgoing of traffic for HTTPS/HTTP and FTP.
 
-##### Open these ports to allow communication in an out
+##### Open these ports to allow communication in an out. These may not be required though.
+
+#### CentOS 7
 
 systemctl start firewalld
 
@@ -67,6 +69,20 @@ firewall-cmd --permanent --add-port=443/tcp
 firewall-cmd --permanent --add-port=3306/tcp
 
 firewall-cmd --reload
+
+#### CentOS 6 and earlier
+
+iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+
+iptables -I INPUT -p tcp -m tcp --dport 20 -j ACCEPT
+
+iptables -I INPUT -p tcp -m tcp --dport 21 -j ACCEPT
+
+iptables -I INPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
+iptables -I INPUT -p tcp -m tcp --dport 3306 -j ACCEPT
+
+/ect/init.d/iptables save
 
 Make sure you have these perl modules installed before you run these scripts.
 
