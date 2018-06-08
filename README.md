@@ -18,35 +18,35 @@ Docker Images: https://hub.docker.com/r/mikegreen24/driver-ase/
 
 ##### This pipeline also requires some packages to be installed as the other software it uses within it needs them. Some of these packages may be installed already.
 
-openssl - sudo yum -y install openssl
+openssl - sudo yum install -y openssl
 
-openssl-devel - sudo yum -y install openssl-devel
+openssl-devel - sudo yum install -y openssl-devel
 
-EPEL repository - sudo yum -y install epel-release
+EPEL repository - sudo yum install -y epel-release
 
-yaml - sudo yum -y install yaml-cpp.x86_64 yaml-cpp-devel.x86_64
+yaml - sudo yum install -y yaml-cpp.x86_64 yaml-cpp-devel.x86_64
 
-gcc - sudo yum -y install gcc
+gcc - sudo yum install -y gcc
 
-gcc-c++ - sudo yum -y install gcc-c++.x86_64
+gcc-c++ - sudo yum install -y gcc-c++.x86_64
 
-ncurses-devel - sudo yum -y install ncurses-devel.x86_64
+ncurses-devel - sudo yum install -y ncurses-devel.x86_64
 
-java - yum -y install java
+java - yum install -y java
 
-bzip2-devel - yum -y install bzip2-devel
+bzip2-devel - yum install -y bzip2-devel
 
-xz-devel - yum -y install xz-devel
+xz-devel - yum install -y xz-devel
 
-libcurl-devel - yum -y install libcurl-devel
+libcurl-devel - yum install -y libcurl-devel
 
-perl-core - yum -y install perl-core
+perl-core - yum install -y perl-core
 
-firewalld - yum -y install firewalld
+firewalld - yum install -y firewalld
 
-curl - yum -y install curl
+curl - yum install -y curl
 
-Developement Tools - yum -y groupinstall "Development Tools"
+Developement Tools - yum groupinstall -y "Development Tools"
 
 #### Firewall
 
