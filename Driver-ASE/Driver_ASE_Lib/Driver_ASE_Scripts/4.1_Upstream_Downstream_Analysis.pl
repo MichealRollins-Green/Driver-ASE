@@ -145,7 +145,7 @@ else
 
 $parsing->matricize("$WGS_Path/somatic_list","$WGS_Path/somatic_list",1,6,"$WGS_Path");
 
-mkdir "$WGS_Path/$mutations" unless (-s "$WGS_Path/$mutations");
+mkdir "$WGS_Path/$mutations" unless (-d "$WGS_Path/$mutations");
 
 `cp matrix.tab rowlabels.txt collabels.txt $WGS_Path/$mutations`;
 
