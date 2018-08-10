@@ -102,7 +102,8 @@ $parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer 
 chdir "$WGS_Path";
 
 `mkdir -p $WGS_Path/$annotate_vars` unless(-d "$WGS_Path/$annotate_vars");
-`rm -rf $WGS_Path/$annotate_vars/*`;
+`find $WGS_Path/$annotate_vars/* 2>/dev/null|xargs rm -rf`;
+#`rm -rf $WGS_Path/$annotate_vars/*`;
 
 if (lc $overlap_data eq "y" or lc $overlap_data eq "yes")
 {
