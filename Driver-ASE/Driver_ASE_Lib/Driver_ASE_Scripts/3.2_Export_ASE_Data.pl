@@ -226,7 +226,8 @@ else
 }
 
 mkdir "$ase/$matrix" unless(-d "$ase/$matrix");
-`rm -rf $ase/$matrix/*`;
+`find $ase/$matrix/* 2>/dev/null|xargs rm -rf`;
+#`rm -rf $ase/$matrix/*`;
 
 # tumor
 #matricize(index file,output file,index column to print,output column,path to RNA_Seq_Analysis directory)

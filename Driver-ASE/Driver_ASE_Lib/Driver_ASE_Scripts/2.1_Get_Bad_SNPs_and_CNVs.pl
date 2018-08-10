@@ -58,7 +58,8 @@ $parsing->check_cancer_type($database_path,$cancer_type);
 chdir "$RNA_Path";
 
 `mkdir -p $bad_snps` unless(-d "$bad_snps");
-`rm -rf $bad_snps/*`;
+`find $bad_snps/* 2>/dev/null|xargs rm -rf`;
+#`rm -rf $bad_snps/*`;
 
 #make tumor normal tables for birdseed and copy number
 #mk_tn_tables($geno_dir (directory where Genotype data was downloaded), $genotype (raw file name (same as directory name but will be used for files)))
@@ -86,7 +87,8 @@ $Bad_SNP_CNV->run_snps("$geno_dir,$copy_dir","$RNA_Path/$cancer_type\_lookup_TN"
 #The results will be saved into the directory bad_snps_bed
 print "Now running get_cd_bed.\n";
 mkdir "$bad_snps_bed" unless(-d "$bad_snps_bed");
-`rm -rf $bad_snps_bed/*`;
+`find $bad_snps_bed/* 2>/dev/null|xargs rm -rf`;
+#`rm -rf $bad_snps_bed/*`;
 #get_cd_bed($RNA_Path/$affy_dir/$snp6_cd_file (path to snp6.cd.txt,path to the RNA_Seq_Analysis directory), $bad_snps_bed (directory with default name bad_snps_bed), $bad_snps (directory with default name bad_snps))
 $Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/$snp6_cd_file","$bad_snps_bed","$bad_snps");
 
@@ -120,9 +122,11 @@ $Bad_SNP_CNV->get_cd_bed("$RNA_Path/$affy_dir/$snp6_cd_file","$bad_snps_bed","$b
 #If there are errors in this process then it most likely means that some CNVs were not download properly.
 print "Now running run_cnv.\n";
 mkdir "$bad_cnvs" unless(-d "$bad_cnvs");
-`rm -rf $bad_cnvs/*`;
+`find $bad_cnvs/* 2>/dev/null|xargs rm -rf`;
+#`rm -rf $bad_cnvs/*`;
 `mkdir $temp_dir` unless(-d "$temp_dir");
-`rm -rf $temp_dir/*`;
+`find $temp_dir/* 2>/dev/null|xargs rm -rf`;
+#`rm -rf $temp_dir/*`;
 #run_cnv($RNA_Path/$cancer_type\_lookup_TN (TN file generated after the vlookups and pull_column), $copy_dir","$geno_dir (directory where Copy number estimate data was downloaded, and directory where Genotype data was downloaded), $RNA_Path/$affy_dir/$cnv_hg19_bed (cnv.hg19.bed file), $RNA_Path/$bad_cnvs (directory with default name bad_cnvs), $temp_dir (path to a temp directory))
 $Bad_SNP_CNV->run_cnv("$RNA_Path/$cancer_type\_lookup_TN","$copy_dir","$geno_dir","$RNA_Path/$affy_dir/$cnv_hg19_bed","$RNA_Path/$bad_cnvs","$temp_dir");
 

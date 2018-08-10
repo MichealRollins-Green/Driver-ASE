@@ -66,7 +66,7 @@ $parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer 
 chdir "$RNA_Path";
 
 `mkdir -p $imputation` unless(-d "$imputation");
-`rm -f $imputation/*`;
+`find $imputation/* 2>/dev/null |xargs rm -rf`;
 `mkdir -p $logs` unless(-d "$logs");
 
 #submit_shapeit($OneKG_Ref_Path (path to ALL.integrated_phase1_SHAPEIT_16-06-14.nomono),$RNA_Path (path to directory where RNA-Seq analysis data is stored),$imputation (path to directory with default name phased),$map_dir (path to directory where map files are stored),$ped_dir(path to directory where ped files are stored),l$logs (path to directory where log files will be stored),$shapeit (path/command for shapeit))
@@ -96,11 +96,12 @@ mce_map
 
 #To save disk space;
 #remove them permentately!
-`rm -f $Impute2out/*_allele_probs`;
-`rm -f $Impute2out/*_info_by_sample`;
-`rm -f $Impute2out/*_info`;
-`rm -f $Impute2out/*_summary`;
-`rm -f $Impute2out/*_warnings`;
+system("find $Impute2out -type f -name \"*_allele_probs\" -o -name \"*_info_by_sample\" -o -name \"*_info\" -o -name \"*_summary\" -o -name \"*_warnings\" 2>/dev/null |xargs rm -rf");
+#`rm -f $Impute2out/*_allele_probs`;
+#`rm -f $Impute2out/*_info_by_sample`;
+#`rm -f $Impute2out/*_info`;
+#`rm -f $Impute2out/*_summary`;
+#`rm -f $Impute2out/*_warnings`;
 
 `cat chr_lens|tail -n 12 > file_for_submit`;
 #submit next 12 chrs for imputation
@@ -113,11 +114,12 @@ mce_map
 
 #To save disk space;
 #remove them permentately!
-`rm -f $Impute2out/*_allele_probs`;
-`rm -f $Impute2out/*_info_by_sample`;
-`rm -f $Impute2out/*_info`;
-`rm -f $Impute2out/*_summary`;
-`rm -f $Impute2out/*_warnings`;
+system("find $Impute2out -type f -name \"*_allele_probs\" -o -name \"*_info_by_sample\" -o -name \"*_info\" -o -name \"*_summary\" -o -name \"*_warnings\" 2>/dev/null |xargs rm -rf");
+#`rm -f $Impute2out/*_allele_probs`;
+#`rm -f $Impute2out/*_info_by_sample`;
+#`rm -f $Impute2out/*_info`;
+#`rm -f $Impute2out/*_summary`;
+#`rm -f $Impute2out/*_warnings`;
 
 print "All jobs are done for $cancer_type.\n";
 

@@ -238,7 +238,7 @@ if (($Exp_Strategy eq "RNA-Seq" and !(-f "$Analysispath/$cancer_type/$tables/$RN
     $dwnld->metadata_collect("$cancer_type.result.txt","Payload.txt");
     
     #Gets metadata files for each UUID and prints to a metadata file.
-    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $cancer_type\_metadata.txt`;
+    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://api.gdc.cancer.gov/v0/legacy/files' > $cancer_type\_metadata.txt`;
     
     #Uses the metadata file to get data(i.e. UUID, TCGA ID) an prints the data for the UUIDs to a datatable file.
     #parse_patient_id(_metadata.txt file created from curl,output file)
@@ -247,7 +247,7 @@ if (($Exp_Strategy eq "RNA-Seq" and !(-f "$Analysispath/$cancer_type/$tables/$RN
     #metadata_ids(.result.txt created from gdc_parser,output file)
     $dwnld->metadata_ids("$cancer_type.result.txt","Payload.txt");
     
-    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $cancer_type\_metadata.txt`;
+    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://api.gdc.cancer.gov/v0/legacy/files' > $cancer_type\_metadata.txt`;
     
     open (my $meta,"$cancer_type\_metadata.txt");
     open (ME,">$cancer_type.edit.metadata.txt");
@@ -282,7 +282,7 @@ if (($Exp_Strategy eq "RNA-Seq" and !(-f "$Analysispath/$cancer_type/$tables/$RN
     #index_ids(.result.txt file from gdc_parser,output file)
     $dwnld->index_ids("$cancer_type.result.txt","Payload.txt");
     
-    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > index_file_ids.txt`;
+    `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://api.gdc.cancer.gov/v0/legacy/files' > index_file_ids.txt`;
     
     #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n),outputFile)
     

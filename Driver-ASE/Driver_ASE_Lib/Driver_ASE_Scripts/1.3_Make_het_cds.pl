@@ -64,7 +64,8 @@ $parsing->check_cancer_type($database_path,$cancer_type); #checks if the cancer 
 chdir "$RNA_Path";
 
 `mkdir -p $imputation` unless(-d "$imputation");
-`rm -f $RNA_Path/$imputation/*`;
+`find $RNA_Path/$imputation/* 2>/dev/null |xargs rm -rf`;
+#`rm -f $RNA_Path/$imputation/*`;
 
 my @imputeout = $parsing->get_only_files_in_dir("$Impute2out");
 @imputeout = grep {/haps/}@imputeout;
@@ -109,7 +110,8 @@ chdir "$RNA_Path";
 `mv $imputation/$cancer_type\_TN_TCGA_Imputation.* $RNA_Path`;
 
 mkdir "$RNA_Path/$cds_plink" unless(-d "$RNA_Path/$cds_plink");
-`rm -f $RNA_Path/$cds_plink/*`;
+`find $RNA_Path/$cds_plink/* 2>/dev/null |xargs rm -rf`;
+#`rm -f $RNA_Path/$cds_plink/*`;
 chdir "$RNA_Path/$cds_plink";
 
 print "Now running Extract_Ind_Het_Genos.\n";
@@ -174,17 +176,20 @@ mce_map
 
 chdir "$RNA_Path/$cds_plink";
 
-`rm -f *chr*.snplist *chr*.log *chr*.txt`;
-`rm -f *.bim *.ped *.fam`;
-`rm -f *chr*.o *chr*.ss *chr*.e`;
+system("find $RNA_Path/$cds_plink/ -type f -name \"*chr*.snplist\"-o -name \"*chr*.log\" -o -name \"*chr*.txt\" -o -name \"*.bim\" -o -name \"*.ped\" -o -name \"*.fam\" -o -name \"*chr*.o\" -o -name \"*chr*.ss\" -o -name \"*chr*.e\" 2>/dev/null|xargs rm -rf");
+
+#`rm -f *chr*.snplist *chr*.log *chr*.txt`;
+#`rm -f *.bim *.ped *.fam`;
+#`rm -f *chr*.o *chr*.ss *chr*.e`;
 
 #remove non-sorted bed
 `ls |grep Het|grep sorted -v|xargs rm`;
 
 chdir $RNA_Path;
 
-mkdir "$RNA_Path/$cds_sorted";
-`rm -f $RNA_Path/$cds_sorted/*`;
+mkdir "$RNA_Path/$cds_sorted" unless(-d "$RNA_Path/$cds_sorted");
+`find $RNA_Path/$cds_sorted/* 2>/dev/null |xargs rm -rf`;
+#`rm -f $RNA_Path/$cds_sorted/*`;
 
 print "Now running Split_BedHaps.\n";
 mce_map
@@ -204,13 +209,16 @@ print "Now running Merge_All_Chrs_4_Single_TCGA_Bed.\n";
 #Merge_All_Chrs_4_Single_TCGA_Bed($phased/$phased_sample (path to phased sample file created in script 1.2),$RNA_Path/$cds_plink (path to directory with default name cds_plink),$RNA_Path/$cds_sorted (path to directory with default name cds_sorted))
 $impute_plink->Merge_All_Chrs_4_Single_TCGA_Bed("$phased/$phased_sample","$RNA_Path/$cds_plink","$RNA_Path/$cds_sorted");
 
+system("find $RNA_Path/$cds_sorted/ -type f -name \"*chr*\" -o -name \"*e\" -o -name \"*o\" -o -name \"*ss\" 2>/dev/null|xargs rm -rf");
+
 chdir "$RNA_Path";
-`rm -f $cds_sorted/*chr*`;
+#`rm -f $cds_sorted/*chr*`;
 
-`rm -f $cds_sorted/*.e $cds_sorted/*.o $cds_sorted/*.ss`;
+#`rm -f $cds_sorted/*.e $cds_sorted/*.o $cds_sorted/*.ss`;
 
-mkdir "$cds_tmp";
-`rm -f $cds_tmp/*`;
+mkdir "$cds_tmp" unless(-d "$RNA_Path/$cds_tmp");
+`find $RNA_Path/$cds_tmp/* 2>/dev/null |xargs rm -rf`;
+#`rm -f $cds_tmp/*`;
 
 my @cds_sort_files = `ls $cds_sorted`;
 

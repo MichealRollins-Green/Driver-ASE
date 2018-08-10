@@ -92,7 +92,6 @@ foreach my $cancer_type (@cancer)
         #gets the manifest file from gdc and gets the UUIDs from it
         #gdc_parser(cancer type(e.g. OV),type of data (Genotyping array),data type)
         $dwnld->gdc_parser($cancer_type,$Exp_Strategy,$array_type);
-        
         if ($array_type eq "Copy number estimate")
         {
             open (my $tangent,"$cancer_type.$array_type.result.txt");
@@ -127,9 +126,7 @@ foreach my $cancer_type (@cancer)
             #metadata_collect(birdseed.txt file,output file)
             $dwnld->metadata_collect("$cancer_type\_birdseed.txt","$cancer_type\_$array_type\_Payload.txt");
         }
-        
-        `curl --request POST --header \'Content-Type: application/json\' --data \@\'$cancer_type\_$array_type\_Payload.txt\' \'https://gdc-api.nci.nih.gov/legacy/files\' > \'$cancer_type\_$array_type.metadata.txt\'`;
-        
+        `curl --request POST --header \'Content-Type: application/json\' --data \@\'$cancer_type\_$array_type\_Payload.txt\' \'https://api.gdc.cancer.gov/v0/legacy/files\' > \'$cancer_type\_$array_type.metadata.txt\'`;
         #matches UUID and TCGA ID
         #The columns of each cancer type may be different
         #QueryBase(.result.txt file from gdc_parser,query column,.metadata.txt file from the curl command,reqular expression,output file,column(s) to keep)
@@ -152,7 +149,7 @@ foreach my $cancer_type (@cancer)
 	}
 	close (IDI);
 	close (IDO);
-        
+	print "Wrote file for downloading.\n";
         `mkdir $Analysispath/$cancer_type/$tables` unless(-d "$Analysispath/$cancer_type/$tables");
         
         copy("$Geno_CNV_table","$Analysispath/$cancer_type/$tables");

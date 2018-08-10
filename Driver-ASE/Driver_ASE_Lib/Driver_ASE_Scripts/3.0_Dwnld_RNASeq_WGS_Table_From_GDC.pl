@@ -163,13 +163,13 @@ foreach my $cancer_type (@cancer)
         #parses the gdc website manifest of the specified cancer type and prints to a results file.
         #gdc_parser($cancer_type(e.g. OV),$Exp_Strategy (RNA-Seq or WGS))
         $dwnld->gdc_parser($cancer_type,$Exp_Strategy);
-        
+      
         #Gets the metadata data of the file and places the UUID in a Payload.txt file.
         #metadata_collect(.result.txt file from gdc_parser,output file)
         $dwnld->metadata_collect("$cancer_type.result.txt","Payload.txt");
         
         #Gets metadata files for each UUID and prints to a metadata file.
-        `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $cancer_type\_metadata.txt`;
+        `curl --request POST --header "Content-Type: application/json" --data \@Payload.txt 'https://api.gdc.cancer.gov/v0/legacy/files' > $cancer_type\_metadata.txt`;
         
         #Uses the metadata file to get data(i.e. UUID, TCGA ID) an prints the data for the UUIDs to a datatable file.
         #parse_patient_id(_metadata.txt file created from curl,output file)
@@ -178,8 +178,8 @@ foreach my $cancer_type (@cancer)
         #metadata_ids(.result.txt,output file)
         $dwnld->metadata_ids("$cancer_type.result.txt","Payload.txt");
         
-        `curl --request POST --header \'Content-Type: application/json\' --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > $cancer_type\_metadata.txt`;
-        
+        `curl --request POST --header \'Content-Type: application/json\' --data \@Payload.txt 'https://api.gdc.cancer.gov/v0/legacy/files' > $cancer_type\_metadata.txt`;
+     
         open (my $meta,"$cancer_type\_metadata.txt");
         open (my $ME,">$cancer_type.edit.metadata.txt");
         chomp(my @metaedit = <$meta>);
@@ -210,8 +210,8 @@ foreach my $cancer_type (@cancer)
         #index_ids(.result.txt,output file)
         $dwnld->index_ids("$cancer_type.result.txt","Payload.txt");
         
-        `curl --request POST --header \'Content-Type: application/json\' --data \@Payload.txt 'https://gdc-api.nci.nih.gov/legacy/files' > index_file_ids.txt`;
-        
+        `curl --request POST --header \'Content-Type: application/json\' --data \@Payload.txt 'https://api.gdc.cancer.gov/v0/legacy/files' > index_file_ids.txt`;
+       
         #vlookup(lookupFile,queryCol,sourceFile,lookupCol,returnCol(s),append(y/n),outputFile)
         #e.g. vlookup(lookupfile,3,sourcefile,4,"1,2,4,6","y",outputFile)
         #Will search each column 3 entry of lookupfile within colum 4 of sourceFile and will append columns 1,2,4,6 of sourceFile to the end of each row in lookupfile.
@@ -220,11 +220,11 @@ foreach my $cancer_type (@cancer)
         
         if ($Exp_Strategy eq "RNA-Seq")
         {
-            $parsing->vlookup("temp","1","index_file_ids.txt","3","2","y","$downloadtable.txt");
+            $parsing->vlookup("temp","1","index_file_ids.txt","3","1","y","$downloadtable.txt");
         }
         else
         {
-            $parsing->vlookup("temp","1","index_file_ids.txt","3","1","y","$downloadtable.txt");
+            $parsing->vlookup("temp","1","index_file_ids.txt","3","2","y","$downloadtable.txt");
         }
         
         `mkdir "$Analysispath/$cancer_type/$tables"` unless(-d "$Analysispath/$cancer_type/$tables");

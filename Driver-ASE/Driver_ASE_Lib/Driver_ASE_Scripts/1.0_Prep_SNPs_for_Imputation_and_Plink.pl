@@ -62,7 +62,8 @@ else
 {
     unless (-e "$RNA_Path/$affy_dir/$GenomeWideSNP")
     {
-        `unzip $database_path/GenomeWideSNP_6.na35.annot.csv.zip -d $RNA_Path/$affy_dir`;
+        print "unzipping $GenomeWideSNP\n";
+        `unzip $database_path/$GenomeWideSNP.zip -d $RNA_Path/$affy_dir`;
     }
     
     #ParseAnnoAffxSNP6 changes the strand '-' into "+" and transforms two alleles in /ATCG/ into their complements /TAGC/

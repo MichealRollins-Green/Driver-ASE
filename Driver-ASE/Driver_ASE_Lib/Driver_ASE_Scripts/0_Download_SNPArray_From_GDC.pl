@@ -151,7 +151,7 @@ if (!(-f "$Analysispath/$cancer_type/$tables/$Geno_CNV_table"))
         $dwnld->metadata_collect("$cancer_type\_birdseed.txt","$cancer_type\_$array_type\_Payload.txt");
     }
     
-    `curl --request POST --header \'Content-Type: application/json\' --data \@\'$cancer_type\_$array_type\_Payload.txt\' \'https://gdc-api.nci.nih.gov/legacy/files\' > \'$cancer_type\_$array_type.metadata.txt\'`;
+    `curl --request POST --header \'Content-Type: application/json\' --data \@\'$cancer_type\_$array_type\_Payload.txt\' \'https://api.gdc.cancer.gov/v0/legacy/files\' > \'$cancer_type\_$array_type.metadata.txt\'`;
     
     #matches UUID and TCGA ID
     #The columns of each cancer type may be different
