@@ -417,11 +417,8 @@ sub Make_Plink_Bed
     #Transform ped into BED of plink;
     print "Now making plink bed for $sample.chr$chr\n";
     `$plink --map $RNA_Path/$map_dir/$sample.chr$chr.map --ped $RNA_Path/$map_dir/$sample.chr$chr.ped --make-bed --out $RNA_Path/$map_dir/$sample.chr$chr`;
-    
-    unlink("$RNA_Path/$map_dir/$sample.chr$chr.map",
-           "$RNA_Path/$map_dir/$sample.chr$chr.ped",
-           "$RNA_Path/$map_dir/$sample.chr$chr.pro",
-           "$RNA_Path/$map_dir/$sample.chr$chr.txt");
+ 
+    `rm -f "$RNA_Path/$map_dir/$sample.chr$chr.map" "$RNA_Path/$map_dir/$sample.chr$chr.ped" "$RNA_Path/$map_dir/$sample.chr$chr.pro" "$RNA_Path/$map_dir/$sample.chr$chr.log"`;
 }
 
 sub ped_it_4_plink

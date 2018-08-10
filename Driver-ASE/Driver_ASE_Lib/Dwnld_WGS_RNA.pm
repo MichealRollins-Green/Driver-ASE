@@ -7,7 +7,7 @@ use FileHandle;
 use LWP::Simple;
 use FindBin qw($Bin);
 use File::Copy qw(copy);
-use MCE::Map max_workers => 4;
+use MCE::Map;
 use Cwd;
 use Cwd 'realpath';
 my $TCGA_Analysis_Dir = realpath("../");
@@ -66,11 +66,11 @@ sub gdc_parser
         my $url;
        if ($exp_strat =~ /Genotyping array/)
         {
-           $url = "https://gdc-api.nci.nih.gov/legacy/files?filters=%7B'op':'and','content':%5B%7B'op':'in','content':%7B'field':'cases.project.project_id','value':%5B'TCGA-$cancer_type'%5D%7D%7D,%7B'op':'in','content':%7B'field':'files.data_type','value':%5B'$array_type'%5D%7D%7D%5D%7D";
+           $url = "https://api.gdc.cancer.gov/v0/legacy/files?filters=%7B%22op%22:%22and%22,%22content%22:%5B%7B%22op%22:%22in%22,%22content%22:%7B%22field%22:%22files.experimental_strategy%22,%22value%22:%5B%22".$exp_strat."%22%5D%7D%7D,%7B%22op%22:%22in%22,%22content%22:%7B%22field%22:%22cases.project.project_id%22,%22value%22:%5B%22TCGA-".$cancer_type."%22%5D%7D%7D,%7B%22op%22:%22in%22,%22content%22:%7B%22field%22:%22files.data_type%22,%22value%22:%5B%22".$array_type."%22%5D%7D%7D%5D%7D";
         }
         elsif ($exp_strat =~ /RNA-Seq/ || $exp_strat =~ /WGS/)
         {
-            $url = "https://gdc-api.nci.nih.gov/legacy/files?filters=%7B'op':'and','content':%5B%7B'op':'in','content':%7B'field':'files.data_type','value':%5B'Aligned%20reads'%5D%7D%7D,%7B'op':'in','content':%7B'field':'files.experimental_strategy','value':%5B'$exp_strat'%5D%7D%7D,%7B'op':'in','content':%7B'field':'cases.project.project_id','value':%5B'TCGA-$cancer_type'%5D%7D%7D%5D%7D";
+            $url = "https://api.gdc.cancer.gov/v0/legacy/files?filters=%7B'op':'and','content':%5B%7B'op':'in','content':%7B'field':'files.data_type','value':%5B'Aligned%20reads'%5D%7D%7D,%7B'op':'in','content':%7B'field':'files.experimental_strategy','value':%5B'$exp_strat'%5D%7D%7D,%7B'op':'in','content':%7B'field':'cases.project.project_id','value':%5B'TCGA-$cancer_type'%5D%7D%7D%5D%7D";
         }
         #my $url="https://dcc.icgc.org/api/v1/manifests?filters=%7B'donor':%7B'primarySite':%7B'is':%5B'Blood'%5D%7D%7D%7D";
         $url =~ s/https://;
@@ -87,7 +87,7 @@ sub gdc_parser
         print "Now we are querying all $cancer_type cancer samples from TCGA project:\n\n",$url,"\n\n";
         if (defined $array_type)
         {
-            `curl \'$url\' > \'$cancer_type.$array_type.result.txt\'`;
+            `curl -o \'$cancer_type.$array_type.result.txt\' \'$url\'`;
         }
         else
         {
@@ -259,12 +259,12 @@ sub ref_parse
         my($refID,$UUID) = ($_ =~ /(\S*)\t(\S*)/);
         if ($dwld_cmd eq "curl")
         {
-            $cmd = "$dwld_cmd -# -C - --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' --output \'$ref_tmp/$refID.$UUID\' ";
+            $cmd = "$dwld_cmd -# -C - --header \'X-Auth-Token: $token\' \'https://api.gdc.cancer.gov/v0/legacy/data/$refID\' --output \'$ref_tmp/$refID.$UUID\' ";
         }
         else
         {
             #aria2c is the download command if curl was not specified as the command in the command line when running script
-            $cmd = "$dwld_cmd -s 16 -x 16 -c --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$refID\' -o \'$ref_tmp/$refID.$UUID\' ";
+            $cmd = "$dwld_cmd -s 16 -x 16 -c --header \'X-Auth-Token: $token\' \'https://api.gdc.cancer.gov/v0/legacy/data/$refID\' -o \'$ref_tmp/$refID.$UUID\' ";
         }
         `$cmd`;
     }@table;
@@ -879,24 +879,24 @@ sub dwnld_wgs_or_rna
         {
             if ($dwld_cmd eq "curl")
             {
-                $cmd = "$dwld_cmd -C - --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$bam_output_dir/$a[0]/$a[0].bam\' ";
+                $cmd = "$dwld_cmd -C - --header \'X-Auth-Token: $token\'  \'https://api.gdc.cancer.gov/v0/legacy/data/$a[0]\'  -s --output \'$bam_output_dir/$a[0]/$a[0].bam\' ";
             }
             else
             {
                 #aria2c is the download command if curl was not specified as the command in the command line when running script
-                $cmd = "$dwld_cmd -s 16 -x 16 -c --dir $bam_output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+                $cmd = "$dwld_cmd -s 16 -x 16 -c --dir $bam_output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://api.gdc.cancer.gov/v0/legacy/data/$a[0]";
             }
         }
         else
         {
             if ($dwld_cmd eq "curl")
             {
-                $cmd = "curl --header \'X-Auth-Token: $token\'  \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\'  -s --output \'$bam_output_dir/$a[0]/$a[0].bam\' ";
+                $cmd = "curl --header \'X-Auth-Token: $token\'  \'https://api.gdc.cancer.gov/v0/legacy/data/$a[0]\'  -s --output \'$bam_output_dir/$a[0]/$a[0].bam\' ";
             }
             else
             {
                 #aria2c is the download command if curl was not specified as the command in the command line when running script
-                $cmd = "$dwld_cmd -s 16 -x 16 --dir $bam_output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+                $cmd = "$dwld_cmd -s 16 -x 16 --dir $bam_output_dir/$a[0]/ -o $a[0].bam --header \'X-Auth-Token: $token\' https://api.gdc.cancer.gov/v0/legacy/data/$a[0]";
             }
         }
         
@@ -951,24 +951,24 @@ sub download_files_from_gdc
         {
             if ($dwld_cmd eq "curl")
             {
-                $cmd = "$dwld_cmd -C - --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$geno_cnv_dir/$a[0].$a[1]\' ";
+                $cmd = "$dwld_cmd -C - --header \'X-Auth-Token: $token\' \'https://api.gdc.cancer.gov/v0/legacy/data/$a[0]\' -s --output \'$geno_cnv_dir/$a[0].$a[1]\' ";
             }
             else
             {
                 #aria2c is the download command if curl was not specified as the command in the command line when running script
-                $cmd = "$dwld_cmd -s 16 -x 16 -c --dir \'$geno_cnv_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+                $cmd = "$dwld_cmd -s 16 -x 16 -c --dir \'$geno_cnv_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://api.gdc.cancer.gov/v0/legacy/data/$a[0]";
             }
         }
         else
         {
             if ($dwld_cmd eq "curl")
             {
-                $cmd = "$dwld_cmd  --header \'X-Auth-Token: $token\' \'https://gdc-api.nci.nih.gov/legacy/data/$a[0]\' -s --output \'$geno_cnv_dir/$a[0].$a[1]\' ";
+                $cmd = "$dwld_cmd  --header \'X-Auth-Token: $token\' \'https://api.gdc.cancer.gov/v0/legacy/data/$a[0]\' -s --output \'$geno_cnv_dir/$a[0].$a[1]\' ";
             }
             else
             {
                 #aria2c is the download command if curl was not specified as the command in the command line when running script
-                $cmd = "$dwld_cmd -s 16 -x 16 --dir \'$geno_cnv_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://gdc-api.nci.nih.gov/legacy/data/$a[0]";
+                $cmd = "$dwld_cmd -s 16 -x 16 --dir \'$geno_cnv_dir\' -o $a[0].$a[1] --header \'X-Auth-Token: $token\' https://api.gdc.cancer.gov/v0/legacy/data/$a[0]";
             }
         }
         
