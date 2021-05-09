@@ -1,3 +1,5 @@
+#!/usr/bin/perl -w
+
 package Driver_ASE_Lib::Gene_Level_ASE_Analysis;
 
 use warnings;
