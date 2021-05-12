@@ -289,9 +289,7 @@ You will also need to have a GDC account to get the key for downloading as it do
 #### 3. Rename the downloaded token to gdc.key.
 #### 4. Place it in the Database directory of the pipeline. When running the download scripts, the path to the key will need to be entered.
 
-#### MatLab scripts Download link
-
-https://mega.nz/#!aJs1jIaR!KqhQiXh1eBK0p0re0oS4mi6meVnn3YlD5moYEJLsBRI
+#### MatLab scripts are included in the directory of 'Driver_ASE_MatLab_Lib'
 
 #### Once downloaded create a directory for the cancer type being worked on in the directory titled MatLab_Analysis
 #### In the created cancer type directory there will be directories that are created from the analysis scripts that will need to be placed in there. These directories are: somatic_calls, mutations, annotations and matrix.
