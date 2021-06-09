@@ -22,21 +22,21 @@ Docker Images: https://hub.docker.com/r/mikegreen24/driver-ase/
 ##### This pipeline also requires some packages to be installed as the other software it uses within it needs them. Some of these packages may be installed already.
 
 
-sudo yum install -y openssl  # openssl <br/>
-sudo yum install -y openssl-devel # openssl-devel <br/>
-sudo yum install -y epel-release # EPEL repository <br/>
-sudo yum install -y yaml-cpp.x86_64 yaml-cpp-devel.x86_64     # yaml <br/>
-sudo yum install -y gcc   # gcc <br/>
-sudo yum install -y gcc-c++.x86_64  # gcc-c++ <br/>
-sudo yum install -y ncurses-devel.x86_64    # ncurses-devel <br/>
-yum install -y java   # java <br/>
-yum install -y bzip2-devel   # bzip2-devel <br/>
-yum install -y xz-devel # xz-devel <br/>
-yum install -y libcurl-devel  # libcurl-devel <br/>
-yum install -y perl-core  # perl-core <br/>
-yum install -y firewalld  # firewalld  <br/>
-yum install -y curl # curl <br/>
-yum groupinstall -y "Development Tools"  # Developement Tools <br/>
+sudo yum install -y openssl   <br/>
+sudo yum install -y openssl-devel  <br/>
+sudo yum install -y epel-release  <br/>
+sudo yum install -y yaml-cpp.x86_64 yaml-cpp-devel.x86_64      <br/>
+sudo yum install -y gcc    <br/>
+sudo yum install -y gcc-c++.x86_64  <br/>
+sudo yum install -y ncurses-devel.x86_64     <br/>
+yum install -y java    <br/>
+yum install -y bzip2-devel   <br/>
+yum install -y xz-devel <br/>
+yum install -y libcurl-devel  <br/>
+yum install -y perl-core   <br/>
+yum install -y firewalld   <br/>
+yum install -y curl <br/>
+yum groupinstall -y "Development Tools"  <br/>
 
 
 #### Firewall
