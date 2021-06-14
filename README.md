@@ -15,7 +15,7 @@ The pipeline performs ASE analysis by using RNA-Seq, affymetrix genotyping array
 
 The Driver-ASE pipeline was developed on a Centos 7 x86_64 system and the some of the package names listed below are specific to Centos. If you wish to use the pipeline on a different distribution, install the equivalent packages for the distribution that you are using. If you don't want to configure your system to use the pipeline, you could use an image that was made with Docker that has all of the dependencies already installed for the pipeline to run.
 
-Docker Images: https://hub.docker.com/r/mikegreen24/driver-ase/
+Docker Images: https://hub.docker.com/r/mikevermeulen/driver-ase/
 
 #### Packages
 
